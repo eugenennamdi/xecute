@@ -1,9 +1,11 @@
 "use client"
 
+import Link from "next/link"
 import { useRef } from "react"
 import type { LucideIcon } from "lucide-react"
 import {
   ArrowLeftRight,
+  BookOpen,
   CircleDollarSign,
   LineChart,
   MessageSquare,
@@ -14,6 +16,8 @@ import {
   Trash2,
 } from "lucide-react"
 
+import { GithubIcon } from "@/components/brand/github-icon"
+import { XSocialIcon } from "@/components/brand/x-social-icon"
 import { XecuteMark } from "@/components/brand/xecute-mark"
 import { AddCircleIcon, type AddCircleIconHandle } from "@/components/ui/add-circle"
 import { Button } from "@/components/ui/button"
@@ -143,8 +147,40 @@ export function AppSidebar({ collapsed = false, onToggle, onClose }: AppSidebarP
           })}
         </nav>
 
-        {/* Bottom Expand Toggle */}
-        <div className="mt-auto pt-2">
+        {/* Bottom Actions */}
+        <div className="mt-auto flex flex-col items-center gap-1.5 pt-2">
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Link
+                  href="/docs"
+                  className="flex size-8 items-center justify-center rounded-lg text-foreground/40 hover:bg-black/[0.04] hover:text-foreground"
+                  aria-label="Documentation"
+                >
+                  <BookOpen className="size-4" />
+                </Link>
+              }
+            />
+            <TooltipContent side="right">Documentation</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <a
+                  href="https://x.com/xecute_xyz"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex size-8 items-center justify-center rounded-lg text-foreground/40 hover:bg-black/[0.04] hover:text-foreground"
+                  aria-label="X (Twitter)"
+                >
+                  <XSocialIcon className="size-3.5" />
+                </a>
+              }
+            />
+            <TooltipContent side="right">X (@xecute_xyz)</TooltipContent>
+          </Tooltip>
+
           <Tooltip>
             <TooltipTrigger
               render={
@@ -178,43 +214,38 @@ export function AppSidebar({ collapsed = false, onToggle, onClose }: AppSidebarP
           <p className="text-[15px] font-semibold text-[#121316]">Xecute</p>
         </div>
         {onToggle || onClose ? (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="group/sidebar-toggle text-foreground/45 hover:bg-foreground/[0.06] hover:text-foreground"
-                  onClick={onToggle ?? onClose}
-                  aria-label="Close sidebar"
-                >
-                  <PanelLeftClose className="size-4 transition-transform duration-300 ease-out group-hover/sidebar-toggle:-translate-x-0.5" />
-                </Button>
-              }
-            />
-            <TooltipContent side="right">Close sidebar</TooltipContent>
-          </Tooltip>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="size-8 text-foreground/40 hover:bg-foreground/[0.06] hover:text-foreground"
+            onClick={onClose || onToggle}
+            aria-label="Collapse sidebar"
+          >
+            <PanelLeftClose className="size-4" />
+          </Button>
         ) : null}
       </div>
 
-      <Button
-        type="button"
-        variant="ghost"
-        className="group/new-chat mt-3 h-9 w-full justify-start gap-2 rounded-lg bg-black/[0.035] px-2.5 text-xs font-medium text-foreground/75 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-black/[0.06] hover:text-foreground active:scale-[0.99]"
-        onMouseEnter={() => newChatIconRef.current?.startAnimation()}
-        onFocus={() => newChatIconRef.current?.startAnimation()}
-        onClick={() => {
-          newChat()
-          onClose?.()
-        }}
-      >
-        <AddCircleIcon ref={newChatIconRef} size={15} className="text-foreground/55 transition-colors group-hover/new-chat:text-foreground" />
-        <span>New chat</span>
-      </Button>
+      <div className="mt-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="group/new-chat flex h-9 w-full items-center justify-start gap-2 rounded-lg border-black/[0.08] bg-white px-2.5 text-xs font-medium text-foreground/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-black/20 hover:bg-white hover:text-foreground active:scale-[0.99]"
+          onMouseEnter={() => newChatIconRef.current?.startAnimation()}
+          onFocus={() => newChatIconRef.current?.startAnimation()}
+          onClick={() => {
+            newChat()
+            onClose?.()
+          }}
+        >
+          <AddCircleIcon ref={newChatIconRef} size={16} className="text-foreground/60 transition-colors group-hover/new-chat:text-foreground" />
+          <span>New chat</span>
+        </Button>
+      </div>
 
-      <nav className="mt-5" aria-label="Xecute modes">
-        <p className="px-2.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/55">Modes</p>
+      <nav className="mt-5 space-y-1" aria-label="Xecute modes">
+        <p className="px-2 text-[10px] font-semibold uppercase tracking-wider text-foreground/55">Modes</p>
         <div className="mt-1.5 space-y-0.5">
           {(Object.keys(modeCopy) as Mode[]).map((mode) => {
             const Icon = modeIcons[mode]
@@ -226,16 +257,16 @@ export function AppSidebar({ collapsed = false, onToggle, onClose }: AppSidebarP
                 data-icon-motion={mode}
                 onClick={() => selectMode(mode)}
                 className={cn(
-                  "group flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs transition-colors",
+                  "group flex min-h-8 w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-xs transition-colors",
                   isActive
-                    ? "border border-black/[0.06] bg-white font-semibold text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
-                    : "font-medium text-foreground/72 hover:bg-black/[0.04] hover:text-foreground",
+                    ? "border border-black/[0.05] bg-white font-semibold text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                    : "font-normal text-foreground/75 hover:bg-black/[0.04] hover:text-foreground",
                 )}
               >
                 <Icon
                   className={cn(
-                    "xecute-responsive-icon size-3.5 transform-gpu transition-colors",
-                    isActive ? "text-[#FE6501]" : "text-foreground/55 group-hover:text-foreground/85",
+                    "xecute-responsive-icon size-3.5 shrink-0 transform-gpu transition-colors",
+                    isActive ? "text-[#FE6501]" : "text-foreground/50 group-hover:text-foreground/80",
                   )}
                 />
                 <span className="flex-1">{modeCopy[mode].label}</span>
@@ -311,6 +342,35 @@ export function AppSidebar({ collapsed = false, onToggle, onClose }: AppSidebarP
             </p>
           )}
         </div>
+      </div>
+
+      {/* Sidebar Utility Footer */}
+      <div className="mt-auto border-t border-black/[0.06] pt-2.5 px-1 space-y-0.5">
+        <Link
+          href="/docs"
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground/65 transition-colors hover:bg-black/[0.04] hover:text-foreground"
+        >
+          <BookOpen className="size-3.5 text-foreground/45" />
+          <span className="font-medium">Documentation</span>
+        </Link>
+        <a
+          href="https://x.com/xecute_xyz"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground/65 transition-colors hover:bg-black/[0.04] hover:text-foreground"
+        >
+          <XSocialIcon className="size-3.5 text-foreground/45" />
+          <span>X (@xecute_xyz)</span>
+        </a>
+        <a
+          href="https://github.com/eugenennamdi/xecute"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground/65 transition-colors hover:bg-black/[0.04] hover:text-foreground"
+        >
+          <GithubIcon className="size-3.5 text-foreground/45" />
+          <span>GitHub</span>
+        </a>
       </div>
     </aside>
   )

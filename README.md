@@ -1,4 +1,4 @@
-# Xecute · AI Execution Terminal for [X Layer](https://web3.okx.com/onchainos/dev-docs/xlayer/developer/build-on-xlayer/about-xlayer)
+# Xecute · AI Execution Terminal for X Layer
 
 > **Execute anything on [X Layer](https://web3.okx.com/onchainos/dev-docs/xlayer/developer/build-on-xlayer/about-xlayer).**  
 > Natural-language execution, verified onchain state, deterministic safeguards, and human-confirmed transactions.

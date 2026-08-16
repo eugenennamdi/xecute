@@ -30,6 +30,7 @@ export type DeploymentRecord = {
 }
 
 export const ROUTER_ADDRESS_TESTNET: `0x${string}` = "0x9be3af8223f49b9357941db269a39775f7802acb"
+export const AAVE_V3_POOL_MAINNET: `0x${string}` = "0xE3F3Caefdd7180F884c01E57f65Df979Af84f116"
 
 export const DEPLOYMENTS: Record<string, DeploymentRecord> = {
   testnetRouter: {
