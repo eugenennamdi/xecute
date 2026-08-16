@@ -393,26 +393,26 @@ function localAnswer(
         }).join("\n")
 
         parts.push(
-`🛡️ **Wallet Approval Audit: ${activeList.length} Active Permission${activeList.length === 1 ? "" : "s"} Found**
+`**Wallet Approval Audit: ${activeList.length} Active Permission${activeList.length === 1 ? "" : "s"} Detected**
 
-I detected **${activeList.length}** active token approval${activeList.length === 1 ? "" : "s"} for \`${addr}\` on **${net}**:
+Detected **${activeList.length}** active token approval${activeList.length === 1 ? "" : "s"} for \`${addr}\` on **${net}**:
 
 | Token | Protocol / Spender | Allowance Limit | Security Status |
 | :--- | :--- | :--- | :--- |
 ${rows}
 
-${riskyCount > 0 ? `⚠️ **${riskyCount} unlimited allowance${riskyCount === 1 ? "" : "s"} detected.** You can revoke any approval by asking: *"Revoke allowance for [Spender]"*.` : "All allowances are bounded to exact limits."}`
+${riskyCount > 0 ? `**${riskyCount} unlimited allowance${riskyCount === 1 ? "" : "s"} detected.** You can revoke any approval by asking: *"Revoke allowance for [Spender]"*.` : "All allowances are bounded to exact limits."}`
         )
       } else {
         parts.push(
-`🛡️ **Wallet Approval Audit: Clean & Secure**
+`**Wallet Approval Audit: 0 Active Approvals**
 
-I scanned your wallet (\`${addr}\`) on **${net}** across verified token assets (**USDT**, **USDC**, **USDG**, **WETH**).
+Scanned wallet (\`${addr}\`) on **${net}** across verified token assets (**USDT**, **USDC**, **USDG**, **WETH**).
 
 • **0 Active Approvals** — No smart contracts currently have permission to spend your tokens.
-• **0 Unlimited Allowances** — Your wallet exposure is **$0.00**.
+• **0 Unlimited Allowances** — Wallet exposure is **$0.00**.
 
-✅ **Your wallet is completely safe.** No open permissions or allowances need to be revoked.`
+**Wallet Status**: No open permissions or allowances need to be revoked.`
         )
       }
     } else {
@@ -535,17 +535,17 @@ ${points.join("\n\n")}
 `**Xecute** is the AI-native execution terminal for **X Layer**, engineered to bridge natural language intents with verified onchain execution and real-time ecosystem intelligence.
 
 ### Core Capabilities:
-• 🔄 **Trade & Settle (Testnet)**: Convert plain English into executable onchain transactions (Token Swaps, OKB/ERC-20 Transfers, and Smart Approvals) with automated preflight simulation, slippage control, and non-custodial wallet signatures.
-• 📈 **Yield & Earn (Mainnet)**: Query live DeFi APRs and liquidity pools across **Aave V3**, **Uniswap V3**, and ecosystem vaults with 1-click deposit deeplinks.
-• 🔮 **Predict & Stress-Test**: Run real-time price shock simulations (e.g. *"What happens if OKB drops 10%?"*) to model portfolio exposure and impermanent loss.
-• 🛡️ **Protect & Audit**: Inspect token approvals, detect unlimited spender allowances, and execute instant 0-allowance revocations to safeguard your wallet.
+• **Trade & Settle (Testnet)**: Convert plain English into executable onchain transactions (Token Swaps, OKB/ERC-20 Transfers, and Smart Approvals) with automated preflight simulation, slippage control, and non-custodial wallet signatures.
+• **Yield & Earn (Mainnet)**: Query live DeFi APRs and liquidity pools across **Aave V3**, **Uniswap V3**, and ecosystem vaults with 1-click deposit deeplinks.
+• **Predict & Stress-Test**: Run real-time price shock simulations (e.g. *"What happens if OKB drops 10%?"*) to model portfolio exposure and impermanent loss.
+• **Protect & Audit**: Inspect token approvals, detect unlimited spender allowances, and execute instant 0-allowance revocations to safeguard your wallet.
 
 You can interact using conversational prompts or trigger explicit modes using \`/trade\`, \`/earn\`, \`/predict\`, and \`/protect\`.`
     )
   }
 
   if (parts.length === 0) {
-    return `I am Xecute, your AI execution terminal for X Layer. How can I assist you with onchain trading, DeFi yield discovery, or wallet security today?`
+    return `I can help you execute supported actions on X Layer Testnet and inspect verified X Layer Mainnet data. What would you like to do on X Layer?`
   }
 
   return parts.join("\n\n")

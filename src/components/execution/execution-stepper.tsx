@@ -98,7 +98,7 @@ export function ExecutionStepper({
                 >
                   {step.label}
                 </span>
-                {step.isComplete && <span className="font-mono text-[10px] text-[#16845c]">Passed ✓</span>}
+                {step.isComplete && <span className="font-mono text-[10px] font-medium text-[#16845c]">Passed</span>}
                 {step.isRunning && <span className="font-mono text-[10px] text-[#FE6501] animate-pulse">Running...</span>}
               </div>
               <p className="text-[11px] leading-tight text-foreground/50">{step.detail}</p>

@@ -60,7 +60,7 @@ const welcomeMessage: ChatMessage = {
   id: "welcome",
   role: "assistant",
   content:
-    "Tell me what you want to do on X Layer. I’ll prepare it, explain anything important, and ask before anything happens.",
+    "Welcome to Xecute.\n\nI can help you execute supported actions on X Layer Testnet and inspect verified X Layer Mainnet data.",
 }
 
 const SESSION_KEY = "xecute-session-id"
