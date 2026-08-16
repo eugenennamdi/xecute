@@ -100,9 +100,9 @@ export default function ExecutionPage() {
                 {item.step}
               </span>
               <div className="min-w-0 flex-1 space-y-1">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
                   <h3 className="text-xs font-semibold text-foreground">{item.title}</h3>
-                  <span className="rounded bg-black/[0.04] px-1.5 py-0.5 text-[10px] font-medium text-foreground/50">
+                  <span className="rounded bg-black/[0.04] px-1.5 py-0.5 text-[10px] font-medium text-foreground/50 shrink-0">
                     {item.tag}
                   </span>
                 </div>

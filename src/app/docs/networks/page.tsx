@@ -1,5 +1,4 @@
 import { DocsBreadcrumbs } from "@/components/docs/docs-breadcrumbs"
-import { DocsCallout } from "@/components/docs/docs-callout"
 import { DocsPrevNext } from "@/components/docs/docs-prev-next"
 import { getPrevNextPages } from "@/config/docs"
 import { ROUTER_ADDRESS_TESTNET } from "@/config/contracts"
@@ -124,9 +123,12 @@ export default function NetworksPage() {
         </div>
       </div>
 
-      <DocsCallout type="warning" title="Why Mainnet Execution is Gated">
-        Mainnet execution is intentionally disabled in this release to prioritize user fund safety during the hackathon. Future Mainnet execution will be introduced progressively following comprehensive third-party smart contract audits and protocol adapter verification.
-      </DocsCallout>
+      <div className="rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 space-y-1.5 shadow-2xs">
+        <h3 className="text-xs font-semibold text-foreground">Why Mainnet Execution is Gated</h3>
+        <p className="text-xs text-foreground/70 leading-relaxed">
+          Mainnet execution is intentionally disabled in this release to prioritize user fund safety during the hackathon. Future Mainnet execution will be introduced progressively following comprehensive third-party smart contract audits and protocol adapter verification.
+        </p>
+      </div>
 
       <DocsPrevNext prev={prev} next={next} />
     </div>

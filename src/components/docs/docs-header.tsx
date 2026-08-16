@@ -20,13 +20,13 @@ export function DocsHeader({
   onToggleMobileNav,
 }: DocsHeaderProps) {
   return (
-    <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-black/[0.06] bg-[#fafafa]/90 px-4 backdrop-blur-md sm:px-6">
+    <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-black/[0.06] bg-[#fafafa]/90 px-3 sm:px-6 backdrop-blur-md">
       {/* Left: Brand & Docs Badge */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <button
           type="button"
           onClick={onToggleMobileNav}
-          className="flex size-8 items-center justify-center rounded-lg text-foreground/60 hover:bg-black/[0.05] hover:text-foreground md:hidden"
+          className="flex size-8 shrink-0 items-center justify-center rounded-lg text-foreground/60 hover:bg-black/[0.05] hover:text-foreground md:hidden"
           aria-label="Toggle navigation"
         >
           {mobileNavOpen ? <X className="size-4" /> : <Menu className="size-4" />}
@@ -34,7 +34,7 @@ export function DocsHeader({
 
         <Link
           href="/"
-          className="group flex items-center gap-2 transition-transform active:scale-95"
+          className="group flex items-center gap-1.5 sm:gap-2 shrink-0 transition-transform active:scale-95"
         >
           <XecuteMark className="size-5 transform-gpu text-[#FE6501] transition-transform duration-200 ease-out group-hover:scale-110" />
           <span className="font-semibold text-sm tracking-tight text-foreground">
@@ -46,14 +46,14 @@ export function DocsHeader({
 
         <Link
           href="/docs"
-          className="rounded-md bg-black/[0.04] px-2 py-0.5 text-xs font-semibold text-foreground/80 hover:bg-black/[0.08]"
+          className="rounded-md bg-black/[0.04] px-2 py-0.5 text-xs font-semibold text-foreground/80 hover:bg-black/[0.08] shrink-0"
         >
           Docs
         </Link>
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {/* Quick Search Button */}
         <button
           type="button"
@@ -81,7 +81,7 @@ export function DocsHeader({
           href="https://x.com/xecute_xyz"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex size-8 items-center justify-center rounded-lg text-foreground/60 transition-colors hover:bg-black/[0.05] hover:text-foreground"
+          className="hidden sm:flex size-8 items-center justify-center rounded-lg text-foreground/60 transition-colors hover:bg-black/[0.05] hover:text-foreground"
           aria-label="X (Twitter)"
         >
           <XSocialIcon className="size-3.5" />
@@ -92,7 +92,7 @@ export function DocsHeader({
           href="https://github.com/eugenennamdi/xecute"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex size-8 items-center justify-center rounded-lg text-foreground/60 transition-colors hover:bg-black/[0.05] hover:text-foreground"
+          className="hidden sm:flex size-8 items-center justify-center rounded-lg text-foreground/60 transition-colors hover:bg-black/[0.05] hover:text-foreground"
           aria-label="GitHub repository"
         >
           <GithubIcon className="size-4" />
@@ -113,7 +113,7 @@ export function DocsHeader({
         <Link href="/">
           <Button
             size="sm"
-            className="h-8 rounded-lg bg-[#FE6501] px-3.5 text-xs font-medium text-white shadow-2xs hover:bg-[#e25a00] active:scale-98"
+            className="h-8 rounded-lg bg-[#FE6501] px-2.5 sm:px-3.5 text-xs font-medium text-white shadow-2xs hover:bg-[#e25a00] active:scale-98"
           >
             Open Xecute
           </Button>

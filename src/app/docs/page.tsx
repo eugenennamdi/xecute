@@ -2,7 +2,6 @@ import Link from "next/link"
 import { ArrowLeftRight, ArrowRight, CircleDollarSign, LineChart, Shield, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { DocsCallout } from "@/components/docs/docs-callout"
 import { DocsPrevNext } from "@/components/docs/docs-prev-next"
 import { getPrevNextPages } from "@/config/docs"
 
@@ -174,44 +173,44 @@ export default function DocsOverviewPage() {
           Xecute replaces disjointed crypto interfaces with a structured 8-step pipeline where AI understands the user&apos;s goal, but deterministic smart contracts and safety policies control execution.
         </p>
 
-        <div className="rounded-2xl border border-black/[0.07] bg-white p-6 shadow-2xs">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-center">
+        <div className="rounded-2xl border border-black/[0.07] bg-white p-3.5 sm:p-6 shadow-2xs">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
+            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 1</span>
               <p className="mt-1 text-xs font-semibold text-foreground">Natural Prompt</p>
               <p className="mt-0.5 text-[10px] text-foreground/50">Plain English intent</p>
             </div>
-            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-center">
+            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 2</span>
               <p className="mt-1 text-xs font-semibold text-foreground">Typed Schema</p>
               <p className="mt-0.5 text-[10px] text-foreground/50">Zod intent validation</p>
             </div>
-            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-center">
+            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 3</span>
               <p className="mt-1 text-xs font-semibold text-foreground">Onchain Verify</p>
               <p className="mt-0.5 text-[10px] text-foreground/50">Live state & balances</p>
             </div>
-            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-center">
+            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 4</span>
               <p className="mt-1 text-xs font-semibold text-foreground">Safeguards</p>
               <p className="mt-0.5 text-[10px] text-foreground/50">7 deterministic checks</p>
             </div>
-            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-center">
+            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 5</span>
               <p className="mt-1 text-xs font-semibold text-foreground">Simulation</p>
               <p className="mt-0.5 text-[10px] text-foreground/50">Pre-flight dry run</p>
             </div>
-            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-center">
+            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 6</span>
               <p className="mt-1 text-xs font-semibold text-foreground">Preview Card</p>
               <p className="mt-0.5 text-[10px] text-foreground/50">Exact balance deltas</p>
             </div>
-            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-center">
+            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 7</span>
               <p className="mt-1 text-xs font-semibold text-foreground">Human Confirm</p>
               <p className="mt-0.5 text-[10px] text-foreground/50">Explicit user trigger</p>
             </div>
-            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-center">
+            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 8</span>
               <p className="mt-1 text-xs font-semibold text-foreground">X Layer Settlement</p>
               <p className="mt-0.5 text-[10px] text-foreground/50">Wallet broadcast</p>

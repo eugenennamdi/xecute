@@ -1,5 +1,4 @@
 import { DocsBreadcrumbs } from "@/components/docs/docs-breadcrumbs"
-import { DocsCallout } from "@/components/docs/docs-callout"
 import { DocsPrevNext } from "@/components/docs/docs-prev-next"
 import { getPrevNextPages } from "@/config/docs"
 
@@ -73,23 +72,23 @@ export default function ProtectPage() {
           When you ask Xecute <em>&ldquo;Scan my wallet for risky approvals&rdquo;</em>, it scans verified token contracts across X Layer, filters out zero allowances, and outputs a focused audit summary:
         </p>
 
-        <div className="rounded-2xl border border-black/[0.07] bg-white p-5 shadow-2xs">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 text-center">
-            <div className="flex flex-col justify-between rounded-xl bg-[#fafafa] p-3.5 border border-black/[0.04]">
-              <span className="text-[11px] font-medium text-foreground/50">Total Scanned</span>
-              <p className="mt-1.5 text-xs font-semibold text-foreground">Verified Assets</p>
+        <div className="rounded-2xl border border-black/[0.07] bg-white p-3 sm:p-5 shadow-2xs">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4 text-center">
+            <div className="flex flex-col justify-between rounded-xl bg-[#fafafa] p-2.5 sm:p-3.5 border border-black/[0.04]">
+              <span className="text-[10px] sm:text-[11px] font-medium text-foreground/50">Total Scanned</span>
+              <p className="mt-1 sm:mt-1.5 text-xs font-semibold text-foreground">Verified Assets</p>
             </div>
-            <div className="flex flex-col justify-between rounded-xl bg-[#fafafa] p-3.5 border border-black/[0.04]">
-              <span className="text-[11px] font-medium text-foreground/50">Active Spenders</span>
-              <p className="mt-1.5 text-xs font-semibold text-foreground">Onchain State</p>
+            <div className="flex flex-col justify-between rounded-xl bg-[#fafafa] p-2.5 sm:p-3.5 border border-black/[0.04]">
+              <span className="text-[10px] sm:text-[11px] font-medium text-foreground/50">Active Spenders</span>
+              <p className="mt-1 sm:mt-1.5 text-xs font-semibold text-foreground">Onchain State</p>
             </div>
-            <div className="flex flex-col justify-between rounded-xl bg-[#fafafa] p-3.5 border border-black/[0.04]">
-              <span className="text-[11px] font-medium text-foreground/50">Unlimited Risk</span>
-              <p className="mt-1.5 text-xs font-semibold text-foreground">Flagged Exposure</p>
+            <div className="flex flex-col justify-between rounded-xl bg-[#fafafa] p-2.5 sm:p-3.5 border border-black/[0.04]">
+              <span className="text-[10px] sm:text-[11px] font-medium text-foreground/50">Unlimited Risk</span>
+              <p className="mt-1 sm:mt-1.5 text-xs font-semibold text-foreground">Flagged Exposure</p>
             </div>
-            <div className="flex flex-col justify-between rounded-xl bg-[#fafafa] p-3.5 border border-black/[0.04]">
-              <span className="text-[11px] font-medium text-foreground/50">Remediation</span>
-              <p className="mt-1.5 text-xs font-semibold text-[#FE6501]">1-Click Revoke</p>
+            <div className="flex flex-col justify-between rounded-xl bg-[#fafafa] p-2.5 sm:p-3.5 border border-black/[0.04]">
+              <span className="text-[10px] sm:text-[11px] font-medium text-foreground/50">Remediation</span>
+              <p className="mt-1 sm:mt-1.5 text-xs font-semibold text-[#FE6501]">1-Click Revoke</p>
             </div>
           </div>
         </div>

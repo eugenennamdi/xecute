@@ -48,7 +48,7 @@ export default function ActPage() {
           <p className="text-xs text-foreground/70 leading-relaxed">
             Swaps tokens (e.g. <code>OKB ↔ USDT ↔ USDC</code>) directly on X Layer Testnet using the deployed router contract at <code>{ROUTER_ADDRESS_TESTNET}</code>.
           </p>
-          <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-xs space-y-1">
+          <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-xs space-y-1 break-words [overflow-wrap:anywhere]">
             <p className="text-[10px] uppercase font-semibold text-foreground/45">Example Prompts</p>
             <p className="font-mono text-foreground/80">&ldquo;Swap 5 USDT to OKB with 0.5% max slippage&rdquo;</p>
             <p className="font-mono text-foreground/80">&ldquo;Trade 0.1 OKB into USDC&rdquo;</p>
@@ -59,7 +59,7 @@ export default function ActPage() {
         </div>
 
         {/* 2. Direct Transfers */}
-        <div className="rounded-2xl border border-black/[0.07] bg-white p-5 space-y-3 shadow-2xs">
+        <div className="rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 space-y-3 shadow-2xs">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">
               2. Direct Native & Token Transfers
@@ -71,7 +71,7 @@ export default function ActPage() {
           <p className="text-xs text-foreground/70 leading-relaxed">
             Transfers native OKB or verified ERC-20 tokens directly to a recipient address with EIP-55 checksum validation.
           </p>
-          <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-xs space-y-1">
+          <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-xs space-y-1 break-words [overflow-wrap:anywhere]">
             <p className="text-[10px] uppercase font-semibold text-foreground/45">Example Prompts</p>
             <p className="font-mono text-foreground/80">&ldquo;Send 0.05 OKB to 0x727ee5DC96E729d8f6C6930cd02ad1695498f3B8&rdquo;</p>
             <p className="font-mono text-foreground/80">&ldquo;Transfer 10 USDC to vitalik.eth / 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045&rdquo;</p>
@@ -79,7 +79,7 @@ export default function ActPage() {
         </div>
 
         {/* 3. Approvals & Revocations */}
-        <div className="rounded-2xl border border-black/[0.07] bg-white p-5 space-y-3 shadow-2xs">
+        <div className="rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 space-y-3 shadow-2xs">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">
               3. Exact Approvals & 1-Click Revocations
@@ -91,7 +91,7 @@ export default function ActPage() {
           <p className="text-xs text-foreground/70 leading-relaxed">
             Constructs exact token approvals for specific spender contracts, or issues zero-allowance (<code>approve(spender, 0)</code>) revocation transactions to eliminate wallet risk.
           </p>
-          <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-xs space-y-1">
+          <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-xs space-y-1 break-words [overflow-wrap:anywhere]">
             <p className="text-[10px] uppercase font-semibold text-foreground/45">Example Prompts</p>
             <p className="font-mono text-foreground/80">&ldquo;Approve 25 USDT for 0x9be3af8223f49b9357941db269a39775f7802acb&rdquo;</p>
             <p className="font-mono text-foreground/80">&ldquo;Revoke allowance for USDC&rdquo;</p>

@@ -13,7 +13,7 @@ export function DocsBreadcrumbs({ section, pageTitle, className }: DocsBreadcrum
   return (
     <nav
       aria-label="Breadcrumbs"
-      className={cn("mb-4 flex items-center gap-1.5 text-xs text-foreground/50", className)}
+      className={cn("mb-4 flex flex-wrap items-center gap-1.5 text-xs text-foreground/50", className)}
     >
       <Link
         href="/docs"

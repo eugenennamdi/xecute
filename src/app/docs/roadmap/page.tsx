@@ -1,5 +1,4 @@
 import { DocsBreadcrumbs } from "@/components/docs/docs-breadcrumbs"
-import { DocsCallout } from "@/components/docs/docs-callout"
 import { DocsPrevNext } from "@/components/docs/docs-prev-next"
 import { getPrevNextPages } from "@/config/docs"
 
@@ -25,17 +24,18 @@ export default function RoadmapPage() {
       </div>
 
       {/* Multi-step execution story */}
-      <DocsCallout type="important" title="The Multi-Step Goal">
-        <p className="text-xs text-foreground/80 leading-relaxed">
+      <div className="rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 space-y-2.5 shadow-2xs">
+        <h2 className="text-sm font-semibold text-foreground">The Multi-Step Goal</h2>
+        <p className="text-xs text-foreground/75 leading-relaxed">
           A future user request might look like:
         </p>
-        <div className="my-2 rounded-lg bg-black/[0.04] p-3 font-mono text-xs text-foreground font-semibold">
+        <div className="rounded-xl bg-[#fafafa] p-3 border border-black/[0.04] font-mono text-xs text-foreground font-medium break-words [overflow-wrap:anywhere]">
           &ldquo;Keep enough OKB for gas, swap $500 into xBTC, and deposit the remaining USDT into an Aave V3 yield pool.&rdquo;
         </div>
-        <p className="text-xs text-foreground/75 leading-relaxed">
+        <p className="text-xs text-foreground/70 leading-relaxed">
           Xecute will translate that single objective into a coordinated, reviewable multi-step execution plan across protocols, rather than forcing the user to manually switch between 3 different decentralized applications.
         </p>
-      </DocsCallout>
+      </div>
 
       {/* Roadmap Pillars */}
       <div className="space-y-6">

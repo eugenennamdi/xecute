@@ -71,23 +71,23 @@ export default function SafeguardsPage() {
         ].map((item) => (
           <div
             key={item.num}
-            className="rounded-2xl border border-black/[0.07] bg-white p-5 space-y-2 shadow-2xs"
+            className="rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 space-y-2 shadow-2xs"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="flex size-6 items-center justify-center rounded-full bg-black/[0.06] text-xs font-bold text-foreground">
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-xs font-bold text-foreground">
                   {item.num}
                 </span>
                 <h2 className="text-sm font-semibold text-foreground">{item.title}</h2>
               </div>
-              <span className="rounded bg-black/[0.04] px-2 py-0.5 text-[10px] font-medium text-foreground/50">
+              <span className="rounded bg-black/[0.04] px-2 py-0.5 text-[10px] font-medium text-foreground/50 shrink-0">
                 Deterministic Policy
               </span>
             </div>
-            <p className="text-xs text-foreground/75 leading-relaxed pl-8">
+            <p className="text-xs text-foreground/75 leading-relaxed sm:pl-8">
               {item.desc}
             </p>
-            <div className="pl-8 pt-1 text-[11px] text-foreground/60 font-medium">
+            <div className="sm:pl-8 pt-1 text-[11px] text-foreground/60 font-medium">
               Rationale: {item.rationale}
             </div>
           </div>

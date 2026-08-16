@@ -1,8 +1,9 @@
-"use client"
-
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { ExternalLink } from "lucide-react"
 
+import { GithubIcon } from "@/components/brand/github-icon"
+import { XSocialIcon } from "@/components/brand/x-social-icon"
 import { DOCS_NAVIGATION, type DocItem, type DocSection } from "@/config/docs"
 import { cn } from "@/lib/utils"
 
@@ -60,6 +61,40 @@ export function DocsSidebar({
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Mobile-only external links */}
+      <div className="pt-4 border-t border-black/[0.06] space-y-0.5 md:hidden">
+        <a
+          href="https://x.com/xecute_xyz"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onItemClick}
+          className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-foreground/70 transition-colors hover:bg-black/[0.04] hover:text-foreground"
+        >
+          <XSocialIcon className="size-3.5 text-foreground/45" />
+          <span>X (@xecute_xyz)</span>
+        </a>
+        <a
+          href="https://github.com/eugenennamdi/xecute"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onItemClick}
+          className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-foreground/70 transition-colors hover:bg-black/[0.04] hover:text-foreground"
+        >
+          <GithubIcon className="size-3.5 text-foreground/45" />
+          <span>GitHub</span>
+        </a>
+        <a
+          href="https://web3.okx.com/onchainos/dev-docs/xlayer/developer/build-on-xlayer/about-xlayer"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onItemClick}
+          className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-foreground/70 transition-colors hover:bg-black/[0.04] hover:text-foreground"
+        >
+          <span>X Layer Official Docs</span>
+          <ExternalLink className="size-3 text-foreground/40" />
+        </a>
       </div>
     </aside>
   )

@@ -225,3 +225,11 @@ button:disabled {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Documentation code & address wrapping on mobile screens */
+code,
+pre,
+.font-mono {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

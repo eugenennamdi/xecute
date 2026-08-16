@@ -32,51 +32,51 @@ export default function QuickStartPage() {
         </h2>
 
         {/* Step 1 */}
-        <div className="space-y-3 rounded-2xl border border-black/[0.07] bg-white p-5 shadow-2xs">
+        <div className="space-y-3 rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 shadow-2xs">
           <div className="flex items-center gap-2.5">
-            <span className="flex size-6 items-center justify-center rounded-full bg-[#FE6501] text-xs font-bold text-white">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#FE6501] text-xs font-bold text-white">
               1
             </span>
             <h3 className="text-sm font-semibold text-foreground">
               Open Xecute & Connect Your Wallet
             </h3>
           </div>
-          <p className="text-xs text-foreground/70 leading-relaxed pl-8">
+          <p className="text-xs text-foreground/70 leading-relaxed sm:pl-8.5">
             Navigate to the terminal at <a href="https://xecute.xyz" target="_blank" rel="noopener noreferrer" className="text-[#FE6501] font-medium hover:underline">xecute.xyz</a> and click <strong>Connect wallet</strong> at the top right. Xecute supports OKX Wallet, MetaMask, Coinbase Wallet, and all WalletConnect-compatible Web3 wallets via Reown AppKit.
           </p>
         </div>
 
         {/* Step 2 */}
-        <div className="space-y-3 rounded-2xl border border-black/[0.07] bg-white p-5 shadow-2xs">
+        <div className="space-y-3 rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 shadow-2xs">
           <div className="flex items-center gap-2.5">
-            <span className="flex size-6 items-center justify-center rounded-full bg-[#FE6501] text-xs font-bold text-white">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#FE6501] text-xs font-bold text-white">
               2
             </span>
             <h3 className="text-sm font-semibold text-foreground">
               Obtain Testnet OKB for Gas
             </h3>
           </div>
-          <p className="text-xs text-foreground/70 leading-relaxed pl-8">
+          <p className="text-xs text-foreground/70 leading-relaxed sm:pl-8.5">
             Transactions on X Layer use native <strong>OKB</strong> to pay network gas. If your wallet balance is zero, you can ask Xecute <em>&ldquo;Where can I get testnet OKB faucet?&rdquo;</em> or visit the official <a href="https://www.okx.com/xlayer/faucet" target="_blank" rel="noreferrer" className="text-[#FE6501] font-medium hover:underline">OKX X Layer Testnet Faucet</a> directly.
           </p>
         </div>
 
         {/* Step 3 */}
-        <div className="space-y-3 rounded-2xl border border-black/[0.07] bg-white p-5 shadow-2xs">
+        <div className="space-y-3 rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 shadow-2xs">
           <div className="flex items-center gap-2.5">
-            <span className="flex size-6 items-center justify-center rounded-full bg-[#FE6501] text-xs font-bold text-white">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#FE6501] text-xs font-bold text-white">
               3
             </span>
             <h3 className="text-sm font-semibold text-foreground">
               Type Your Natural-Language Intent
             </h3>
           </div>
-          <p className="text-xs text-foreground/70 leading-relaxed pl-8">
+          <p className="text-xs text-foreground/70 leading-relaxed sm:pl-8.5">
             Type what you want to execute in the terminal chat input. Xecute parses the action, network, tokens, amounts, and slippage tolerances into a typed schema:
           </p>
 
-          <div className="pl-8 space-y-2">
-            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-xs font-mono text-foreground/80">
+          <div className="sm:pl-8.5 space-y-2">
+            <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-xs font-mono text-foreground/80 break-words [overflow-wrap:anywhere]">
               <p className="text-foreground/50 text-[10px] uppercase tracking-wider mb-1 font-sans font-semibold">Example Prompts</p>
               <ul className="space-y-1.5 list-disc list-inside">
                 <li><span className="text-[#FE6501]">Swap:</span> &ldquo;Swap 10 USDT to OKB with 0.5% max slippage&rdquo;</li>
@@ -90,19 +90,19 @@ export default function QuickStartPage() {
         </div>
 
         {/* Step 4 */}
-        <div className="space-y-3 rounded-2xl border border-black/[0.07] bg-white p-5 shadow-2xs">
+        <div className="space-y-3 rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 shadow-2xs">
           <div className="flex items-center gap-2.5">
-            <span className="flex size-6 items-center justify-center rounded-full bg-[#FE6501] text-xs font-bold text-white">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#FE6501] text-xs font-bold text-white">
               4
             </span>
             <h3 className="text-sm font-semibold text-foreground">
               Review Pre-Flight Safeguards & Execution Card
             </h3>
           </div>
-          <p className="text-xs text-foreground/70 leading-relaxed pl-8">
+          <p className="text-xs text-foreground/70 leading-relaxed sm:pl-8.5">
             Before any transaction is signed, Xecute executes 7 deterministic safety checks (gas reserves, slippage ceiling, checksum validity, balance checks). If safe, Xecute attaches an interactive <strong>Action Confirmation Card</strong> with:
           </p>
-          <div className="pl-8 grid grid-cols-2 gap-2 text-xs">
+          <div className="sm:pl-8.5 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             <div className="rounded-lg border border-black/[0.05] bg-[#fafafa] p-2.5">
               <span className="text-[10px] font-semibold text-foreground/50 uppercase">Balance Delta</span>
               <p className="mt-0.5 font-medium text-foreground">Exact You Pay & You Receive</p>
@@ -115,16 +115,16 @@ export default function QuickStartPage() {
         </div>
 
         {/* Step 5 */}
-        <div className="space-y-3 rounded-2xl border border-black/[0.07] bg-white p-5 shadow-2xs">
+        <div className="space-y-3 rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 shadow-2xs">
           <div className="flex items-center gap-2.5">
-            <span className="flex size-6 items-center justify-center rounded-full bg-[#FE6501] text-xs font-bold text-white">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#FE6501] text-xs font-bold text-white">
               5
             </span>
             <h3 className="text-sm font-semibold text-foreground">
               Confirm & Sign Onchain
             </h3>
           </div>
-          <p className="text-xs text-foreground/70 leading-relaxed pl-8">
+          <p className="text-xs text-foreground/70 leading-relaxed sm:pl-8.5">
             Click <strong>Confirm swap</strong> (or transfer/revoke) on the execution card. Your connected Web3 wallet will prompt you to review and sign the transaction. Once broadcast, Xecute verifies the receipt onchain and gives you a direct link to the <a href="https://www.okx.com/web3/explorer/xlayer-test" target="_blank" rel="noreferrer" className="text-[#FE6501] font-medium hover:underline">OKX X Layer Testnet Explorer</a>.
           </p>
         </div>

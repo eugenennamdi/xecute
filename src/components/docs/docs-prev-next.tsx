@@ -16,7 +16,7 @@ export function DocsPrevNext({ prev, next, className }: DocsPrevNextProps) {
   return (
     <div
       className={cn(
-        "mt-12 grid grid-cols-1 gap-4 border-t border-black/[0.06] pt-8 sm:grid-cols-2",
+        "mt-10 sm:mt-12 grid grid-cols-1 gap-3 sm:gap-4 border-t border-black/[0.06] pt-6 sm:pt-8 sm:grid-cols-2",
         className,
       )}
     >
@@ -34,7 +34,7 @@ export function DocsPrevNext({ prev, next, className }: DocsPrevNextProps) {
           </span>
         </Link>
       ) : (
-        <div />
+        <div className="hidden sm:block" />
       )}
 
       {next ? (
