@@ -4,8 +4,6 @@
 > 
 > A chat-first execution terminal and ecosystem intelligence engine for X Layer. Describe your intent in plain English—Xecute verifies live onchain state, applies deterministic safeguards, previews state deltas, and executes human-confirmed transactions on X Layer Testnet.
 
-[Live App](https://xecute.vercel.app) · [Demo Video](https://youtube.com) · [Explorer](https://www.okx.com/web3/explorer/xlayer-test/address/0x9be3af8223f49b9357941db269a39775f7802acb)
-
 ---
 
 ## Why Xecute?
