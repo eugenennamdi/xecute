@@ -14,6 +14,21 @@ const traceSteps: Record<Mode, string[]> = {
   protect: ["Understanding the risk request", "Checking available wallet context", "Reviewing safety signals"],
 }
 
+function extractTokens(text: string): string[] {
+  const matches: Array<{ token: string; index: number }> = []
+  const candidates = ["USDT0", "USDG", "USDC", "USDT", "WOKB", "WETH", "OKB", "ETH", "BTC", "SOL"]
+  for (const token of candidates) {
+    const regex = new RegExp(`\\b${token}\\b`, "gi")
+    let match: RegExpExecArray | null
+    while ((match = regex.exec(text)) !== null) {
+      matches.push({ token, index: match.index })
+    }
+  }
+  matches.sort((a, b) => a.index - b.index)
+  // Deduplicate consecutive tokens
+  return [...new Set(matches.map((m) => m.token))]
+}
+
 export function getProcessingLabel(
   mode: Mode,
   rawPrompt?: string,
@@ -42,10 +57,9 @@ export function getProcessingLabel(
     return "Broadcasting transaction to X Layer"
   }
 
-  if (!rawPrompt) {
+  const text = (rawPrompt ?? "").toLowerCase().trim()
+  if (!text) {
     switch (mode) {
-      case "trade":
-        return "Analyzing liquidity & gas"
       case "earn":
         return "Scanning yield opportunities"
       case "predict":
@@ -53,77 +67,109 @@ export function getProcessingLabel(
       case "protect":
         return "Auditing wallet permissions"
       default:
-        return "Processing request"
+        return "Thinking"
     }
   }
 
-  const text = rawPrompt.toLowerCase().trim()
-
-  // 1. Gas / Network queries
-  if (text.includes("gas") || text.includes("block height") || text.includes("rpc") || text.includes("snapshot")) {
-    return "Checking network gas & block"
+  // 1. Conversational, Identity, Capabilities & Greetings
+  if (
+    /^(hi|hello|hey|gm|gn|good\s+(morning|afternoon|evening)|yo|sup|help|who\s+are\s+you|what\s+are\s+you|what\s+can\s+you\s+do|how\s+do\s+you\s+work|what\s+is\s+xecute|who\s+made\s+you|who\s+built\s+you|about\s+you|introduce\s+yourself|tell\s+me\s+about\s+yourself|capabilities)\b/i.test(
+      text,
+    )
+  ) {
+    return "Thinking"
   }
 
-  // 2. Balance / Holdings / Address queries
-  if (text.includes("balance") || text.includes("holding") || text.includes("holds") || text.includes("wallet") || text.startsWith("0x")) {
-    return "Fetching real-time balances"
+  // 2. Ecosystem, Architecture, Developer & General Documentation Inquiries
+  if (
+    /\b(what\s+is\s+x\s*layer|about\s+x\s*layer|how\s+does\s+x\s*layer|polygon\s+cdk|agglayer|zk-?rollup|zero[- ]knowledge|validium|finality|chain\s+id|rpc(\s+url)?|tokenomics|consensus|whitepaper|documentation|docs|metamask|walletconnect|appkit|developer|sdk)\b/i.test(
+      text,
+    )
+  ) {
+    return "Consulting X Layer knowledge base"
   }
 
-  // 3. Faucet queries
-  if (text.includes("faucet") || text.includes("test okb")) {
-    return "Checking official faucet"
+  // 3. Bridging & Cross-chain Transfers
+  if (/\b(bridge|bridging|deposit from ethereum|withdraw to ethereum|l1\s*(to|->)\s*l2|l2\s*(to|->)\s*l1)\b/i.test(text)) {
+    return "Checking X Layer bridge guide"
   }
 
-  // 4. Token Approvals & Security Audits
-  if (text.includes("approval") || text.includes("allowance") || text.includes("revoke") || text.includes("spender")) {
-    return "Auditing token approvals"
-  }
-  if (text.includes("honeypot") || text.includes("security") || text.includes("risk") || text.includes("scan")) {
-    return "Auditing contract security"
+  // 4. Gas & Network Telemetry Queries
+  if (/\b(gas price|current gas|gas fee|network status|network health|block height|latest block|rpc status|is x layer online|network snapshot)\b/i.test(text)) {
+    return "Checking network gas & block status"
   }
 
-  // 5. Earn & Yield Pools
-  if (text.includes("yield") || text.includes("earn") || text.includes("pool") || text.includes("vault") || text.includes("apy")) {
-    const tokens = ["USDT0", "USDT", "USDC", "OKB", "WOKB", "WETH", "ETH", "USDG", "BTC", "SOL"]
-    const matched = tokens.filter((t) => text.toUpperCase().includes(t))
-    if (matched.length > 0) {
-      return `Scanning yield pools for ${matched[0]}`
+  // 5. Balance, Holdings, Address Inspection
+  if (/\b(balance|holding|portfolio|assets? in wallet|how much okb|how many tokens?)\b/i.test(text) || /^0x[a-f0-9]{40}/i.test(text)) {
+    return "Inspecting wallet balances on X Layer"
+  }
+
+  // 6. Faucet Queries
+  if (/\b(faucet|claim okb|test okb|free okb|testnet funds|testnet tokens)\b/i.test(text)) {
+    return "Checking official testnet faucet"
+  }
+
+  // 7. Token Approvals & Security Audits
+  if (/\b(approvals?|allowances?|revok(e|ing)|spenders?|unlimited allowance)\b/i.test(text)) {
+    return "Auditing token approvals & allowances"
+  }
+  if (/\b(honeypots?|security|safety|safe|risk|audits?|malicious|drainers?|phishing)\b/i.test(text)) {
+    return "Auditing contract security & risk"
+  }
+
+  // 8. Earn & DeFi Yield Pools
+  if (/\b(yield|earn|apy|apr|staking|liquidity pool|vault|farm)\b/i.test(text)) {
+    const found = extractTokens(text)
+    if (found.length > 0) {
+      return `Scanning yield pools for ${found[0]}`
     }
     return "Scanning DeFi yield opportunities"
   }
 
-  // 6. Predictions & Scenarios
-  if (text.includes("what if") || text.includes("predict") || text.includes("drops") || text.includes("pumps") || text.includes("scenario") || text.includes("simulate")) {
-    return "Simulating market scenario"
+  // 9. Predictions & Market Scenario Stress Tests
+  if (/\b(what if|predict|drops?|pumps?|crash|scenario|stress test|simulate|price shock|impermanent loss)\b/i.test(text)) {
+    return "Modeling market scenario & risk"
   }
 
-  // 7. Swaps & Trades
-  if (text.includes("swap") || text.includes("trade") || text.includes("buy") || text.includes("sell") || text.includes("exchange")) {
-    const tokens = ["USDT0", "USDT", "USDC", "OKB", "WOKB", "WETH", "ETH", "USDG", "BTC", "SOL"]
-    const foundTokens = tokens.filter((t) => text.toUpperCase().includes(t))
+  // 10. Actual Token Swaps & Direct Quotes
+  if (/\b(swap|trade|buy|sell|exchange|convert)\b/i.test(text)) {
+    const foundTokens = extractTokens(text)
     if (foundTokens.length >= 2) {
       return `Finding best quote for ${foundTokens[0]} → ${foundTokens[1]}`
+    }
+    if (foundTokens.length === 1) {
+      return `Finding live quote for ${foundTokens[0]}`
     }
     return "Analyzing liquidity & gas"
   }
 
-  // 8. Transfers
-  if (text.includes("send") || text.includes("transfer")) {
+  // 11. Transfers & Sends
+  if (/\b(send|transfer)\b/i.test(text)) {
     return "Validating transfer & gas"
+  }
+
+  // 12. Token Price & Market Data
+  if (/\b(price of|market cap|volume|chart|worth|value of okb|token price)\b/i.test(text)) {
+    return "Fetching real-time market data"
+  }
+
+  // 13. General Explanatory Questions (How do I, Why is, Where can I, Can you, Tell me)
+  if (/^(how|what|why|where|when|can|could|is|are|will|explain|tell|show)\b/i.test(text)) {
+    return "Thinking"
   }
 
   // Fallback by mode
   switch (mode) {
-    case "trade":
-      return "Analyzing liquidity & gas"
     case "earn":
       return "Scanning yield opportunities"
     case "predict":
       return "Simulating market scenario"
     case "protect":
       return "Auditing wallet permissions"
+    case "trade":
+      return /\b(0x|[0-9]+)\b/.test(text) ? "Analyzing liquidity & gas" : "Thinking"
     default:
-      return "Processing request"
+      return "Thinking"
   }
 }
 
