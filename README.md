@@ -50,17 +50,20 @@ DeFi users are forced to juggle DEXs, explorers, approval scanners, and yield ag
 ## Architecture & Security Boundary
 
 ```mermaid
-flowchart TD
-    Prompt["Natural-Language Prompt"] --> Interpret["AI Intent Interpretation<br/>(DeepSeek V4 / Gemini 3.7)"]
-    Interpret --> Intent["Structured Intent Object<br/>(Action, Network, Assets, Amount)"]
-    Intent --> Schema["Schema Validation<br/>(Strict Zod Enforcers)"]
-    Schema --> Router["Capability Router<br/>(Swap / Transfer / Approve / Revoke)"]
-    Router --> Adapter["Allowlisted Deterministic Adapter<br/>(Live RPC & Contract Data)"]
-    Adapter --> Safeguards["Deterministic Safeguards & State Check<br/>(7 Pre-Flight Safeguards)"]
-    Safeguards --> Preview["Simulation & Execution Preview UI<br/>(State Deltas & Parameter Tuner)"]
-    Preview --> Confirm["Human Confirmation<br/>(Explicit User Trigger)"]
-    Confirm --> Sign["Wallet Signature<br/>(Reown AppKit / Viem)"]
-    Sign --> Broadcast["X Layer Onchain Broadcast<br/>(XecuteTestnetRouter)"]
+flowchart TB
+    subgraph P1["1. Intent Parsing"]
+        direction LR
+        A["Natural-Language Prompt"] --> B["AI Intent Engine<br/>(DeepSeek V4 / Gemini 3.7)"] --> C["Structured Intent<br/>(Action, Network, Assets, Amount)"]
+    end
+    subgraph P2["2. Validation & Safeguards"]
+        direction LR
+        D["Zod Schema Validation"] --> E["Capability Router<br/>(Swap / Transfer / Approve / Revoke)"] --> F["Deterministic Safeguards<br/>(7 Pre-Flight Policy Checks)"]
+    end
+    subgraph P3["3. Preview & Settlement"]
+        direction LR
+        G["Simulation Preview UI<br/>(State Deltas & Slippage Tuner)"] --> H["Human Confirmation<br/>(Explicit User Trigger)"] --> I["Wallet Signature & Broadcast<br/>(XecuteTestnetRouter)"]
+    end
+    P1 ==> P2 ==> P3
 ```
 
 ### 7 Deterministic Pre-Flight Safeguards
