@@ -30,7 +30,7 @@ Xecute converts that request into structured intent, retrieves live onchain stat
 
 ---
 
-## Hackathon Deployment Model
+## Deployment Model
 
 Xecute deliberately separates Testnet execution from Mainnet intelligence:
 
@@ -48,10 +48,10 @@ Xecute deliberately separates Testnet execution from Mainnet intelligence:
 | **State-changing execution** | **Enabled** | **Disabled (Advisory only)** |
 
 ### X Layer Testnet (Chain ID: 1952)
-Testnet is Xecute's execution environment for the hackathon. Supported actions are executed as genuine X Layer Testnet transactions through the connected wallet.
+Testnet is Xecute's live execution environment. Supported actions are executed as genuine X Layer Testnet transactions through the connected wallet.
 
 ### X Layer Mainnet (Chain ID: 196)
-Mainnet is currently Xecute's read, discovery, analysis, and advisory environment. Xecute can inspect live Mainnet state and surface verified opportunities, but Mainnet financial execution is intentionally disabled in the hackathon release.
+Mainnet is currently Xecute's live read, discovery, analysis, and advisory environment. Xecute inspects real-time Mainnet state and surfaces verified opportunities, while direct state-changing mutations remain restricted to the verified Testnet router in this release.
 
 ---
 
@@ -224,38 +224,18 @@ The LLM cannot override Xecute's execution policy. Before any supported state-ch
 
 ## AI & Execution Security Boundary
 
-```
-Natural-language prompt
-        │
-        ▼
-AI intent interpretation
-        │
-        ▼
-Structured intent
-        │
-        ▼
-Schema validation (Zod)
-        │
-        ▼
-Capability router
-        │
-        ▼
-Allowlisted deterministic adapter
-        │
-        ▼
-Live onchain state & Pre-flight safeguards
-        │
-        ▼
-Simulation / Preview UI
-        │
-        ▼
-Human confirmation
-        │
-        ▼
-Connected wallet signature (Reown AppKit / Viem)
-        │
-        ▼
-X Layer transaction broadcast
+```mermaid
+flowchart TD
+    Prompt["Natural-Language Prompt"] --> Interpret["AI Intent Interpretation<br/>(DeepSeek V4 / Gemini 3.7)"]
+    Interpret --> Intent["Structured Intent Object<br/>(Action, Network, Assets, Amount, Target)"]
+    Intent --> Schema["Schema Validation<br/>(Strict Zod Enforcers)"]
+    Schema --> Router["Capability Router<br/>(Swap / Transfer / Approve / Revoke)"]
+    Router --> Adapter["Allowlisted Deterministic Adapter<br/>(Live RPC & Contract Invocations)"]
+    Adapter --> Safeguards["Deterministic Safeguards & State Check<br/>(7-Point Policy Gate)"]
+    Safeguards --> Preview["Simulation & Execution Preview UI<br/>(State Deltas & Parameter Tuner)"]
+    Preview --> Confirm["Human Confirmation<br/>(Explicit User Trigger)"]
+    Confirm --> Sign["Wallet Signature<br/>(Reown AppKit / Viem)"]
+    Sign --> Broadcast["X Layer Onchain Broadcast<br/>(XecuteTestnetRouter)"]
 ```
 
 **User prompts cannot override:**
@@ -270,76 +250,30 @@ X Layer transaction broadcast
 
 ## System Architecture
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                         User Prompt                          │
-└──────────────────────────────┬───────────────────────────────┘
-                               │
-                               ▼
-┌──────────────────────────────────────────────────────────────┐
-│                    AI Orchestration Layer                    │
-│  • Natural-language understanding                            │
-│  • Mode / capability detection                               │
-│  • Bounded tool selection                                    │
-│  • Structured intent generation                              │
-└──────────────────────────────┬───────────────────────────────┘
-                               │
-                               ▼
-┌──────────────────────────────────────────────────────────────┐
-│                       Validated Intent                       │
-│  • Action (Swap / Transfer / Approve / Revoke)               │
-│  • Network · Assets · Amount · Recipient · Constraints       │
-└──────────────────────┬───────────────────────┬───────────────┘
-                       │                       │
-                       ▼                       ▼
-┌──────────────────────────────┐ ┌─────────────────────────────┐
-│  Read / Intelligence Tools   │ │ Execution Capability Router │
-│  • RPC state                 │ │  • Swap                     │
-│  • Wallet balances           │ │  • Transfer                 │
-│  • Gas & network snapshots   │ │  • Approve                  │
-│  • Token allowances          │ │  • Revoke                   │
-│  • Pools / quotes            │ │                             │
-│  • Protocol registry         │ │  (Testnet execution only)   │
-└──────────────┬───────────────┘ └──────────────┬──────────────┘
-               │                                │
-               │                                ▼
-               │                 ┌─────────────────────────────┐
-               │                 │ Deterministic Safety Policy │
-               │                 │  • Network boundary check   │
-               │                 │  • Native gas reserve       │
-               │                 │  • Balance & allowance      │
-               │                 │  • Slippage ceiling         │
-               │                 │  • Address checksum         │
-               │                 │  • Simulation check         │
-               │                 └──────────────┬──────────────┘
-               │                                │
-               └──────────────────┬─────────────┘
-                                  │
-                                  ▼
-┌──────────────────────────────────────────────────────────────┐
-│                    Execution Preview UI                      │
-│  • State delta preview (Pay vs Receive / Recipient)          │
-│  • Verified quote & route                                    │
-│  • Preflight safeguard checklist                             │
-│  • Grounding metadata & model telemetry                      │
-│  • Human confirmation trigger                                │
-└──────────────────────────────┬───────────────────────────────┘
-                               │
-                               ▼
-┌──────────────────────────────────────────────────────────────┐
-│                    Wallet / Onchain Layer                    │
-│  • Reown AppKit · Wagmi · Viem                               │
-│  • X Layer Testnet (Chain ID: 1952)                          │
-│  • Target: XecuteTestnetRouter (0x9be3...2acb)               │
-│  • User-controlled signature                                 │
-└──────────────────────────────┬───────────────────────────────┘
-                               │
-                               ▼
-┌──────────────────────────────────────────────────────────────┐
-│                      Execution Receipt                       │
-│  • Original intent · Transaction hash · Block index          │
-│  • Safeguards passed · Explorer link · Durable audit record  │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph UI_Layer ["1. Client & Interface Layer"]
+        Prompt["User Instruction"] --> AI["AI Orchestration Engine<br/>• Natural-Language Understanding<br/>• Mode Detection & Tool Invocation"]
+        AI --> ValidatedIntent["Validated Intent Schema<br/>• Action & Target Network<br/>• Amounts, Assets, Constraints"]
+    end
+
+    subgraph Server_Engine ["2. Deterministic Execution & Safety Engine"]
+        ValidatedIntent --> CapRouter["Execution Capability Router<br/>• Swaps · Transfers · Approvals · Revocations"]
+        ValidatedIntent --> ReadTools["Ecosystem Intelligence Tools<br/>• Live RPC · Allowances · Protocols"]
+        
+        CapRouter --> SafetyGate["Deterministic Safety Gate<br/>• Gas Reserve Buffer (≥ 0.005 OKB)<br/>• Hard Slippage Ceiling (≤ 5%)<br/>• Checksum & Simulation Check"]
+    end
+
+    subgraph Confirmation_Layer ["3. Interactive Preview & Authorization"]
+        SafetyGate --> PreviewCard["Tactile Confirmation Card<br/>• Pay vs Receive Delta Diff<br/>• Preflight Checklist<br/>• User Confirmation Trigger"]
+        ReadTools --> PreviewCard
+    end
+
+    subgraph Settlement_Layer ["4. Onchain Execution & Audit"]
+        PreviewCard --> Wallet["Connected Web3 Wallet<br/>(Reown AppKit / Wagmi / Viem)"]
+        Wallet --> RouterContract["XecuteTestnetRouter (Chain 1952)<br/>0x9be3af8223f49b9357941db269a39775f7802acb"]
+        RouterContract --> AuditReceipt["Durable Execution Receipt<br/>(Neon Postgres Audit Log)"]
+    end
 ```
 
 ---
@@ -463,7 +397,7 @@ npm run build
 
 ## Current Release Boundaries
 
-Xecute is an active hackathon build and should not be interpreted as production-audited financial infrastructure. Current boundaries include:
+Xecute is currently in active early-access release (v0.1) and is designed with strict boundaries:
 - State-changing execution is enabled only on X Layer Testnet.
 - X Layer Mainnet remains read-only/advisory.
 - Testnet assets may have no real monetary value.
@@ -477,7 +411,7 @@ Xecute is an active hackathon build and should not be interpreted as production-
 
 ## Roadmap
 
-### Hackathon Release
+### Current Release (v0.1)
 - [x] Chat-first interface
 - [x] Structured intent parsing
 - [x] X Layer Testnet wallet support
@@ -494,7 +428,7 @@ Xecute is an active hackathon build and should not be interpreted as production-
 - [x] Testnet Earn discovery
 - [x] Onchain execution receipts
 
-### Post-Hackathon
+### Future Roadmap (v0.2+)
 - [ ] Production security audit
 - [ ] Expanded X Layer protocol registry
 - [ ] More execution adapters
