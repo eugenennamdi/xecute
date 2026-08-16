@@ -8,6 +8,7 @@ import { ChevronDownIcon } from "@/components/ui/chevron-down"
 import { CircleCheckIcon, type CircleCheckIconHandle } from "@/components/ui/circle-check"
 import { ExecutionStepper } from "@/components/execution/execution-stepper"
 import { ParameterTuner } from "@/components/execution/parameter-tuner"
+import { appKit } from "@/components/providers/appkit-provider"
 import type { TradeIntent } from "@/lib/intents"
 import { getCanonicalPreflightSummary } from "@/lib/safety/policy"
 import type { SafetyCheck, SafetyReport } from "@/lib/safety/types"
@@ -141,32 +142,35 @@ export function ActionConfirmation({
   const isTransfer = intent.action === "transfer"
   const isApprove = intent.action === "approve"
   const isRevoke = intent.action === "revoke"
+  const actionVerb = isTransfer ? "transfer" : isApprove ? "approve" : isRevoke ? "revoke" : "swap"
 
-  const buttonLabel = confirming
-    ? isTransfer
-      ? "Transferring..."
-      : isApprove
-        ? "Approving..."
-        : isRevoke
-          ? "Revoking..."
-          : "Recording..."
-    : quoteFailed
-      ? "Quote unavailable"
-      : blocked
-        ? isTransfer
-          ? "Transfer blocked"
-          : "Action blocked"
-        : !complete
+  const buttonLabel = !walletConnected && !isMainnet
+    ? `Connect wallet to ${actionVerb}`
+    : confirming
+      ? isTransfer
+        ? "Transferring..."
+        : isApprove
+          ? "Approving..."
+          : isRevoke
+            ? "Revoking..."
+            : "Recording..."
+      : quoteFailed
+        ? "Quote unavailable"
+        : blocked
           ? isTransfer
-            ? "Complete transfer"
-            : "Complete intent"
-          : isTransfer
-            ? "Confirm transfer"
-            : isApprove
-              ? "Confirm approval"
-              : isRevoke
-                ? "Confirm revocation"
-                : "Confirm swap"
+            ? "Transfer blocked"
+            : "Action blocked"
+          : !complete
+            ? isTransfer
+              ? "Complete transfer"
+              : "Complete intent"
+            : isTransfer
+              ? "Confirm transfer"
+              : isApprove
+                ? "Confirm approval"
+                : isRevoke
+                  ? "Confirm revocation"
+                  : "Confirm swap"
 
   return (
     <div className="border-t border-foreground/[0.07]">
@@ -176,6 +180,26 @@ export function ActionConfirmation({
             <Info className="size-3.5 shrink-0 text-foreground/50" />
             <span className="font-medium">Mainnet preview</span>
             <span className="text-[11px] text-foreground/45">· Mainnet operates in read-only intelligence mode in this Xecute version.</span>
+          </div>
+        </div>
+      ) : null}
+
+      {!walletConnected && !isMainnet && complete && !blocked && !quoteFailed ? (
+        <div className="border-b border-amber-500/15 bg-amber-500/[0.035] px-4 py-2.5">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 text-amber-800">
+              <WalletCards className="size-3.5 shrink-0 text-amber-600" />
+              <span className="font-medium">Connect wallet to execute</span>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-6 rounded-full px-2.5 text-[11px] font-semibold text-[#FE6501] hover:bg-[#FE6501]/10"
+              onClick={() => void appKit.open({ view: "Connect", namespace: "eip155" })}
+            >
+              Connect wallet
+            </Button>
           </div>
         </div>
       ) : null}
@@ -335,6 +359,19 @@ export function ActionConfirmation({
             >
               <RotateCw className="mr-1.5 size-3" />
               Refresh quote
+            </Button>
+          ) : !walletConnected ? (
+            <Button
+              type="button"
+              size="sm"
+              className="h-8.5 rounded-full bg-[#FE6501] px-4 text-xs font-semibold text-white shadow-xs transition-all duration-150 hover:bg-[#e25a00] active:scale-[0.97] disabled:opacity-40 disabled:hover:bg-[#FE6501]"
+              disabled={!complete || blocked || quoteFailed}
+              onClick={() => {
+                void appKit.open({ view: "Connect", namespace: "eip155" })
+              }}
+            >
+              <WalletCards className="mr-1.5 size-3.5" />
+              {buttonLabel}
             </Button>
           ) : (
             <Button

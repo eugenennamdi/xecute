@@ -329,6 +329,7 @@ function localAnswer(
   prompt: string,
   results: AgentToolResult[],
   messages?: Array<{ role: string; content: string }>,
+  walletAddress?: string | null,
 ) {
   const knowledge = resultByName(results, "search_xlayer_knowledge")
   const network = resultByName(results, "get_xlayer_network_snapshot")
@@ -358,8 +359,18 @@ function localAnswer(
     tradeIntent.toToken &&
     /\b(swap|trade|buy|sell|convert|quote)\b/i.test(prompt)
   ) {
+    const walletPrompt = !walletAddress
+      ? " Please connect your Web3 wallet using the **Connect wallet** button at the top right to verify live balances and sign the transaction."
+      : " Review the execution details and confirm below."
     parts.push(
-      `I've prepared the onchain swap execution plan for ${tradeIntent.amount} ${tradeIntent.fromToken} → ${tradeIntent.toToken} on X Layer Testnet with preflight safeguards. Review the execution details and confirm below.`,
+      `I've prepared the onchain swap execution plan for ${tradeIntent.amount} ${tradeIntent.fromToken} → ${tradeIntent.toToken} on X Layer Testnet with preflight safeguards.${walletPrompt}`,
+    )
+  } else if (tradeIntent.mode === "trade" && tradeIntent.action === "transfer" && tradeIntent.amount && tradeIntent.fromToken) {
+    const walletPrompt = !walletAddress
+      ? " Please connect your Web3 wallet using the **Connect wallet** button at the top right to sign and broadcast the transfer on X Layer Testnet."
+      : " Review the execution details and confirm below."
+    parts.push(
+      `I've prepared the transfer execution plan for ${tradeIntent.amount} ${tradeIntent.fromToken}${tradeIntent.recipient ? ` to \`${tradeIntent.recipient}\`` : ""} on X Layer Testnet.${walletPrompt}`,
     )
   }
 
@@ -611,7 +622,8 @@ async function runLocalAgent(
       ))
     }
 
-    const address = prompt.match(/\b0x[a-fA-F0-9]{40}\b/)?.[0] ?? request.walletAddress ?? "0x727ee5DC96E729d8f6C6930cd02ad1695498f3B8"
+    const explicitAddress = prompt.match(/\b0x[a-fA-F0-9]{40}\b/)?.[0]
+    const address = explicitAddress ?? request.walletAddress
     const transactionHash = prompt.match(/\b0x[a-fA-F0-9]{64}\b/)?.[0]
 
     const isAllowanceScan =
@@ -619,10 +631,12 @@ async function runLocalAgent(
       /\b(approval|allowance|permission|revoke)\b/i.test(prompt)
 
     if (isAllowanceScan) {
-      results.push(await executeXLayerTool(
-        "inspect_xlayer_allowances",
-        JSON.stringify({ address, network: targetNetwork }),
-      ))
+      if (address) {
+        results.push(await executeXLayerTool(
+          "inspect_xlayer_allowances",
+          JSON.stringify({ address, network: targetNetwork }),
+        ))
+      }
     } else if (transactionHash) {
       results.push(await executeXLayerTool(
         "inspect_xlayer_transaction",
@@ -647,7 +661,7 @@ async function runLocalAgent(
   if (extraTrace) localMetadata.tools.unshift(extraTrace)
 
   return {
-    message: localAnswer(prompt, results, request.messages),
+    message: localAnswer(prompt, results, request.messages, request.walletAddress),
     metadata: localMetadata,
     plan: preparedAction(request, results),
   }
@@ -711,7 +725,13 @@ function systemInstructions(request: AgentRequest) {
   let prompt = `${XECUTE_SYSTEM_PROMPT}\nCurrent Active Network Context: ${network === "testnet" ? "X Layer Testnet (Chain ID 1952)" : "X Layer Mainnet (Chain ID 196)"}.`
 
   if (request.walletAddress) {
-    prompt += `\nThe user's connected EVM wallet address is ${request.walletAddress}. When the user asks about their balance, tokens, holdings, or wallet info, call inspect_xlayer_address with this address and target network ('${network}'). Real-time onchain balances are fetched directly from live X Layer RPC.`
+    prompt += `\nConnected Wallet: ${request.walletAddress}. When the user asks about their balance, tokens, holdings, permissions, or asks to perform an onchain execution (swap, transfer, approve, revoke), use this connected wallet address for preflight validation.`
+  } else {
+    prompt += `\nConnected Wallet: NONE (User has not connected a Web3 wallet).
+- For read-only queries (yield discovery, market prices, gas prices, network status, scenario forecasting, protocol info), provide full, grounded answers directly.
+- For onchain executions (swaps, transfers, approvals, revocations), prepare the parameters in the execution preview card and remind the user to connect their wallet using the **Connect wallet** button at the top right to sign and broadcast the transaction on X Layer Testnet.
+- For personal wallet queries (e.g. "my wallet balance", "check my approvals") when no wallet is connected and no 0x address is provided, ask them to connect their wallet via the **Connect wallet** button at the top right so you can query their live account.
+- NEVER ask the user to manually type or paste private keys or wallet addresses in chat; they connect securely through the AppKit wallet modal.`
   }
 
   return prompt

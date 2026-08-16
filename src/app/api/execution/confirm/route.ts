@@ -13,7 +13,7 @@ const ConfirmationSchema = z.object({
   sessionId: z.string().uuid(),
   conversationId: z.string().uuid(),
   plan: PreparedActionSchema,
-  txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/).optional(),
+  txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, "A valid 66-character onchain transaction hash is required."),
 })
 
 export async function POST(request: Request) {
@@ -42,9 +42,7 @@ export async function POST(request: Request) {
     }
 
     const receipt = createMockReceipt(plan.intent)
-    if (txHash) {
-      receipt.transactionHash = txHash as `0x${string}`
-    }
+    receipt.transactionHash = txHash as `0x${string}`
 
     let persistence: "stored" | "unavailable" = "unavailable"
 

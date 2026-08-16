@@ -369,6 +369,12 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       return
     }
 
+    if (!walletConnected || !walletAddress) {
+      const { appKit } = await import("@/components/providers/appkit-provider")
+      void appKit.open({ view: "Connect", namespace: "eip155" })
+      return
+    }
+
     const updatedChecks = currentPlan.safety.checks.map((c) =>
       c.id === "human-confirmation"
         ? { ...c, status: "pass" as const, detail: "User confirmed transaction action." }
@@ -383,8 +389,8 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
     let onchainTxHash: string | undefined
 
-    // If wallet is connected on browser, prompt wallet to sign and broadcast onchain on X Layer Testnet
-    if (typeof window !== "undefined" && walletConnected && walletAddress && currentPlan.intent.mode === "trade") {
+    // Prompt user's connected wallet to sign and broadcast onchain on X Layer Testnet
+    if (typeof window !== "undefined" && currentPlan.intent.mode === "trade") {
       try {
         const ethereum = (window as unknown as { ethereum?: { request: (args: unknown) => Promise<string> } }).ethereum
         if (ethereum) {
@@ -498,6 +504,11 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
         set({ status: "ready" })
         return
       }
+    }
+
+    if (!onchainTxHash) {
+      set({ status: "ready" })
+      return
     }
 
     try {
