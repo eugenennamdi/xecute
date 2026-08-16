@@ -1,6 +1,6 @@
-# Xecute · AI Execution Layer for X Layer
+# Xecute · AI Execution Terminal for [X Layer](https://web3.okx.com/onchainos/dev-docs/xlayer/developer/build-on-xlayer/about-xlayer)
 
-> **Execute anything on X Layer.**  
+> **Execute anything on [X Layer](https://web3.okx.com/onchainos/dev-docs/xlayer/developer/build-on-xlayer/about-xlayer).**  
 > Natural-language execution, verified onchain state, deterministic safeguards, and human-confirmed transactions.
 
 [![Live App](https://img.shields.io/badge/Live_App-xecute.xyz-FE6501?style=flat-square)](https://xecute.xyz/)
@@ -13,7 +13,7 @@
 
 ## What is Xecute?
 
-Xecute is a chat-first execution and ecosystem intelligence layer for **X Layer**.
+Xecute is a chat-first execution and ecosystem intelligence terminal for **X Layer**.
 
 Instead of moving between DEXs, explorers, yield dashboards, approval scanners, and protocol interfaces, users describe what they want to do in plain English:
 
