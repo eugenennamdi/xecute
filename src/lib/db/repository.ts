@@ -19,7 +19,7 @@ import {
   type KnowledgeCategory,
   type XLayerKnowledgeRecord,
 } from "@/lib/knowledge/xlayer"
-import type { MockReceipt } from "@/lib/mock-data"
+import type { ExecutionReceipt } from "@/config/constants"
 import type { SafetyReport } from "@/lib/safety/types"
 
 export type ExchangeContext = {
@@ -254,7 +254,7 @@ export async function storeReceipt({
   conversationId: string
   intent: Intent
   safety: SafetyReport
-  receipt: MockReceipt
+  receipt: ExecutionReceipt
 }) {
   const db = getDatabase()
   const [conversation] = await db

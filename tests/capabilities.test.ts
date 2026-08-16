@@ -184,10 +184,10 @@ test("inspect_xlayer_allowances scans permissions and returns focused audit tabl
   assert.equal(data.network, "X Layer Testnet")
   assert.ok(Array.isArray(data.allowances))
 
-  // End to end response verification
+  // End to end response verification for a clean address
   const agentResponse = await runXecuteAgent({
     messages: [{ role: "user", content: "Check my risky token approvals and allowances" }],
-    walletAddress: "0x727ee5DC96E729d8f6C6930cd02ad1695498f3B8",
+    walletAddress: "0x1111111111111111111111111111111111111111",
     mode: "protect",
     network: "testnet",
   })

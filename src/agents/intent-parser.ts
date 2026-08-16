@@ -53,7 +53,7 @@ function normalizeToken(token: string | null | undefined) {
 
 function extractNetwork(prompt: string, defaultNetwork: "testnet" | "mainnet" = "testnet") {
   if (/\b(mainnet|chain\s*id\s*196)\b/i.test(prompt)) return "mainnet" as const
-  if (/\b(testnet|chain\s*id\s*1952|chain\s*id\s*195|xusdt|xweth)\b/i.test(prompt)) return "testnet" as const
+  if (/\b(testnet|chain\s*id\s*1952|xusdt|xweth)\b/i.test(prompt)) return "testnet" as const
   return defaultNetwork
 }
 

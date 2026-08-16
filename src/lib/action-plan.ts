@@ -1,7 +1,6 @@
 import { z } from "zod"
 
 import { IntentSchema, type Intent } from "@/lib/intents"
-import { createTradePreview } from "@/lib/mock-data"
 import { SafetyReportSchema, type SafetyReport } from "@/lib/safety/types"
 
 export const TradeExecutionPreviewSchema = z.object({
@@ -444,19 +443,43 @@ export function prepareAction(
 
   // 2. Testnet swap or explicit simulation requested
   if (intent.network === "testnet" || forceSimulated) {
-    const simulated = createTradePreview(intent)
     const isTestnet = intent.network === "testnet"
+    const from = (intent.fromToken || "OKB").toUpperCase()
+    const to = (intent.toToken || "USDT").toUpperCase()
+    const amount = Number(intent.amount || "0")
+    const slippage = intent.maxSlippage ?? 0.5
+
+    let rawOut = 0
+    if (from === "OKB") {
+      rawOut = amount * 60
+    } else if (to === "OKB") {
+      rawOut = amount / 60
+    } else {
+      rawOut = amount
+    }
+
+    const estimatedOutput = Number.isFinite(rawOut) ? rawOut.toFixed(to === "OKB" ? 6 : 4) : "0.00"
+    const minimumReceived = (rawOut * (1 - slippage / 100)).toFixed(to === "OKB" ? 6 : 4)
+
     return {
       status: isTestnet && !forceSimulated ? "ready_to_execute" : "simulated_preview",
       intent,
       safety,
       preview: {
-        source: isTestnet && !forceSimulated ? "live" : "simulated",
+        source: "simulated",
         network: intent.network,
-        ...simulated,
-        riskLevel: simulated.riskLevel,
+        fromToken: intent.fromToken!,
+        toToken: intent.toToken!,
+        inputAmount: intent.amount!,
+        estimatedOutput,
+        minimumReceived,
+        slippage: `${slippage}%`,
+        gasEstimate: "142,500 gas",
+        priceImpact: "0.00%",
+        approvalRequired: from !== "OKB",
+        riskLevel: slippage <= 1 ? "Low" : "Medium",
         route: isTestnet
-          ? `Xecute Testnet Swap Router (${intent.fromToken}/${intent.toToken} Pool)`
+          ? "Xecute Testnet Router (Deterministic Testnet Pricing)"
           : "Simulated X Layer Route",
         quotedAt: new Date().toISOString(),
       },

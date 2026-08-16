@@ -465,54 +465,10 @@ async function getSwapQuote(argumentsValue: unknown): Promise<AgentToolResult> {
         ? error.message
         : "Quote request failed"
 
-    // If OKX DEX Aggregator is restricted in the user's region, provide estimated spot rate quote
-    const isRegionOrPermIssue = /region|access|permission|credentials|no access/i.test(message)
-    if (isRegionOrPermIssue) {
-      const rates: Record<string, number> = {
-        OKB: 60,
-        USDT: 1,
-        USDT0: 1,
-        USDC: 1,
-        USDG: 1,
-        WETH: 2500,
-        WBTC: 90000,
-      }
-      const fromRate = rates[fromToken.symbol.toUpperCase()] || 1
-      const toRate = rates[toToken.symbol.toUpperCase()] || 1
-      const rawOut = (Number(input.amount) * fromRate) / toRate
-      const estimatedOutput = Number.isFinite(rawOut) ? rawOut.toFixed(4) : "0.00"
-
-      return {
-        ok: true,
-        data: {
-          network: "X Layer",
-          chainIndex: "196",
-          fromToken: fromToken.symbol,
-          toToken: toToken.symbol,
-          inputAmount: input.amount,
-          outputAmount: estimatedOutput,
-          maxSlippage: input.maxSlippage,
-          priceImpactPercentage: "< 0.05%",
-          estimatedGasUnits: "145000",
-          liquiditySources: ["X Layer Spot Router"],
-          quotedAt: new Date().toISOString(),
-          readOnly: true,
-          isSimulated: true,
-        },
-        sources: [xLayerSources.trade],
-        trace: {
-          name: "get_xlayer_swap_quote",
-          label: "OKX DEX quote",
-          status: "complete",
-          summary: `Spot rate estimate (${fromToken.symbol} → ${toToken.symbol}): ~${estimatedOutput} ${toToken.symbol}`,
-        },
-      }
-    }
-
     return unavailable(
       "get_xlayer_swap_quote",
       "OKX DEX quote",
-      message,
+      `Live DEX quote unavailable: ${message}`,
       [xLayerSources.trade],
     )
   }
@@ -1083,8 +1039,7 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
 
   const spenders = isTestnet
     ? [
-        { name: "Xecute Testnet Swap Router", address: "0x2Fd615fc0a1B751278C62cEb61B31359c2794D33" },
-        { name: "Xecute Test Vault", address: "0x8A2f3B6445582361cfF6e82894101e405B6091C4" },
+        { name: "Xecute Testnet Swap Router", address: "0x9be3af8223f49b9357941db269a39775f7802acb" },
       ]
     : [
         { name: "Uniswap V3 SwapRouter02", address: "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45" },
@@ -1103,14 +1058,18 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
             input.network,
           ).catch(() => ({ allowance: "0", rawHex: "0x0", isUnlimited: false }))
 
+          const isUnlim = res.isUnlimited
+          const hasAllowance = Number(res.allowance) > 0 || isUnlim
+
           return {
             token: token.symbol,
             tokenAddress: token.address,
             spenderName: spender.name,
             spenderAddress: spender.address,
             allowance: res.allowance,
-            isUnlimited: res.isUnlimited,
-            riskLevel: res.isUnlimited ? ("High" as const) : Number(res.allowance) > 0 ? ("Medium" as const) : ("Safe" as const),
+            isUnlimited: isUnlim,
+            riskLevel: isUnlim ? ("High" as const) : hasAllowance ? ("Medium" as const) : ("Safe" as const),
+            source: "rpc_allowance",
           }
         }),
       ),
@@ -1118,6 +1077,7 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
 
     const activeAllowances = checks.filter((c) => c.allowance !== "0" && c.allowance !== "0.00")
     const riskyCount = checks.filter((c) => c.isUnlimited).length
+    const scannedAssetSymbols = tokens.map((t) => t.symbol).join(", ")
 
     return {
       ok: true,
@@ -1126,6 +1086,8 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
         network: isTestnet ? "X Layer Testnet" : "X Layer Mainnet",
         chainId: isTestnet ? 1952 : 196,
         scannedCount: checks.length,
+        scannedAssets: tokens.map((t) => t.symbol),
+        scanScope: `Scanned ${tokens.length} verified assets (${scannedAssetSymbols}) across ${spenders.length} protocol spender${spenders.length === 1 ? "" : "s"} on ${isTestnet ? "Testnet" : "Mainnet"}.`,
         activeCount: activeAllowances.length,
         riskyCount,
         allowances: checks,
@@ -1145,7 +1107,7 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
         name: "inspect_xlayer_allowances",
         label: "Wallet allowance audit",
         status: "complete",
-        summary: `${activeAllowances.length} active allowance${activeAllowances.length === 1 ? "" : "s"} scanned (${riskyCount} unlimited)`,
+        summary: `${activeAllowances.length} active allowance${activeAllowances.length === 1 ? "" : "s"} found across ${tokens.length} assets scanned (${riskyCount} unlimited)`,
       },
     }
   } catch (error) {

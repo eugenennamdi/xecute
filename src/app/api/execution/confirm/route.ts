@@ -1,10 +1,10 @@
 import { z } from "zod"
 
 import { isExecutionEnabled } from "@/config/networks"
+import { createExecutionReceipt } from "@/config/constants"
 import { PreparedActionSchema } from "@/lib/action-plan"
 import { hasDatabaseConfiguration } from "@/lib/db/client"
 import { storeReceipt } from "@/lib/db/repository"
-import { createMockReceipt } from "@/lib/mock-data"
 import { evaluateIntentSafety } from "@/lib/safety/policy"
 
 export const runtime = "nodejs"
@@ -41,8 +41,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "The action failed the current safety policy", safety }, { status: 409 })
     }
 
-    const receipt = createMockReceipt(plan.intent)
-    receipt.transactionHash = txHash as `0x${string}`
+    const receipt = createExecutionReceipt(plan.intent, txHash as `0x${string}`)
 
     let persistence: "stored" | "unavailable" = "unavailable"
 

@@ -6,7 +6,7 @@ import { classifyIntent } from "@/agents/intent-parser"
 import type { PreparedAction } from "@/lib/action-plan"
 import { AgentResponseSchema, type AgentMetadata } from "@/lib/agent-types"
 import type { Intent, Mode } from "@/lib/intents"
-import type { MockReceipt } from "@/lib/mock-data"
+import type { ExecutionReceipt } from "@/config/constants"
 
 export type ChatMessage = {
   id: string
@@ -34,7 +34,7 @@ type TerminalState = {
   messages: ChatMessage[]
   currentIntent: Intent | null
   currentPlan: PreparedAction | null
-  receipt: MockReceipt | null
+  receipt: ExecutionReceipt | null
   status: PreviewStatus
   walletConnected: boolean
   walletAddress: `0x${string}` | null
@@ -523,7 +523,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
         }),
       })
       if (!response.ok) throw new Error("Confirmation request failed")
-      const payload = (await response.json()) as { receipt: MockReceipt }
+      const payload = (await response.json()) as { receipt: ExecutionReceipt }
       set({ receipt: payload.receipt, status: "confirmed" })
     } catch {
       set({ status: "ready" })

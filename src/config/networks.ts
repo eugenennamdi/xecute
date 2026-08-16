@@ -63,7 +63,7 @@ export const XLAYER_NETWORKS: Record<Environment, NetworkConfig> = {
 export const DEFAULT_NETWORK: Environment = "testnet"
 
 export function getNetworkConfig(identifier: number | Environment | string): NetworkConfig {
-  if (identifier === 1952 || identifier === 195 || identifier === "testnet") {
+  if (identifier === 1952 || identifier === "testnet") {
     return XLAYER_NETWORKS.testnet
   }
   if (identifier === 196 || identifier === "mainnet") {
@@ -73,7 +73,7 @@ export function getNetworkConfig(identifier: number | Environment | string): Net
 }
 
 export function isExecutionEnabled(chainId: number): boolean {
-  return chainId === 1952 || chainId === 195
+  return chainId === 1952
 }
 
 export function getExplorerTxUrl(txHash: string, chainId: number = 1952): string {

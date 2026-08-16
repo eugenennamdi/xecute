@@ -244,7 +244,7 @@ function evaluateTrade(intent: Extract<Intent, { mode: "trade" }>) {
 
   checks.push(check(
     "human-confirmation",
-    "Human confirmation",
+    "Human confirmation required",
     "pending",
     "Explicit wallet confirmation required before any onchain transaction can be signed.",
     "approval",

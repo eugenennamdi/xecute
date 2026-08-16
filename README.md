@@ -115,10 +115,10 @@ npm run dev
 
 ## Verification & Tests
 
-Xecute includes 40 automated unit and integration tests covering intent parsing, safety guardrails, RPC lookups, and routing:
+Xecute includes 53 automated unit and integration tests covering intent parsing, safety guardrails, smart contract invariants, RPC lookups, and execution routing:
 
 ```bash
 npm run typecheck   # Type check
-npm test            # 40/40 passing unit & integration tests
+npm test            # 53/53 passing unit & integration tests
 npm run build       # Production build
 ```

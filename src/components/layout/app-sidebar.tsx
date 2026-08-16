@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import type { Mode } from "@/lib/intents"
-import { modeCopy } from "@/lib/mock-data"
+import { modeCopy } from "@/config/constants"
 import { useTerminalStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
 

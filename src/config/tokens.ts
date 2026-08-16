@@ -173,7 +173,7 @@ export const XLAYER_MAINNET_TOKENS: Record<string, Token> = {
 
 export function findToken(symbol: string, chainId: number = 1952): Token | null {
   const upper = symbol.trim().toUpperCase()
-  if (chainId === 1952 || chainId === 195) {
+  if (chainId === 1952) {
     const direct = XLAYER_TESTNET_TOKENS[symbol] || XLAYER_TESTNET_TOKENS[upper]
     if (direct) return direct
     if (upper === "XUSDT" || upper === "USDT" || upper === "USDT0") return XLAYER_TESTNET_TOKENS.USDT

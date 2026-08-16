@@ -7,7 +7,7 @@ export class TestnetVaultAdapter implements XecuteAdapter {
   name = "Xecute Test Earn Vault (X Layer Testnet)"
   category = "earn" as const
   chainIds = [1952]
-  executionEnabled = true
+  executionEnabled = false // Disabled: Testnet sandbox has no active vault contract
 
   supports(intent: Intent, context: ExecutionContext): boolean {
     return (
@@ -18,43 +18,19 @@ export class TestnetVaultAdapter implements XecuteAdapter {
 
   async getPreview(_intent: Intent, _context: ExecutionContext): Promise<AdapterPreview> {
     return {
-      earnOpportunities: [
-        {
-          name: "xUSDT Liquidity Vault",
-          protocol: "Xecute Test Vault",
-          apy: "5.4% (Simulated)",
-          tvlUsd: "$150,000 (Testnet)",
-          risk: "Low",
-          isTestVault: true,
-        },
-        {
-          name: "xWETH Staking Vault",
-          protocol: "Xecute Test Vault",
-          apy: "3.8% (Simulated)",
-          tvlUsd: "50 xWETH",
-          risk: "Low",
-          isTestVault: true,
-        },
-      ],
-      routeDescription: "Xecute Testnet Earn Sandbox",
+      earnOpportunities: [],
+      routeDescription: "X Layer Testnet sandbox has no active DeFi yield deployments.",
     }
   }
 
   async simulate(_intent: Intent, _context: ExecutionContext): Promise<SimulationResult> {
     return {
-      success: true,
-      gasUsed: "95,000",
-      logs: ["TestnetVaultDepositSimulationSuccess"],
+      success: false,
+      error: "Testnet earn execution is disabled (sandbox environment has no active vault deployment).",
     }
   }
 
-  async buildTransaction(intent: Intent, _context: ExecutionContext): Promise<TransactionRequest | null> {
-    return {
-      to: "0x1952000000000000000000000000000000000002",
-      data: "0xb6b55f250000000000000000000000000000000000000000000000000000000000000000",
-      value: "0",
-      gasLimit: "120000",
-      chainId: 1952,
-    }
+  async buildTransaction(_intent: Intent, _context: ExecutionContext): Promise<TransactionRequest | null> {
+    return null
   }
 }

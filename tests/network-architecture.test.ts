@@ -19,11 +19,11 @@ test("Case 1: Valid Testnet swap is confirmable with execution enabled", async (
 
   const preview = await adapter.getPreview(intent, { chainId: 1952 })
   assert.ok(preview.quote)
-  assert.equal(preview.quote.source, "live")
+  assert.equal(preview.quote.source, "simulated") // Explicit deterministic testnet router pricing
   assert.equal(preview.quote.fromToken, "USDT")
   assert.equal(preview.quote.toToken, "OKB")
 
-  const sim = await adapter.simulate?.(intent, { chainId: 1952 })
+  const sim = await adapter.simulate?.(intent, { chainId: 1952, walletAddress: "0x1111111111111111111111111111111111111111" })
   assert.equal(sim?.success, true)
 
   const summary = getCanonicalPreflightSummary(safety)
@@ -107,21 +107,16 @@ test("Case 8: Human confirmation is strictly pending before user confirmation", 
   assert.equal(summary.pending, 1)
 })
 
-test("Case 9: Testnet Earn vault adapter returns valid test opportunities with execution enabled", async () => {
+test("Case 9: Testnet Earn vault adapter is disabled from execution until live contract deployed", async () => {
   const intent = parseIntent("Find yield for my testnet USDT", "earn", "testnet")
   const adapter = resolveAdapter(intent, { chainId: 1952 })
 
   assert.ok(adapter)
   assert.equal(adapter.category, "earn")
-  assert.equal(adapter.executionEnabled, true)
-
-  const preview = await adapter.getPreview(intent, { chainId: 1952 })
-  assert.ok(preview.earnOpportunities && preview.earnOpportunities.length > 0)
-  assert.equal(preview.earnOpportunities[0].isTestVault, true)
+  assert.equal(adapter.executionEnabled, false) // Fail closed: disabled
 
   const tx = await adapter.buildTransaction?.(intent, { chainId: 1952 })
-  assert.ok(tx)
-  assert.equal(tx.chainId, 1952)
+  assert.equal(tx, null)
 })
 
 test("Case 10: Mainnet Earn adapter discovery is read-only", async () => {
@@ -134,4 +129,11 @@ test("Case 10: Mainnet Earn adapter discovery is read-only", async () => {
 
   const tx = await adapter.buildTransaction?.(intent, { chainId: 196 })
   assert.equal(tx, null) // No transaction construction on mainnet
+})
+
+test("Case 11: Network security gating allows 1952 and strictly blocks 196 and 195", () => {
+  assert.equal(isExecutionEnabled(1952), true)
+  assert.equal(isExecutionEnabled(196), false)
+  assert.equal(isExecutionEnabled(195), false)
+  assert.equal(isExecutionEnabled(1), false)
 })

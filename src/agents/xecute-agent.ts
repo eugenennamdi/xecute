@@ -409,10 +409,10 @@ ${riskyCount > 0 ? `**${riskyCount} unlimited allowance${riskyCount === 1 ? "" :
 
 Scanned wallet (\`${addr}\`) on **${net}** across verified token assets (**USDT**, **USDC**, **USDG**, **WETH**).
 
-• **0 Active Approvals** — No smart contracts currently have permission to spend your tokens.
-• **0 Unlimited Allowances** — Wallet exposure is **$0.00**.
+• **0 Active Approvals** — 0 active ERC-20 approvals found across the verified assets scanned.
+• **0 Unlimited Allowances** — Exposure across scanned approvals is **$0.00**.
 
-**Wallet Status**: No open permissions or allowances need to be revoked.`
+**Wallet Status**: No open permissions or allowances need to be revoked across the scanned scope.`
         )
       }
     } else {

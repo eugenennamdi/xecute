@@ -53,8 +53,8 @@ export class MainnetDexQuoteAdapter implements XecuteAdapter {
       const outRaw = Number(first.toTokenAmount) / 10 ** toToken.decimals
       const estimatedOutput = outRaw.toFixed(6)
       const minimumReceived = (outRaw * (1 - (intent.maxSlippage ?? 0.5) / 100)).toFixed(6)
-      const priceImpact = typeof first.priceImpactPercentage === "string" ? `${first.priceImpactPercentage}%` : "< 0.05%"
-      const gas = typeof first.estimatedGas === "string" ? `${first.estimatedGas} gas` : "185,000 gas"
+      const priceImpact = typeof first.priceImpactPercentage === "string" ? `${first.priceImpactPercentage}%` : "Unavailable"
+      const gas = typeof first.estimatedGas === "string" ? `${first.estimatedGas} gas` : "Gas unavailable"
 
       return {
         quote: {
@@ -67,10 +67,10 @@ export class MainnetDexQuoteAdapter implements XecuteAdapter {
           slippage: `${intent.maxSlippage ?? 0.5}%`,
           gasEstimate: gas,
           priceImpact,
-          route: "OKX DEX Aggregator (QuickSwap + ambient pools)",
+          route: "OKX DEX Aggregator (X Layer Mainnet)",
           quotedAt: new Date().toISOString(),
         },
-        routeDescription: "Live X Layer Mainnet Aggregated Route",
+        routeDescription: "Live X Layer Mainnet Aggregated Route (Read-Only)",
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Mainnet live quote unavailable"
@@ -80,9 +80,8 @@ export class MainnetDexQuoteAdapter implements XecuteAdapter {
 
   async simulate(_intent: Intent, _context: ExecutionContext): Promise<SimulationResult> {
     return {
-      success: true,
-      gasUsed: "185,000",
-      logs: ["MainnetQuoteSimulationOnly"],
+      success: false,
+      error: "Mainnet execution is disabled in this Xecute version. Live quote is read-only.",
     }
   }
 
