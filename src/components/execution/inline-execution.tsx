@@ -285,65 +285,65 @@ function TradeResult({
 
   return (
     <>
-      <div className="px-4 pb-4">
+      <div className="px-3 sm:px-4 pb-3 sm:pb-4">
         {isSimulated ? (
-          <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-1.5 text-xs text-amber-700">
+          <div className="mb-2.5 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-1.5 text-xs text-amber-700">
             <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-[10px] font-bold text-amber-700">
               SIMULATED
             </Badge>
-            <span>Simulated estimate only. Not an executable live quote.</span>
+            <span className="text-[11px]">Simulated estimate only. Not an executable live quote.</span>
           </div>
         ) : null}
 
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-xl border border-black/[0.05] bg-black/[0.02] px-3.5 py-3.5">
-          <div>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3 rounded-xl border border-black/[0.05] bg-black/[0.02] p-2.5 sm:p-3.5">
+          <div className="min-w-0">
             <p className="text-[10px] font-medium uppercase tracking-wider text-foreground/40">You pay</p>
-            <p className="mt-1 font-mono text-lg font-semibold tracking-tight text-foreground">
+            <p className="mt-0.5 truncate font-mono text-base sm:text-lg font-semibold tracking-tight text-foreground">
               {preview.inputAmount} <span className="font-sans text-xs font-medium text-foreground/50">{preview.fromToken}</span>
             </p>
           </div>
-          <span className="flex size-7 items-center justify-center rounded-full border border-black/[0.08] bg-white text-foreground/50 shadow-sm">
-            <ArrowDown className="size-3.5" />
+          <span className="flex size-6 sm:size-7 shrink-0 items-center justify-center rounded-full border border-black/[0.08] bg-white text-foreground/50 shadow-sm">
+            <ArrowDown className="size-3 sm:size-3.5" />
           </span>
-          <div className="text-right">
+          <div className="min-w-0 text-right">
             <p className="text-[10px] font-medium uppercase tracking-wider text-foreground/40">Estimated receive</p>
-            <p className="mt-1 font-mono text-lg font-semibold tracking-tight text-[#16845c]">
+            <p className="mt-0.5 truncate font-mono text-base sm:text-lg font-semibold tracking-tight text-[#16845c]">
               {preview.estimatedOutput} <span className="font-sans text-xs font-medium text-foreground/50">{preview.toToken}</span>
             </p>
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-3 divide-x divide-black/[0.06] rounded-xl border border-black/[0.06] bg-white">
+        <div className="mt-2.5 grid grid-cols-3 divide-x divide-black/[0.06] rounded-xl border border-black/[0.06] bg-white">
           {[["Slippage", `${slippage}%`], ["Gas Est.", preview.gasEstimate], ["Price Impact", preview.priceImpact]].map(([label, value]) => (
-            <div key={label} className="min-w-0 px-2 py-2 text-center">
-              <p className="text-[10px] text-foreground/40">{label}</p>
-              <p className="mt-0.5 truncate font-mono text-xs font-medium text-foreground/75">{value}</p>
+            <div key={label} className="min-w-0 px-1 sm:px-2 py-1.5 sm:py-2 text-center">
+              <p className="text-[9.5px] sm:text-[10px] text-foreground/40 truncate">{label}</p>
+              <p className="mt-0.5 truncate font-mono text-[11px] sm:text-xs font-medium text-foreground/75">{value}</p>
             </div>
           ))}
         </div>
       </div>
 
       <Disclosure label="Preflight safeguards" meta={`${passedChecksCount} of ${safety.checks.length} checks passed`}>
-        <div className="space-y-4">
-          <div className="rounded-xl border border-black/[0.06] bg-black/[0.015] p-3.5">
-            <div className="flex items-center justify-between border-b border-black/[0.05] pb-2.5 mb-2.5">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="rounded-xl border border-black/[0.06] bg-black/[0.015] p-3 sm:p-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-black/[0.05] pb-2 mb-2.5">
               <span className="text-[11px] font-medium text-foreground/50">Liquidity Route</span>
-              <span className="inline-flex items-center gap-1 rounded-md border border-black/[0.06] bg-white px-2 py-0.5 text-[11px] font-medium text-foreground/85 shadow-2xs">
+              <span className="inline-flex max-w-full truncate items-center gap-1 rounded-md border border-black/[0.06] bg-white px-2 py-0.5 text-[10.5px] sm:text-[11px] font-medium text-foreground/85 shadow-2xs">
                 {preview.route}
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-lg border border-black/[0.04] bg-white p-2 shadow-2xs">
-                <p className="text-[10px] text-foreground/45">Min. Output</p>
-                <p className="mt-0.5 truncate font-mono text-[11px] font-semibold text-foreground/90">{minReceived} {preview.toToken}</p>
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-center">
+              <div className="min-w-0 rounded-lg border border-black/[0.04] bg-white p-1.5 sm:p-2 shadow-2xs">
+                <p className="text-[9.5px] sm:text-[10px] text-foreground/45 truncate">Min. Output</p>
+                <p className="mt-0.5 truncate font-mono text-[10.5px] sm:text-[11px] font-semibold text-foreground/90">{minReceived} {preview.toToken}</p>
               </div>
-              <div className="rounded-lg border border-black/[0.04] bg-white p-2 shadow-2xs">
-                <p className="text-[10px] text-foreground/45">Approval</p>
-                <p className="mt-0.5 text-[11px] font-semibold text-foreground/90">{preview.approvalRequired ? "Required" : "Not required"}</p>
+              <div className="min-w-0 rounded-lg border border-black/[0.04] bg-white p-1.5 sm:p-2 shadow-2xs">
+                <p className="text-[9.5px] sm:text-[10px] text-foreground/45 truncate">Approval</p>
+                <p className="mt-0.5 truncate text-[10.5px] sm:text-[11px] font-semibold text-foreground/90">{preview.approvalRequired ? "Required" : "Not required"}</p>
               </div>
-              <div className="rounded-lg border border-black/[0.04] bg-white p-2 shadow-2xs">
-                <p className="text-[10px] text-foreground/45">Risk Level</p>
-                <p className="mt-0.5 inline-flex items-center justify-center gap-1 text-[11px] font-semibold text-[#16845c]">
+              <div className="min-w-0 rounded-lg border border-black/[0.04] bg-white p-1.5 sm:p-2 shadow-2xs">
+                <p className="text-[9.5px] sm:text-[10px] text-foreground/45 truncate">Risk Level</p>
+                <p className="mt-0.5 inline-flex items-center justify-center gap-1 text-[10.5px] sm:text-[11px] font-semibold text-[#16845c]">
                   <span className="size-1.5 rounded-full bg-[#16845c]" />
                   {preview.riskLevel}
                 </p>
@@ -397,74 +397,74 @@ function TransferResult({
 
   return (
     <>
-      <div className="px-4 pb-4">
+      <div className="px-3 sm:px-4 pb-3 sm:pb-4">
         {isSimulated ? (
-          <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-1.5 text-xs text-amber-700">
+          <div className="mb-2.5 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-1.5 text-xs text-amber-700">
             <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-[10px] font-bold text-amber-700">
               SIMULATED
             </Badge>
-            <span>Simulated estimate only. Not an executable live transaction.</span>
+            <span className="text-[11px]">Simulated estimate only. Not an executable live transaction.</span>
           </div>
         ) : null}
 
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-xl border border-black/[0.05] bg-black/[0.02] px-3.5 py-3.5">
-          <div>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3 rounded-xl border border-black/[0.05] bg-black/[0.02] p-2.5 sm:p-3.5">
+          <div className="min-w-0">
             <p className="text-[10px] font-medium uppercase tracking-wider text-foreground/40">You send</p>
-            <p className="mt-1 font-mono text-lg font-semibold tracking-tight text-foreground">
+            <p className="mt-0.5 truncate font-mono text-base sm:text-lg font-semibold tracking-tight text-foreground">
               {intent.amount ?? preview.inputAmount}{" "}
               <span className="font-sans text-xs font-medium text-foreground/50">{intent.fromToken ?? preview.fromToken}</span>
             </p>
           </div>
-          <span className="flex size-7 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#FE6501] shadow-sm">
-            <Send className="size-3.5" />
+          <span className="flex size-6 sm:size-7 shrink-0 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#FE6501] shadow-sm">
+            <Send className="size-3 sm:size-3.5" />
           </span>
-          <div className="text-right">
+          <div className="min-w-0 text-right">
             <p className="text-[10px] font-medium uppercase tracking-wider text-foreground/40">Recipient</p>
-            <p className="mt-1 font-mono text-xs font-semibold text-foreground/80" title={recipientAddress}>
+            <p className="mt-0.5 truncate font-mono text-xs font-semibold text-foreground/80" title={recipientAddress}>
               {shortRecipient}
             </p>
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-3 divide-x divide-black/[0.06] rounded-xl border border-black/[0.06] bg-white">
+        <div className="mt-2.5 grid grid-cols-3 divide-x divide-black/[0.06] rounded-xl border border-black/[0.06] bg-white">
           {[
             ["Network", "X Layer Testnet"],
             ["Gas Est.", preview.gasEstimate || "21,000 gas"],
             ["Asset Type", intent.fromToken === "OKB" ? "Native OKB" : "ERC-20 Token"],
           ].map(([label, value]) => (
-            <div key={label} className="min-w-0 px-2 py-2 text-center">
-              <p className="text-[10px] text-foreground/40">{label}</p>
-              <p className="mt-0.5 truncate font-mono text-xs font-medium text-foreground/75">{value}</p>
+            <div key={label} className="min-w-0 px-1 sm:px-2 py-1.5 sm:py-2 text-center">
+              <p className="text-[9.5px] sm:text-[10px] text-foreground/40 truncate">{label}</p>
+              <p className="mt-0.5 truncate font-mono text-[11px] sm:text-xs font-medium text-foreground/75">{value}</p>
             </div>
           ))}
         </div>
       </div>
 
       <Disclosure label="Preflight safeguards" meta={`${passedChecksCount} of ${safety.checks.length} checks passed`}>
-        <div className="space-y-4">
-          <div className="rounded-xl border border-black/[0.06] bg-black/[0.015] p-3.5">
-            <div className="flex items-center justify-between border-b border-black/[0.05] pb-2.5 mb-2.5">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="rounded-xl border border-black/[0.06] bg-black/[0.015] p-3 sm:p-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-black/[0.05] pb-2 mb-2.5">
               <span className="text-[11px] font-medium text-foreground/50">Execution Route</span>
-              <span className="inline-flex items-center gap-1 rounded-md border border-black/[0.06] bg-white px-2 py-0.5 text-[11px] font-medium text-foreground/85 shadow-2xs">
+              <span className="inline-flex max-w-full truncate items-center gap-1 rounded-md border border-black/[0.06] bg-white px-2 py-0.5 text-[10.5px] sm:text-[11px] font-medium text-foreground/85 shadow-2xs">
                 {intent.fromToken === "OKB" ? "Direct Native Transfer" : "ERC-20 transfer() Call"}
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-lg border border-black/[0.04] bg-white p-2 shadow-2xs">
-                <p className="text-[10px] text-foreground/45">Transfer Method</p>
-                <p className="mt-0.5 truncate font-mono text-[11px] font-semibold text-foreground/90">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-center">
+              <div className="min-w-0 rounded-lg border border-black/[0.04] bg-white p-1.5 sm:p-2 shadow-2xs">
+                <p className="text-[9.5px] sm:text-[10px] text-foreground/45 truncate">Transfer Method</p>
+                <p className="mt-0.5 truncate font-mono text-[10.5px] sm:text-[11px] font-semibold text-foreground/90">
                   {intent.fromToken === "OKB" ? "Native Send" : "Token Transfer"}
                 </p>
               </div>
-              <div className="rounded-lg border border-black/[0.04] bg-white p-2 shadow-2xs">
-                <p className="text-[10px] text-foreground/45">Target</p>
-                <p className="mt-0.5 truncate font-mono text-[11px] font-semibold text-foreground/90">
+              <div className="min-w-0 rounded-lg border border-black/[0.04] bg-white p-1.5 sm:p-2 shadow-2xs">
+                <p className="text-[9.5px] sm:text-[10px] text-foreground/45 truncate">Target</p>
+                <p className="mt-0.5 truncate font-mono text-[10.5px] sm:text-[11px] font-semibold text-foreground/90">
                   {shortRecipient}
                 </p>
               </div>
-              <div className="rounded-lg border border-black/[0.04] bg-white p-2 shadow-2xs">
-                <p className="text-[10px] text-foreground/45">Risk Level</p>
-                <p className="mt-0.5 inline-flex items-center justify-center gap-1 text-[11px] font-semibold text-[#16845c]">
+              <div className="min-w-0 rounded-lg border border-black/[0.04] bg-white p-1.5 sm:p-2 shadow-2xs">
+                <p className="text-[9.5px] sm:text-[10px] text-foreground/45 truncate">Risk Level</p>
+                <p className="mt-0.5 inline-flex items-center justify-center gap-1 text-[10.5px] sm:text-[11px] font-semibold text-[#16845c]">
                   <span className="size-1.5 rounded-full bg-[#16845c]" />
                   {preview.riskLevel || "Low"}
                 </p>
@@ -518,49 +518,51 @@ function ApprovalResult({
 
   return (
     <>
-      <div className="px-4 pb-4">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-xl border border-black/[0.05] bg-black/[0.02] px-3.5 py-3.5">
-          <div>
+      <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3 rounded-xl border border-black/[0.05] bg-black/[0.02] p-2.5 sm:p-3.5">
+          <div className="min-w-0">
             <p className="text-[10px] font-medium uppercase tracking-wider text-foreground/40">
               {isRevoke ? "Revoke Token" : "Approve Token"}
             </p>
-            <p className="mt-1 font-mono text-lg font-semibold tracking-tight text-foreground">
+            <p className="mt-0.5 truncate font-mono text-base sm:text-lg font-semibold tracking-tight text-foreground">
               {isRevoke ? "0" : (intent.amount ?? "Unlimited")}{" "}
               <span className="font-sans text-xs font-medium text-foreground/50">{intent.fromToken ?? preview.fromToken}</span>
             </p>
           </div>
-          <span className="flex size-7 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#FE6501] shadow-sm">
-            <ShieldCheck className="size-3.5" />
+          <span className="flex size-6 sm:size-7 shrink-0 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#FE6501] shadow-sm">
+            <ShieldCheck className="size-3 sm:size-3.5" />
           </span>
-          <div className="text-right">
+          <div className="min-w-0 text-right">
             <p className="text-[10px] font-medium uppercase tracking-wider text-foreground/40">Spender Contract</p>
-            <p className="mt-1 font-mono text-xs font-semibold text-foreground/80" title={spenderAddress}>
+            <p className="mt-0.5 truncate font-mono text-xs font-semibold text-foreground/80" title={spenderAddress}>
               {shortSpender}
             </p>
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-3 divide-x divide-black/[0.06] rounded-xl border border-black/[0.06] bg-white">
+        <div className="mt-2.5 grid grid-cols-3 divide-x divide-black/[0.06] rounded-xl border border-black/[0.06] bg-white">
           {[
             ["Network", "X Layer Testnet"],
             ["Gas Est.", preview.gasEstimate || "45,000 gas"],
             ["Action Type", isRevoke ? "Revocation (0)" : "Approval Grant"],
           ].map(([label, value]) => (
-            <div key={label} className="min-w-0 px-2 py-2 text-center">
-              <p className="text-[10px] text-foreground/40">{label}</p>
-              <p className="mt-0.5 truncate font-mono text-xs font-medium text-foreground/75">{value}</p>
+            <div key={label} className="min-w-0 px-1 sm:px-2 py-1.5 sm:py-2 text-center">
+              <p className="text-[9.5px] sm:text-[10px] text-foreground/40 truncate">{label}</p>
+              <p className="mt-0.5 truncate font-mono text-[11px] sm:text-xs font-medium text-foreground/75">{value}</p>
             </div>
           ))}
         </div>
       </div>
 
       <Disclosure label="Preflight safeguards" meta={`${passedChecksCount} of ${safety.checks.length} checks passed`}>
-        <PreflightChecksList
-          walletConnected={walletConnected}
-          safety={safety}
-          slippage={0.5}
-          preserveGas={preserveGas}
-        />
+        <div className="space-y-3 sm:space-y-4">
+          <PreflightChecksList
+            walletConnected={walletConnected}
+            safety={safety}
+            slippage={0.5}
+            preserveGas={preserveGas}
+          />
+        </div>
       </Disclosure>
     </>
   )
@@ -578,7 +580,7 @@ function ModeResult({ intent, plan }: { intent: Exclude<Intent, { mode: "trade" 
             return (
               <div
                 key={opportunity.name}
-                className="group flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-black/[0.015]"
+                className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4 px-3.5 sm:px-4 py-3 transition-colors hover:bg-black/[0.015]"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -595,8 +597,8 @@ function ModeResult({ intent, plan }: { intent: Exclude<Intent, { mode: "trade" 
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="shrink-0 text-right">
+                <div className="flex items-center justify-between sm:justify-end gap-3 pt-1 sm:pt-0 border-t border-black/[0.04] sm:border-0">
+                  <div className="shrink-0 text-left sm:text-right">
                     <p className="font-mono text-sm font-bold text-[#16845c]">{opportunity.apy}</p>
                     <p className="text-[9px] uppercase tracking-wider text-foreground/40">Variable</p>
                   </div>
@@ -633,7 +635,7 @@ function ModeResult({ intent, plan }: { intent: Exclude<Intent, { mode: "trade" 
 
   if (intent.mode === "predict") {
     return (
-      <div className="border-t border-foreground/[0.07] px-4 py-4">
+      <div className="border-t border-foreground/[0.07] px-3 sm:px-4 py-3 sm:py-4">
         <ScenarioInsight asset={intent.asset ?? "OKB"} change={intent.changePercent ?? -10} embedded />
       </div>
     )
@@ -648,15 +650,15 @@ function ModeResult({ intent, plan }: { intent: Exclude<Intent, { mode: "trade" 
     return (
       <div className="divide-y divide-foreground/[0.07] border-t border-foreground/[0.07]">
         {activeFindings.map((finding) => (
-          <div key={finding.label} className="flex items-start justify-between gap-4 px-4 py-3">
-            <div>
+          <div key={finding.label} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 px-3.5 sm:px-4 py-3">
+            <div className="min-w-0">
               <p className="text-xs font-medium text-foreground/85">{finding.label}</p>
-              <p className="mt-1 font-mono text-[10px] text-foreground/45">{finding.spender}</p>
+              <p className="mt-0.5 truncate font-mono text-[10px] text-foreground/45">{finding.spender}</p>
             </div>
             <Badge
               variant="outline"
               className={cn(
-                "h-5 rounded px-1.5 text-[9px] font-medium",
+                "h-5 w-fit rounded px-1.5 text-[9px] font-medium",
                 finding.risk === "High"
                   ? "border-[#d94b2a]/20 bg-[#d94b2a]/[0.06] text-[#d94b2a]"
                   : "border-amber-500/20 bg-amber-500/[0.06] text-amber-700",
@@ -698,14 +700,14 @@ function Receipt() {
   }
 
   return (
-    <div className="border-t border-[#16845c]/15 bg-[#16845c]/[0.035] px-4 py-2.5">
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
+    <div className="border-t border-[#16845c]/15 bg-[#16845c]/[0.035] px-3.5 sm:px-4 py-2.5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="flex items-center gap-2 text-xs font-semibold text-[#16845c]">
           <CheckCircle2 className="size-4 shrink-0" />
           <span>Transaction successful</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={copyHash}
@@ -775,29 +777,31 @@ export function InlineExecution() {
   const networkDisplay = intent.network === "mainnet" ? "X Layer Mainnet" : "X Layer Testnet"
 
   return (
-    <section className="mt-4 overflow-hidden rounded-xl border border-black/[0.07] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.03),0_8px_24px_rgba(0,0,0,0.04)]" aria-label={modeTitles[intent.mode]}>
-      <div className="flex items-center gap-3 px-4 py-3.5">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-black/[0.04] text-foreground/75">
-          <Icon className="size-4" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-xs font-semibold text-foreground/85">
-            {intent.mode === "trade" ? (actionTitles[intent.action] ?? "Execution Intent") : modeTitles[intent.mode]}
-          </h3>
-          <p className="mt-0.5 text-[10px] text-foreground/45">
-            {intent.mode === "trade"
-              ? intent.action === "transfer"
-                ? `${networkDisplay} · Direct onchain transfer`
-                : intent.action === "approve" || intent.action === "revoke"
-                  ? `${networkDisplay} · Token permission`
-                  : `${networkDisplay} · ${isQuoteFailed ? "Quote failed" : isSimulated ? "Simulated" : "Live quote"}`
-              : "Intelligence analysis"}
-          </p>
+    <section className="mt-3.5 w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-black/[0.08] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.03),0_8px_24px_rgba(0,0,0,0.04)]" aria-label={modeTitles[intent.mode]}>
+      <div className="flex flex-wrap items-center justify-between gap-2.5 px-3.5 py-3 sm:px-4">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-black/[0.04] text-foreground/75">
+            <Icon className="size-3.5 sm:size-4" />
+          </span>
+          <div className="min-w-0">
+            <h3 className="truncate text-xs font-semibold text-foreground/85">
+              {intent.mode === "trade" ? (actionTitles[intent.action] ?? "Execution Intent") : modeTitles[intent.mode]}
+            </h3>
+            <p className="truncate text-[10px] text-foreground/45">
+              {intent.mode === "trade"
+                ? intent.action === "transfer"
+                  ? `${networkDisplay} · Direct onchain transfer`
+                  : intent.action === "approve" || intent.action === "revoke"
+                    ? `${networkDisplay} · Token permission`
+                    : `${networkDisplay} · ${isQuoteFailed ? "Quote failed" : isSimulated ? "Simulated" : "Live quote"}`
+                : "Intelligence analysis"}
+            </p>
+          </div>
         </div>
         <Badge
           variant="outline"
           className={cn(
-            "h-5 rounded px-1.5 text-[9px] font-medium",
+            "h-5 shrink-0 rounded px-1.5 text-[9px] font-medium",
             status === "confirmed"
               ? "border-[#16845c]/20 text-[#16845c]"
               : isQuoteFailed || plan.status === "blocked"
@@ -870,7 +874,7 @@ export function InlineExecution() {
           onConfirm={confirmAction}
         />
       ) : (
-        <div className="flex items-center gap-2 border-t border-foreground/[0.07] px-4 py-2.5 text-[10px] text-foreground/40">
+        <div className="flex items-center gap-2 border-t border-foreground/[0.07] px-3.5 sm:px-4 py-2.5 text-[10px] text-foreground/40">
           <Gauge className="size-3.5" />
           Read Only · No onchain transaction prepared
         </div>

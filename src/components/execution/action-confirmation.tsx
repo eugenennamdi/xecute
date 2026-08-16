@@ -247,23 +247,23 @@ export function ActionConfirmation({
 
       {/* Pre-flight Permission Summary for Approve / Revoke */}
       {complete && (isApprove || isRevoke) && intent.fromToken && (
-        <div className="px-4 pt-3">
-          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-black/[0.07] bg-[#fafafa] p-2.5 text-xs shadow-2xs">
-            <div className="rounded-xl border border-black/[0.04] bg-white p-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">
+        <div className="px-3 sm:px-4 pt-2.5 sm:pt-3">
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 rounded-2xl border border-black/[0.07] bg-[#fafafa] p-2 sm:p-2.5 text-xs shadow-2xs">
+            <div className="min-w-0 rounded-xl border border-black/[0.04] bg-white p-2">
+              <span className="text-[9.5px] sm:text-[10px] font-semibold uppercase tracking-wider text-foreground/45 truncate block">
                 {isRevoke ? "Revoke Token" : "Approve Token"}
               </span>
-              <div className="mt-0.5 flex items-baseline gap-1">
-                <span className="font-mono text-sm font-semibold text-foreground/90 tabular-nums">
+              <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
+                <span className="truncate font-mono text-xs sm:text-sm font-semibold text-foreground/90 tabular-nums">
                   {isRevoke ? "0" : (intent.amount ?? "Unlimited")}
                 </span>
-                <span className="text-xs font-semibold text-foreground/60">{intent.fromToken}</span>
+                <span className="truncate text-[11px] sm:text-xs font-semibold text-foreground/60">{intent.fromToken}</span>
               </div>
             </div>
-            <div className="rounded-xl border border-black/[0.04] bg-white p-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Spender Contract</span>
+            <div className="min-w-0 rounded-xl border border-black/[0.04] bg-white p-2">
+              <span className="text-[9.5px] sm:text-[10px] font-semibold uppercase tracking-wider text-foreground/45 truncate block">Spender Contract</span>
               <div className="mt-0.5">
-                <span className="font-mono text-xs font-semibold text-foreground/80" title={intent.spender || ""}>
+                <span className="truncate block font-mono text-[11px] sm:text-xs font-semibold text-foreground/80" title={intent.spender || ""}>
                   {intent.spender ? `${intent.spender.slice(0, 6)}...${intent.spender.slice(-4)}` : "Verified Contract"}
                 </span>
               </div>
@@ -274,22 +274,22 @@ export function ActionConfirmation({
 
       {/* Pre-flight Balance Delta Diff for Swap */}
       {complete && !isTransfer && !isApprove && !isRevoke && intent.fromToken && intent.toToken && intent.amount && (
-        <div className="px-4 pt-3">
-          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-black/[0.07] bg-[#fafafa] p-2.5 text-xs shadow-2xs">
-            <div className="rounded-xl border border-black/[0.04] bg-white p-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">You Pay</span>
-              <div className="mt-0.5 flex items-baseline gap-1">
-                <span className="font-mono text-sm font-semibold text-foreground/90 tabular-nums">-{intent.amount}</span>
-                <span className="text-xs font-semibold text-foreground/60">{intent.fromToken}</span>
+        <div className="px-3 sm:px-4 pt-2.5 sm:pt-3">
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 rounded-2xl border border-black/[0.07] bg-[#fafafa] p-2 sm:p-2.5 text-xs shadow-2xs">
+            <div className="min-w-0 rounded-xl border border-black/[0.04] bg-white p-2">
+              <span className="text-[9.5px] sm:text-[10px] font-semibold uppercase tracking-wider text-foreground/45 truncate block">You Pay</span>
+              <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
+                <span className="truncate font-mono text-xs sm:text-sm font-semibold text-foreground/90 tabular-nums">-{intent.amount}</span>
+                <span className="truncate text-[11px] sm:text-xs font-semibold text-foreground/60">{intent.fromToken}</span>
               </div>
             </div>
-            <div className="rounded-xl border border-[#16845c]/15 bg-[#16845c]/[0.03] p-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#16845c]/80">Est. Receive</span>
-              <div className="mt-0.5 flex items-baseline gap-1">
-                <span className="font-mono text-sm font-semibold text-[#16845c] tabular-nums">
+            <div className="min-w-0 rounded-xl border border-[#16845c]/15 bg-[#16845c]/[0.03] p-2">
+              <span className="text-[9.5px] sm:text-[10px] font-semibold uppercase tracking-wider text-[#16845c]/80 truncate block">Est. Receive</span>
+              <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
+                <span className="truncate font-mono text-xs sm:text-sm font-semibold text-[#16845c] tabular-nums">
                   Market quote
                 </span>
-                <span className="text-xs font-semibold text-[#16845c]/90">{intent.toToken}</span>
+                <span className="truncate text-[11px] sm:text-xs font-semibold text-[#16845c]/90">{intent.toToken}</span>
               </div>
             </div>
           </div>
@@ -298,7 +298,7 @@ export function ActionConfirmation({
 
       {/* Parameter Tuner for Trade on Testnet */}
       {complete && !isMainnet && !blocked && (
-        <div className="px-4 pt-3">
+        <div className="px-3 sm:px-4 pt-2.5 sm:pt-3">
           <ParameterTuner
             slippage={slippage}
             preserveGas={preserveGas}
@@ -309,8 +309,8 @@ export function ActionConfirmation({
         </div>
       )}
 
-      <div className="px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
+      <div className="px-3.5 sm:px-4 py-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-3">
           <button
             type="button"
             aria-expanded={checksOpen}
@@ -334,7 +334,7 @@ export function ActionConfirmation({
                 />
               ))}
             </span>
-            <span>
+            <span className="truncate">
               {blocked
                 ? "Preflight checks blocked"
                 : isMainnet
@@ -345,7 +345,7 @@ export function ActionConfirmation({
             </span>
             <ChevronDownIcon
               size={11}
-              className={cn("text-foreground/40 transition-transform duration-300", checksOpen && "rotate-180")}
+              className={cn("shrink-0 text-foreground/40 transition-transform duration-300", checksOpen && "rotate-180")}
             />
           </button>
 
@@ -354,7 +354,7 @@ export function ActionConfirmation({
               type="button"
               size="sm"
               variant="outline"
-              className="h-8 rounded-full border-black/[0.1] bg-white px-3.5 text-xs font-medium text-foreground/75 shadow-xs transition-all hover:bg-black/[0.04] active:scale-[0.97]"
+              className="h-8.5 w-full sm:w-auto rounded-full border-black/[0.1] bg-white px-3.5 text-xs font-medium text-foreground/75 shadow-xs transition-all hover:bg-black/[0.04] active:scale-[0.97] justify-center"
               onClick={() => onConfirm()}
             >
               <RotateCw className="mr-1.5 size-3" />
@@ -364,20 +364,20 @@ export function ActionConfirmation({
             <Button
               type="button"
               size="sm"
-              className="h-8.5 rounded-full bg-[#FE6501] px-4 text-xs font-semibold text-white shadow-xs transition-all duration-150 hover:bg-[#e25a00] active:scale-[0.97] disabled:opacity-40 disabled:hover:bg-[#FE6501]"
+              className="h-9 sm:h-8.5 w-full sm:w-auto rounded-full bg-[#FE6501] px-4 text-xs font-semibold text-white shadow-xs transition-all duration-150 hover:bg-[#e25a00] active:scale-[0.97] disabled:opacity-40 disabled:hover:bg-[#FE6501] justify-center"
               disabled={!complete || blocked || quoteFailed}
               onClick={() => {
                 void appKit.open({ view: "Connect", namespace: "eip155" })
               }}
             >
-              <WalletCards className="mr-1.5 size-3.5" />
-              {buttonLabel}
+              <WalletCards className="mr-1.5 size-3.5 shrink-0" />
+              <span className="truncate">{buttonLabel}</span>
             </Button>
           ) : (
             <Button
               type="button"
               size="sm"
-              className="h-8.5 rounded-full bg-[#FE6501] px-4 text-xs font-semibold text-white shadow-xs transition-all duration-150 hover:bg-[#e25a00] active:scale-[0.97] disabled:opacity-40 disabled:hover:bg-[#FE6501]"
+              className="h-9 sm:h-8.5 w-full sm:w-auto rounded-full bg-[#FE6501] px-4 text-xs font-semibold text-white shadow-xs transition-all duration-150 hover:bg-[#e25a00] active:scale-[0.97] disabled:opacity-40 disabled:hover:bg-[#FE6501] justify-center"
               disabled={!confirmable || confirming}
               onMouseEnter={() => confirmButtonIconRef.current?.startAnimation()}
               onFocus={() => confirmButtonIconRef.current?.startAnimation()}
@@ -387,11 +387,11 @@ export function ActionConfirmation({
               }}
             >
               {confirming ? (
-                <LoaderCircle className="mr-1.5 size-3 animate-spin" />
+                <LoaderCircle className="mr-1.5 size-3 shrink-0 animate-spin" />
               ) : (
-                <CircleCheckIcon ref={confirmButtonIconRef} size={14} className="mr-1.5" />
+                <CircleCheckIcon ref={confirmButtonIconRef} size={14} className="mr-1.5 shrink-0" />
               )}
-              {buttonLabel}
+              <span className="truncate">{buttonLabel}</span>
             </Button>
           )}
         </div>

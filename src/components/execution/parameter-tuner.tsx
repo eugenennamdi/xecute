@@ -44,9 +44,9 @@ export function ParameterTuner({
       </div>
 
       {showSlippage && (
-        <div className="mt-2.5 flex items-center justify-between gap-2">
+        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
           <span className="text-[11px] font-medium text-foreground/55">Slippage tolerance:</span>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             {PRESETS.map((preset) => {
               const active = !isCustom && slippage === preset
               return (
@@ -89,7 +89,7 @@ export function ParameterTuner({
       )}
 
       {isCustom && (
-        <div className="mt-2 flex items-center justify-end gap-1.5">
+        <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5">
           <span className="text-[11px] text-foreground/50">Custom value:</span>
           <input
             type="number"

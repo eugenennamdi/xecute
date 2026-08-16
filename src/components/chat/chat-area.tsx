@@ -428,24 +428,24 @@ export function ChatArea() {
           }}
           className="absolute inset-0 overflow-y-auto"
         >
-        <div className="mx-auto flex min-h-full w-full max-w-[820px] flex-col px-4 pb-8 sm:px-6">
+        <div className="mx-auto flex min-h-full w-full max-w-[820px] flex-col px-3.5 pb-8 sm:px-6">
           {!hasConversation ? (
-            <div className="my-auto w-full py-8 sm:py-12">
-              <div className="mb-8 text-center">
-                <div className="group/brand mb-5 flex items-center justify-center" aria-hidden>
-                  <XecuteMark className="size-9 transform-gpu text-[#FE6501] transition-transform duration-300 ease-out group-hover/brand:scale-105" />
+            <div className="my-auto w-full py-6 sm:py-12">
+              <div className="mb-6 text-center sm:mb-8">
+                <div className="group/brand mb-4 flex items-center justify-center sm:mb-5" aria-hidden>
+                  <XecuteMark className="size-8 transform-gpu text-[#FE6501] transition-transform duration-300 ease-out group-hover/brand:scale-105 sm:size-9" />
                 </div>
-                <h1 className="text-[27px] font-semibold tracking-tight text-[#121316] sm:text-[32px]">
+                <h1 className="text-2xl font-semibold tracking-tight text-[#121316] sm:text-[32px]">
                   Execute anything on X Layer.
                 </h1>
-                <p className="mx-auto mt-2.5 max-w-lg text-sm leading-relaxed text-foreground/60">
+                <p className="mx-auto mt-2 max-w-lg text-xs leading-relaxed text-foreground/60 sm:mt-2.5 sm:text-sm">
                   Natural language execution, verified onchain state, and preflight safety checks.
                 </p>
               </div>
 
               {composer}
 
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <div className="mt-3.5 flex flex-wrap items-center justify-center gap-1.5 sm:mt-4 sm:gap-2">
                 {exampleChips.map((chip) => (
                   <button
                     key={chip.label}
@@ -455,7 +455,7 @@ export function ChatArea() {
                       setMode(chip.mode)
                       submit(chip.prompt)
                     }}
-                    className="inline-flex items-center rounded-full border border-black/[0.08] bg-white px-3.5 py-1.5 text-xs font-medium text-foreground/75 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-150 hover:border-black/[0.18] hover:bg-[#fafafa] hover:text-foreground active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
+                    className="inline-flex items-center rounded-full border border-black/[0.08] bg-white px-3 py-1 text-[11.5px] sm:px-3.5 sm:py-1.5 sm:text-xs font-medium text-foreground/75 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-150 hover:border-black/[0.18] hover:bg-[#fafafa] hover:text-foreground active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
                   >
                     {chip.label}
                   </button>
@@ -463,7 +463,7 @@ export function ChatArea() {
               </div>
             </div>
           ) : (
-            <div className="space-y-9 pb-10 pt-8 sm:pt-12">
+            <div className="space-y-7 pb-8 pt-6 sm:space-y-9 sm:pb-10 sm:pt-12">
               {visibleMessages.map((message, messageIndex) => {
                 const retryPrompt = precedingUserPrompt(visibleMessages, messageIndex)
 
@@ -476,13 +476,13 @@ export function ChatArea() {
                     )}
                   >
                     {message.role === "assistant" ? (
-                      <div className="group/message flex w-full items-start gap-3">
-                        <div className="mt-1 flex size-6 shrink-0 items-center justify-center" aria-hidden>
-                          <XecuteMark className="size-[18px] text-[#FE6501]" />
+                      <div className="group/message flex w-full min-w-0 items-start gap-2.5 sm:gap-3">
+                        <div className="mt-1 flex size-5.5 sm:size-6 shrink-0 items-center justify-center" aria-hidden>
+                          <XecuteMark className="size-4 sm:size-[18px] text-[#FE6501]" />
                         </div>
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 overflow-hidden">
                           {message.id === "welcome" ? (
-                            <p className="text-[15px] leading-7 text-foreground/78">
+                            <p className="text-[14.5px] sm:text-[15px] leading-7 text-foreground/78">
                               {message.content}
                             </p>
                           ) : message.streaming ? (
@@ -512,7 +512,7 @@ export function ChatArea() {
                         </div>
                       </div>
                     ) : (
-                      <div className="max-w-[88%] rounded-[18px] border border-black/[0.04] bg-black/[0.045] px-4 py-2.5 text-[14px] leading-6 text-foreground/85 sm:max-w-[76%]">
+                      <div className="max-w-[90%] rounded-[18px] border border-black/[0.04] bg-black/[0.045] px-3.5 py-2 text-[13.5px] leading-6 text-foreground/85 sm:max-w-[76%] sm:px-4 sm:py-2.5 sm:text-[14px] break-words">
                         {message.content}
                       </div>
                     )}
@@ -521,11 +521,11 @@ export function ChatArea() {
               })}
               {isProcessing ? (
                 <div className="flex justify-start">
-                  <div className="flex max-w-[94%] items-start gap-3 sm:max-w-[86%]">
-                    <div className="mt-1 flex size-6 shrink-0 items-center justify-center" aria-hidden>
-                      <XecuteMark className="size-[18px] text-[#FE6501]" />
+                  <div className="flex max-w-[96%] items-start gap-2.5 sm:max-w-[86%] sm:gap-3">
+                    <div className="mt-1 flex size-5.5 sm:size-6 shrink-0 items-center justify-center" aria-hidden>
+                      <XecuteMark className="size-4 sm:size-[18px] text-[#FE6501]" />
                     </div>
-                    <div className="pt-0.5">
+                    <div className="min-w-0 pt-0.5">
                       <ProcessingTrace
                         mode={activeMode}
                         prompt={[...visibleMessages].reverse().find((m) => m.role === "user")?.content}
@@ -546,17 +546,17 @@ export function ChatArea() {
             size="icon"
             variant="outline"
             onClick={scrollToLatest}
-            className="absolute bottom-4 right-4 z-10 size-9 rounded-full border-black/[0.08] bg-white text-foreground/55 shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:bg-white hover:text-foreground sm:right-8"
+            className="absolute bottom-3 right-3 z-10 size-8 rounded-full border-black/[0.08] bg-white text-foreground/55 shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:bg-white hover:text-foreground sm:bottom-4 sm:right-8 sm:size-9"
             aria-label="Scroll to latest message"
             title="Scroll to latest"
           >
-            <ArrowDownToLine className="size-4" />
+            <ArrowDownToLine className="size-3.5 sm:size-4" />
           </Button>
         ) : null}
       </div>
 
       {hasConversation ? (
-        <div className="shrink-0 bg-[linear-gradient(to_top,#fafafa_82%,rgba(250,250,250,0))] px-4 pb-4 pt-5 sm:px-6 sm:pb-6">
+        <div className="shrink-0 bg-[linear-gradient(to_top,#fafafa_82%,rgba(250,250,250,0))] px-3 pb-3 pt-3 sm:px-6 sm:pb-6 sm:pt-5">
           <div className="mx-auto w-full max-w-[820px]">{composer}</div>
         </div>
       ) : null}

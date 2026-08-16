@@ -150,17 +150,16 @@ function remoteProviderConfigs(request: AgentRequest): RemoteProviderConfig[] {
   const directOrder = preferred === "gemini"
     ? (["gemini", "deepseek"] as const)
     : (["deepseek", "gemini"] as const)
-  const configs = uniqueProviderConfigs(directOrder.flatMap((provider) => [
-    directProviderConfig(provider, complex),
-    ...(complex ? [directProviderConfig(provider, complex, true)] : []),
-  ]))
+  const configs: Array<RemoteProviderConfig | null> = [
+    ...directOrder.flatMap((provider) => [
+      directProviderConfig(provider, complex),
+      ...(complex ? [directProviderConfig(provider, complex, true)] : []),
+    ]),
+    legacyProviderConfig("openai"),
+    legacyProviderConfig("openrouter"),
+  ]
 
-  if (configuredValue("AI_ENABLE_OPENROUTER_FALLBACK") === "true") {
-    const openRouter = legacyProviderConfig("openrouter")
-    if (openRouter) configs.push(openRouter)
-  }
-
-  return configs
+  return uniqueProviderConfigs(configs)
 }
 
 function uniqueProviderConfigs(configs: Array<RemoteProviderConfig | null>) {
@@ -530,8 +529,23 @@ ${points.join("\n\n")}
   if (knowledge && !quote && !market && !network && !address && !transaction && !earn && !tokenRisk && !allowances) {
     parts.push(summarizeKnowledge(knowledge))
   }
+
+  if (/^(who are you|what are you|what can you do|how do you work|what is xecute|help)\b/i.test(prompt.trim())) {
+    parts.push(
+`**Xecute** is the AI-native execution terminal for **X Layer**, engineered to bridge natural language intents with verified onchain execution and real-time ecosystem intelligence.
+
+### Core Capabilities:
+• 🔄 **Trade & Settle (Testnet)**: Convert plain English into executable onchain transactions (Token Swaps, OKB/ERC-20 Transfers, and Smart Approvals) with automated preflight simulation, slippage control, and non-custodial wallet signatures.
+• 📈 **Yield & Earn (Mainnet)**: Query live DeFi APRs and liquidity pools across **Aave V3**, **Uniswap V3**, and ecosystem vaults with 1-click deposit deeplinks.
+• 🔮 **Predict & Stress-Test**: Run real-time price shock simulations (e.g. *"What happens if OKB drops 10%?"*) to model portfolio exposure and impermanent loss.
+• 🛡️ **Protect & Audit**: Inspect token approvals, detect unlimited spender allowances, and execute instant 0-allowance revocations to safeguard your wallet.
+
+You can interact using conversational prompts or trigger explicit modes using \`/trade\`, \`/earn\`, \`/predict\`, and \`/protect\`.`
+    )
+  }
+
   if (parts.length === 0) {
-    return `I could not ground an answer for "${prompt}" with the currently available X Layer sources.`
+    return `I am Xecute, your AI execution terminal for X Layer. How can I assist you with onchain trading, DeFi yield discovery, or wallet security today?`
   }
 
   return parts.join("\n\n")
@@ -670,14 +684,6 @@ async function runLocalAgent(
 export async function runXecuteAgent(request: AgentRequest): Promise<AgentResponse> {
   const startedAt = Date.now()
   const prompt = request.messages.at(-1)?.content ?? ""
-  const lightweightAnswer = lightweightConversationAnswer(prompt)
-  if (lightweightAnswer) {
-    return {
-      message: lightweightAnswer,
-      metadata: metadata({ provider: "local", startedAt, results: [] }),
-      plan: null,
-    }
-  }
 
   const configs = remoteProviderConfigs(request)
   if (configs.length === 0) return runLocalAgent(request, startedAt)

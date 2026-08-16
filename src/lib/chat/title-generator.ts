@@ -93,6 +93,10 @@ export function generateConversationTitle(prompt: string, intent?: Intent | null
     return "Market Scenario Simulation"
   }
 
+  if (/who are you|what are you|what can you do|how do you work|about you|capabilities/i.test(lower)) {
+    return "About Xecute"
+  }
+
   if (/what is x layer|about x layer|how does x layer/i.test(lower)) {
     return "About X Layer"
   }
@@ -108,12 +112,12 @@ export function generateConversationTitle(prompt: string, intent?: Intent | null
     .replace(/[?.!,:;]+$/g, "")
     .trim()
 
-  if (!stripped) {
+  if (!stripped || /^(you|me|it|this|that|he|she|they)$/i.test(stripped)) {
     if (mode === "trade") return "Trade Exploration"
     if (mode === "earn") return "Yield Exploration"
     if (mode === "predict") return "Scenario Modeling"
     if (mode === "protect") return "Risk Inspection"
-    return "New Conversation"
+    return "General Inquiry"
   }
 
   const words = stripped.split(/\s+/)

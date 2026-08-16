@@ -15,39 +15,6 @@ export async function POST(request: Request) {
     const body = AgentRequestSchema.parse(await request.json())
     const prompt = body.messages.at(-1)?.content ?? ""
     let exchange: ExchangeContext | null = null
-
-    if (lightweightConversationAnswer(prompt)) {
-      const agentResult = await runXecuteAgent(body)
-      const conversationId = body.conversationId ?? crypto.randomUUID()
-      const title = generateConversationTitle(prompt, null, body.mode)
-
-      if (body.sessionId && hasDatabaseConfiguration()) {
-        after(async () => {
-          try {
-            const deferredExchange = await beginExchange({
-              sessionId: body.sessionId!,
-              conversationId: body.conversationId,
-              newConversationId: conversationId,
-              prompt,
-              mode: body.mode,
-            })
-            await completeExchange(deferredExchange, agentResult)
-          } catch {
-            // A conversational reply should not fail because background history storage is unavailable.
-          }
-        })
-      }
-
-      return Response.json(AgentResponseSchema.parse({
-        ...agentResult,
-        conversationId,
-        conversationTitle: title,
-        persistence: "unavailable",
-      }), {
-        headers: { "Cache-Control": "no-store" },
-      })
-    }
-
     if (body.sessionId && hasDatabaseConfiguration()) {
       try {
         exchange = await beginExchange({
