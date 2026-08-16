@@ -374,26 +374,11 @@ Every critical user-facing value in Xecute is derived from a deterministic sourc
 | :--- | :--- | :--- | :--- | :--- |
 | **X Layer Testnet** | `1952` | `XecuteTestnetRouter` | [`0x9be3af8223f49b9357941db269a39775f7802acb`](https://www.okx.com/web3/explorer/xlayer-test/address/0x9be3af8223f49b9357941db269a39775f7802acb) | Testnet swap and execution routing contract |
 
-### X Layer Verified Asset Registry
-| Network | Asset Symbol | Asset Name | Contract Address | Decimals |
-| :--- | :--- | :--- | :--- | :--- |
-| **Testnet (`1952`)** | `OKB` | Native OKB | Native Gas Asset | 18 |
-| **Testnet (`1952`)** | `USDT` | Tether USD (Testnet) | `0x8CAFC62C9A436329c2C3d65DE3d1685F31f92e85` | 6 |
-| **Testnet (`1952`)** | `USDC` | USD Coin (Testnet) | `0x947f6fe1c63dc6824f114c042e6bc82701bbab70` | 6 |
-| **Testnet (`1952`)** | `USDG` | Global Dollar (Testnet) | `0x3235bca2537f7a26f041793798cf0c69d8cfd9ef` | 6 |
-| **Mainnet (`196`)** | `OKB` | Native OKB | Native Gas Asset | 18 |
-| **Mainnet (`196`)** | `WOKB` | Wrapped OKB | `0xe538905cf8410324e03a5a23c1c177a474d59b2b` | 18 |
-| **Mainnet (`196`)** | `xETH` | X Layer Wrapped Ether | `0x5a77f1443d16ee5761d310e38b62f77f726bc71c` | 18 |
-| **Mainnet (`196`)** | `xBTC` | X Layer Wrapped Bitcoin | `0xe32812497678bb0bc161c5c0c2937748805f3246` | 8 |
-| **Mainnet (`196`)** | `USDT0 / USDT`| Tether USD | `0x1e4a5963abfd975d8c9021ce480b42188849d41d` | 6 |
-| **Mainnet (`196`)** | `USDC` | USD Coin | `0x74b7f16337b8f9de7fb3fc82b0b1404685345107` | 6 |
-| **Mainnet (`196`)** | `USDG` | Global Dollar | `0xa78e2baabaf5c4f36b7fc394725deb68d332eec1` | 6 |
-
 ---
 
 ## Tech Stack
 
-- **Application**: Next.js 15 (App Router, Server Actions), React 19, TypeScript, Tailwind CSS v4, Radix UI Primitives, Lucide Icons
+- **Application**: Next.js 16 (App Router, Server Actions), React 19, TypeScript, Tailwind CSS v4, Radix UI Primitives, Lucide Icons
 - **AI Orchestration**: Hybrid model routing (`deepseek-v4-flash`, `deepseek-v4-pro`, `gemini-3.7-flash`, `gemini-3.5-flash-lite`, OpenRouter / OpenAI fallback)
 - **Web3 & Wallets**: Reown AppKit, Wagmi v2, Viem v2
 - **Data & Persistence**: Neon Serverless Postgres, Drizzle ORM
