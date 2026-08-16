@@ -262,7 +262,7 @@ function resultByName(results: AgentToolResult[], name: string) {
 
 function hasActionCue(prompt: string, mode: Mode) {
   const patterns: Record<Mode, RegExp> = {
-    trade: /^\s*(?:please\s+)?(?:swap|trade|buy|sell|convert|quote|send|transfer|approve|revoke)\b|\b(?:please|can you|could you|i want to|i(?:'d| would) like to)\s+(?:swap|trade|buy|sell|convert|send|transfer|approve|revoke)\b|\b(?:get|give|show)\s+(?:me\s+)?(?:a\s+)?quote\b/i,
+    trade: /\b(swap|trade|buy|sell|convert|quote|send|transfer|approve|revoke|cancel approval|zero out|prepare|execute|sign|broadcast|confirm|proceed|ready|let'?s (?:swap|trade|buy|sell|convert|send|transfer|approve|revoke|do this|proceed|execute))\b/i,
     earn: /\b(earn|yield|apy|vault|staking|stake|lend|deposit)\b/i,
     predict: /\b(what happens|scenario|forecast|drops?|rises?|falls?|exposure|stress test)\b/i,
     protect: /\b(approval|allowance|revoke|malicious|unsafe|scam|risk|check (?:my )?wallet|transaction hash)\b/i,
@@ -370,6 +370,20 @@ function localAnswer(
       : " Review the execution details and confirm below."
     parts.push(
       `I've prepared the transfer execution plan for ${tradeIntent.amount} ${tradeIntent.fromToken}${tradeIntent.recipient ? ` to \`${tradeIntent.recipient}\`` : ""} on X Layer Testnet.${walletPrompt}`,
+    )
+  } else if (tradeIntent.mode === "trade" && tradeIntent.action === "revoke" && tradeIntent.fromToken) {
+    const walletPrompt = !walletAddress
+      ? " Please connect your Web3 wallet using the **Connect wallet** button at the top right to sign and broadcast the revocation transaction on X Layer Testnet."
+      : " Review the execution details and confirm below to revoke."
+    parts.push(
+      `I've prepared the onchain revocation execution plan for your **${tradeIntent.fromToken}** allowance to reset the permission to 0 on X Layer Testnet.${walletPrompt}`,
+    )
+  } else if (tradeIntent.mode === "trade" && tradeIntent.action === "approve" && tradeIntent.fromToken) {
+    const walletPrompt = !walletAddress
+      ? " Please connect your Web3 wallet using the **Connect wallet** button at the top right to sign and broadcast the approval transaction on X Layer Testnet."
+      : " Review the execution details and confirm below."
+    parts.push(
+      `I've prepared the onchain approval execution plan for ${tradeIntent.amount || "1"} ${tradeIntent.fromToken} on X Layer Testnet.${walletPrompt}`,
     )
   }
 

@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import { ROUTER_ADDRESS_TESTNET } from "@/config/contracts"
 import { IntentSchema, type Intent } from "@/lib/intents"
 import { SafetyReportSchema, type SafetyReport } from "@/lib/safety/types"
 
@@ -328,6 +329,11 @@ export function prepareAction(
 
   const action = intent.action || "swap"
 
+  // Auto-resolve spender on Testnet if not explicitly specified
+  if (intent.network === "testnet" && (action === "approve" || action === "revoke") && !intent.spender) {
+    intent.spender = ROUTER_ADDRESS_TESTNET
+  }
+
   // Check completeness per action
   if (action === "transfer") {
     if (!intent.amount || !intent.fromToken || !intent.recipient) {
@@ -381,6 +387,7 @@ export function prepareAction(
   // Handle Approve action preview
   if (action === "approve") {
     const isTestnet = intent.network === "testnet"
+    const spenderAddr = intent.spender || (isTestnet ? ROUTER_ADDRESS_TESTNET : "0x0000000000000000000000000000000000000000")
     return {
       status: isTestnet && !forceSimulated ? "ready_to_execute" : "simulated_preview",
       intent,
@@ -398,7 +405,7 @@ export function prepareAction(
         priceImpact: "0.0%",
         approvalRequired: true,
         riskLevel: "Low",
-        route: `ERC-20 Token Approval (${intent.spender?.slice(0, 6)}...${intent.spender?.slice(-4)})`,
+        route: `ERC-20 Token Approval (${spenderAddr.slice(0, 6)}...${spenderAddr.slice(-4)})`,
         quotedAt: new Date().toISOString(),
       },
     }
@@ -407,6 +414,7 @@ export function prepareAction(
   // Handle Revoke action preview
   if (action === "revoke") {
     const isTestnet = intent.network === "testnet"
+    const spenderAddr = intent.spender || (isTestnet ? ROUTER_ADDRESS_TESTNET : "0x0000000000000000000000000000000000000000")
     return {
       status: isTestnet && !forceSimulated ? "ready_to_execute" : "simulated_preview",
       intent,
@@ -424,7 +432,7 @@ export function prepareAction(
         priceImpact: "0.0%",
         approvalRequired: true,
         riskLevel: "Low",
-        route: `ERC-20 Allowance Revocation (${intent.spender?.slice(0, 6)}...${intent.spender?.slice(-4)})`,
+        route: `ERC-20 Allowance Revocation (${spenderAddr.slice(0, 6)}...${spenderAddr.slice(-4)})`,
         quotedAt: new Date().toISOString(),
       },
     }

@@ -200,3 +200,43 @@ test("inspect_xlayer_allowances scans permissions and returns focused audit tabl
   assert.ok(!agentResponse.message.includes("Token risk metadata is unavailable"))
 })
 
+test("parses conversational revoke prompts and follow-up preparation requests into actionable execution plans", async () => {
+  const { parseIntent } = await import("../src/agents/intent-parser")
+  const { runXecuteAgent } = await import("../src/agents/xecute-agent")
+
+  // Conversational prompt: "let's revoke for usdc"
+  const intent1 = parseIntent("let's revoke for usdc", "trade", "testnet")
+  assert.equal(intent1.mode, "trade")
+  assert.equal(intent1.action, "revoke")
+  assert.equal(intent1.fromToken, "USDC")
+  assert.equal(intent1.amount, "0")
+  assert.equal(intent1.spender, "0x9be3af8223f49b9357941db269a39775f7802acb")
+
+  // Follow-up confirmation prompt: "prepare the transaction, my wallet is already connected"
+  const intent2 = parseIntent("prepare the transaction, my wallet is already connected", "trade", "testnet", [
+    { role: "user", content: "let's revoke for usdc" },
+    { role: "assistant", content: "I can prepare a zero-allowance revocation for your USDC." },
+  ])
+  assert.equal(intent2.mode, "trade")
+  assert.equal(intent2.action, "revoke")
+  assert.equal(intent2.fromToken, "USDC")
+  assert.equal(intent2.amount, "0")
+  assert.equal(intent2.spender, "0x9be3af8223f49b9357941db269a39775f7802acb")
+
+  // End-to-end agent returns valid execution plan card for revocation
+  const agentResponse = await runXecuteAgent({
+    messages: [{ role: "user", content: "let's revoke for usdc" }],
+    walletAddress: "0x727ee5DC96E729d8f6C6930cd02ad1695498f3B8",
+    mode: "trade",
+    network: "testnet",
+  })
+
+  assert.ok(agentResponse.plan)
+  assert.equal(agentResponse.plan?.status, "ready_to_execute")
+  assert.equal(agentResponse.plan?.intent.mode, "trade")
+  assert.equal(agentResponse.plan?.intent.action, "revoke")
+  assert.equal(agentResponse.plan?.intent.fromToken, "USDC")
+  assert.ok(agentResponse.plan?.preview)
+  assert.equal(agentResponse.plan?.preview?.inputAmount, "0")
+})
+

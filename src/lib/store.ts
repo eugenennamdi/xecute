@@ -406,11 +406,11 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
               recipient: (currentPlan.intent.recipient || fromAddr) as `0x${string}`,
             })
           } else if (action === "approve" || action === "revoke") {
-            const { getApprovalTransactionPayload } = await import("@/lib/contracts/router")
+            const { getApprovalTransactionPayload, ROUTER_ADDRESS_TESTNET } = await import("@/lib/contracts/router")
             payload = getApprovalTransactionPayload({
-              tokenSymbol: currentPlan.intent.fromToken || "USDT",
+              tokenSymbol: currentPlan.intent.fromToken || "USDC",
               amount: action === "revoke" ? "0" : currentPlan.intent.amount || "1",
-              spender: (currentPlan.intent.spender || fromAddr) as `0x${string}`,
+              spender: (currentPlan.intent.spender || ROUTER_ADDRESS_TESTNET) as `0x${string}`,
             })
           } else {
             // Default Swap action

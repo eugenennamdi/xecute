@@ -1,3 +1,4 @@
+import { ROUTER_ADDRESS_TESTNET } from "@/config/contracts"
 import {
   EarnIntentSchema,
   type Intent,
@@ -70,7 +71,10 @@ function extractSlippage(prompt: string) {
 export function classifyIntent(prompt: string, fallback: Mode = "trade"): Mode {
   const text = prompt.toLowerCase()
 
-  if (/\b(revoke|cancel approval)\b/.test(text)) {
+  if (/\b(revoke|cancel\s+approval|remove\s+approval|zero\s+out\s+approval)\b/i.test(text)) {
+    return "trade"
+  }
+  if (/\b(prepare(?:\s+(?:the\s+)?transaction)?|execute(?:\s+(?:the\s+)?transaction)?|sign(?:\s+(?:the\s+)?transaction)?|ready to sign|my wallet is(?: already)? connected)\b/i.test(text)) {
     return "trade"
   }
   if (/\b(approval|allowance|malicious|unsafe|scam|risky approvals?)\b/.test(text) && !/\bapprove\s+\d+/i.test(text)) {
@@ -101,6 +105,37 @@ function parseTrade(
   const text = prompt.toLowerCase()
   const ethAddress = prompt.match(/\b(0x[a-fA-F0-9]{40})\b/)?.[1] ?? null
   const tokens = knownTokens(prompt)
+  const isFollowUpCue = /\b(prepare(?:\s+(?:the\s+)?transaction)?|execute(?:\s+(?:the\s+)?transaction)?|sign(?:\s+(?:the\s+)?transaction)?|broadcast|confirm|proceed|do it|let'?s do it|ready to sign|my wallet is(?: already)? connected)\b/i.test(text)
+
+  // Contextual scan from history for previous revoke / approve / transfer intents
+  let historyRevokeToken: string | null = null
+  let historyRevokeSpender: string | null = null
+  let historyHasRevoke = false
+  let historyApproveToken: string | null = null
+  let historyApproveSpender: string | null = null
+  let historyApproveAmount: string | null = null
+  let historyHasApprove = false
+
+  if (history && history.length > 0) {
+    for (let i = history.length - 1; i >= 0; i--) {
+      const msg = history[i]?.content ?? ""
+      if (!historyHasRevoke && /\b(revoke|cancel\s+approval)\b/i.test(msg)) {
+        historyHasRevoke = true
+        const hTokens = knownTokens(msg)
+        if (hTokens[0]) historyRevokeToken = normalizeToken(hTokens[0])
+        const hEth = msg.match(/\b(0x[a-fA-F0-9]{40})\b/)?.[1]
+        if (hEth) historyRevokeSpender = hEth
+      }
+      if (!historyHasApprove && /\bapprove\b/i.test(msg)) {
+        historyHasApprove = true
+        const hTokens = knownTokens(msg)
+        if (hTokens[0]) historyApproveToken = normalizeToken(hTokens[0])
+        const hEth = msg.match(/\b(0x[a-fA-F0-9]{40})\b/)?.[1]
+        if (hEth) historyApproveSpender = hEth
+        historyApproveAmount = extractAmount(msg)
+      }
+    }
+  }
 
   // 1. Transfer Intent: Send / Transfer [Amount] [Token] to [0x...]
   if (/\b(send|transfer)\b/i.test(text)) {
@@ -126,34 +161,10 @@ function parseTrade(
     })
   }
 
-  // 2. Approve Intent: Approve [Amount] [Token] for/to [0x...]
-  if (/\b(approve)\b/i.test(text)) {
-    const approveMatch = cleanPrompt.match(
-      /\bapprove\s+(?:(\d+(?:\.\d+)?)\s+)?([a-z][a-z0-9.]*)\s*(?:for|to|spender\s+)?(0x[a-fA-F0-9]{40})?/i,
-    )
-    const amount = approveMatch?.[1] ?? extractAmount(prompt)
-    const fromToken = normalizeToken(approveMatch?.[2] ?? tokens[0] ?? "USDT")
-    const spender = ethAddress
-
-    return TradeIntentSchema.parse({
-      mode: "trade",
-      action: "approve",
-      rawPrompt: prompt,
-      network: extractNetwork(prompt, defaultNetwork),
-      fromToken,
-      toToken: fromToken,
-      spender,
-      amount,
-      maxSlippage: 0.5,
-      preserveGasBalance: true,
-      requiresConfirmation: true,
-    })
-  }
-
-  // 3. Revoke Intent: Revoke [Token] access/approval for [0x...]
-  if (/\b(revoke)\b/i.test(text)) {
-    const fromToken = normalizeToken(tokens[0] ?? "USDT")
-    const spender = ethAddress
+  // 2. Revoke Intent: Revoke [Token] access/approval for [0x...]
+  if (/\b(revoke|cancel\s+approval|remove\s+approval|zero\s+out\s+approval)\b/i.test(text) || (isFollowUpCue && historyHasRevoke)) {
+    const fromToken = normalizeToken(tokens[0] ?? historyRevokeToken ?? "USDC")
+    const spender = ethAddress ?? historyRevokeSpender ?? (defaultNetwork === "testnet" ? ROUTER_ADDRESS_TESTNET : null)
 
     return TradeIntentSchema.parse({
       mode: "trade",
@@ -164,6 +175,30 @@ function parseTrade(
       toToken: fromToken,
       spender,
       amount: "0",
+      maxSlippage: 0.5,
+      preserveGasBalance: true,
+      requiresConfirmation: true,
+    })
+  }
+
+  // 3. Approve Intent: Approve [Amount] [Token] for/to [0x...]
+  if (/\b(approve)\b/i.test(text) || (isFollowUpCue && historyHasApprove)) {
+    const approveMatch = cleanPrompt.match(
+      /\bapprove\s+(?:(\d+(?:\.\d+)?)\s+)?([a-z][a-z0-9.]*)\s*(?:for|to|spender\s+)?(0x[a-fA-F0-9]{40})?/i,
+    )
+    const amount = approveMatch?.[1] ?? historyApproveAmount ?? extractAmount(prompt) ?? "1"
+    const fromToken = normalizeToken(approveMatch?.[2] ?? tokens[0] ?? historyApproveToken ?? "USDT")
+    const spender = ethAddress ?? historyApproveSpender ?? (defaultNetwork === "testnet" ? ROUTER_ADDRESS_TESTNET : null)
+
+    return TradeIntentSchema.parse({
+      mode: "trade",
+      action: "approve",
+      rawPrompt: prompt,
+      network: extractNetwork(prompt, defaultNetwork),
+      fromToken,
+      toToken: fromToken,
+      spender,
+      amount,
       maxSlippage: 0.5,
       preserveGasBalance: true,
       requiresConfirmation: true,
