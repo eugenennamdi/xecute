@@ -76,9 +76,9 @@ flowchart TD
 
 ## Smart Contracts & Deployments
 
-| Network | Chain ID | Contract | Address | Explorer |
-| :--- | :--- | :--- | :--- | :--- |
-| **X Layer Testnet** | `1952` | `XecuteTestnetRouter` | `0x9be3af8223f49b9357941db269a39775f7802acb` | [View on OKX Explorer](https://www.okx.com/web3/explorer/xlayer-test/address/0x9be3af8223f49b9357941db269a39775f7802acb) |
+| Network | Chain ID | Contract | Address |
+| :--- | :--- | :--- | :--- |
+| **X Layer Testnet** | `1952` | `XecuteTestnetRouter` | `0x9be3af8223f49b9357941db269a39775f7802acb` |
 
 ---
 
