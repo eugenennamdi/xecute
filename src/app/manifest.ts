@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Xecute",
     short_name: "Xecute",
-    description: "AI-powered onchain execution terminal for X Layer",
+    description: "AI Execution & Intelligence Terminal on X Layer",
     start_url: "/",
     display: "standalone",
     background_color: "#fbfbfa",

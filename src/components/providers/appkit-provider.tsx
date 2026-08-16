@@ -22,7 +22,7 @@ export const appKit = createAppKit({
   projectId: reownProjectId,
   metadata: {
     name: "Xecute",
-    description: "AI-powered onchain execution terminal for X Layer",
+    description: "AI Execution & Intelligence Terminal on X Layer",
     url: appUrl,
     icons: [`${appUrl}/xecute-app-icon.svg`],
   },

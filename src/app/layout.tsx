@@ -8,7 +8,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   applicationName: "Xecute",
-  title: "Xecute · Onchain execution terminal",
+  title: "Xecute · AI Execution & Intelligence Terminal on X Layer",
   description: "Prompt it. Preview it. Xecute it on X Layer.",
 };
 
