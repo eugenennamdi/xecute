@@ -377,40 +377,47 @@ function localAnswer(
     if (allowances.ok && allowances.data && typeof allowances.data === "object") {
       const data = allowances.data as Record<string, unknown>
       const list = Array.isArray(data.allowances) ? data.allowances : []
-      const activeList = list.filter((a: Record<string, unknown>) => a.allowance && a.allowance !== "0" && a.allowance !== "0.00")
-      const riskyCount = Number(data.riskyCount ?? 0)
+      const activeList = (data.activeAllowances as Array<Record<string, unknown>> | undefined) || list.filter((a: Record<string, unknown>) => a.hasAllowance || (a.allowance && a.allowance !== "0" && a.allowance !== "0.00"))
+      const highRiskCount = Number(data.highRiskCount ?? 0)
       const net = String(data.network || "X Layer")
       const addr = String(data.address || "")
+      const scanScope = String(data.scanScope || `Scanned verified token assets on ${net}.`)
 
       if (activeList.length > 0) {
         const rows = activeList.map((a: Record<string, unknown>) => {
           const tok = String(a.token || "Token")
           const spender = String(a.spenderName || a.spenderAddress || "Contract")
+          const spenderType = String(a.spenderType || "Contract")
           const allow = String(a.allowance || "0")
-          const risk = String(a.riskLevel || "Safe")
-          const riskBadge = risk === "High" ? "**Unlimited (High Risk)**" : "Active (Medium)"
-          return `| **${tok}** | ${spender} | \`${allow}\` | ${riskBadge} |`
+          const risk = String(a.riskLevel || "Informational")
+          const riskBadge =
+            risk === "High"
+              ? `**High Attention (${spenderType === "EOA" ? "EOA Spender" : "Unlimited"})**`
+              : risk === "Attention"
+                ? "Attention (Bounded / Unknown)"
+                : "Informational (Recognized Protocol)"
+          return `| **${tok}** | ${spender} (${spenderType}) | \`${allow}\` | ${riskBadge} |`
         }).join("\n")
 
         parts.push(
 `**Wallet Approval Audit: ${activeList.length} Active Permission${activeList.length === 1 ? "" : "s"} Detected**
 
-Detected **${activeList.length}** active token approval${activeList.length === 1 ? "" : "s"} for \`${addr}\` on **${net}**:
+${scanScope}
 
-| Token | Protocol / Spender | Allowance Limit | Security Status |
+| Token | Protocol / Spender | Allowance Limit | Security Assessment |
 | :--- | :--- | :--- | :--- |
 ${rows}
 
-${riskyCount > 0 ? `**${riskyCount} unlimited allowance${riskyCount === 1 ? "" : "s"} detected.** You can revoke any approval by asking: *"Revoke allowance for [Spender]"*.` : "All allowances are bounded to exact limits."}`
+${highRiskCount > 0 ? `**${highRiskCount} high-attention allowance${highRiskCount === 1 ? "" : "s"} detected.** You can revoke any approval by asking: *"Revoke allowance for [Spender]"*.` : "All active permissions are bounded or granted to recognized protocol contracts."}`
         )
       } else {
         parts.push(
 `**Wallet Approval Audit: 0 Active Approvals**
 
-Scanned wallet (\`${addr}\`) on **${net}** across verified token assets (**USDT**, **USDC**, **USDG**, **WETH**).
+${scanScope}
 
-• **0 Active Approvals** — 0 active ERC-20 approvals found across the verified assets scanned.
-• **0 Unlimited Allowances** — Exposure across scanned approvals is **$0.00**.
+• **0 Active Approvals** — 0 active ERC-20 allowances found across the scanned assets and historical approval relationships.
+• **0 Unlimited Allowances** — Active wallet approval exposure is **$0.00**.
 
 **Wallet Status**: No open permissions or allowances need to be revoked across the scanned scope.`
         )

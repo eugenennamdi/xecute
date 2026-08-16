@@ -1,8 +1,8 @@
 import { encodeFunctionData, parseUnits, parseEther, getAddress } from "viem"
 import { XLAYER_TESTNET_TOKENS } from "@/config/tokens"
+import { ROUTER_ADDRESS_TESTNET } from "@/config/contracts"
 
-// Canonical deployed Xecute Swap Router contract on X Layer Testnet (Chain ID 1952)
-export const ROUTER_ADDRESS_TESTNET = "0x9be3af8223f49b9357941db269a39775f7802acb" as `0x${string}`
+export { ROUTER_ADDRESS_TESTNET }
 
 export function getSwapTransactionPayload({
   fromTokenSymbol,

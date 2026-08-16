@@ -69,7 +69,7 @@ export function getNetworkConfig(identifier: number | Environment | string): Net
   if (identifier === 196 || identifier === "mainnet") {
     return XLAYER_NETWORKS.mainnet
   }
-  return XLAYER_NETWORKS.testnet
+  throw new Error(`Unsupported network identifier: ${String(identifier)}`)
 }
 
 export function isExecutionEnabled(chainId: number): boolean {

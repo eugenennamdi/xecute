@@ -247,3 +247,66 @@ export async function getXLayerTokenAllowance(
     return { allowance: "0", rawHex: "0x0", isUnlimited: false }
   }
 }
+
+/**
+ * Classify address as EOA or Contract via eth_getCode
+ */
+export async function getXLayerAccountType(
+  address: string,
+  environment: Environment = "testnet",
+): Promise<"EOA" | "Contract"> {
+  try {
+    const code = await callXLayerRpc<string>("eth_getCode", [address, "latest"], environment)
+    return code && code !== "0x" && code !== "0x0" && code.length > 2 ? "Contract" : "EOA"
+  } catch {
+    return "EOA"
+  }
+}
+
+/**
+ * Discover onchain Approval(owner, spender, value) events for candidate tokens
+ */
+export async function getXLayerApprovalLogs(
+  ownerAddress: string,
+  tokenAddresses: string[],
+  environment: Environment = "testnet",
+): Promise<Array<{ tokenAddress: string; spenderAddress: string; blockNumber: number }>> {
+  try {
+    const cleanOwner = "0x" + ownerAddress.toLowerCase().replace(/^0x/, "").padStart(64, "0")
+    const approvalTopic = "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
+
+    const currentBlock = await getXLayerBlockNumber(environment).catch(() => 0)
+    const fromBlock = currentBlock > 50000 ? `0x${(currentBlock - 50000).toString(16)}` : "0x0"
+
+    const logs = await callXLayerRpc<Array<{ address: string; topics: string[]; blockNumber: string }>>(
+      "eth_getLogs",
+      [
+        {
+          fromBlock,
+          toBlock: "latest",
+          address: tokenAddresses.length === 1 ? tokenAddresses[0] : tokenAddresses,
+          topics: [approvalTopic, cleanOwner],
+        },
+      ],
+      environment,
+    )
+
+    if (!Array.isArray(logs)) return []
+
+    const pairs: Array<{ tokenAddress: string; spenderAddress: string; blockNumber: number }> = []
+    for (const log of logs) {
+      if (log.topics && log.topics.length >= 3) {
+        const spenderRaw = log.topics[2]
+        const spenderAddress = "0x" + spenderRaw.slice(26)
+        pairs.push({
+          tokenAddress: log.address.toLowerCase(),
+          spenderAddress: spenderAddress.toLowerCase(),
+          blockNumber: Number.parseInt(log.blockNumber || "0", 16),
+        })
+      }
+    }
+    return pairs
+  } catch {
+    return []
+  }
+}

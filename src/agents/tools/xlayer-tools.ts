@@ -13,9 +13,12 @@ import {
 } from "@/lib/knowledge/xlayer"
 import { OkxConfigurationError, okxRequest } from "@/lib/okx/client"
 import { getXLayerToken } from "@/lib/okx/xlayer-tokens"
+import { findKnownContract } from "@/config/contracts"
 import {
   callXLayerRpc,
   getXLayerAccountSnapshot,
+  getXLayerAccountType,
+  getXLayerApprovalLogs,
   getXLayerBlockNumber,
   getXLayerGasPriceGwei,
   getXLayerTokenAllowance,
@@ -477,12 +480,11 @@ async function getSwapQuote(argumentsValue: unknown): Promise<AgentToolResult> {
 const VERIFIED_XLAYER_DEX_POOLS: Record<
   string,
   Array<{
-    investmentId?: string
     name: string
     protocol: string
     apy: string
     tvlUsd?: string
-    productGroup?: string
+    productGroup: string
     chainIndex: string
     url: string
   }>
@@ -491,8 +493,7 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
     {
       name: "USDT / USDC (0.01%)",
       protocol: "Uniswap V3",
-      apy: "5.40% APY",
-      tvlUsd: "1820000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
@@ -500,8 +501,7 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
     {
       name: "USDT / OKB (0.05%)",
       protocol: "Uniswap V3",
-      apy: "14.80% APY",
-      tvlUsd: "4350000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
@@ -509,37 +509,43 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
     {
       name: "USDT / xETH (0.05%)",
       protocol: "Uniswap V3",
-      apy: "9.20% APY",
-      tvlUsd: "2840000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
+    },
+  ],
+  USDT0: [
+    {
+      name: "USD₮0 / USDC (0.01%)",
+      protocol: "Uniswap V3",
+      apy: "Variable (Live telemetry unavailable)",
+      productGroup: "DEX_POOL",
+      chainIndex: "196",
+      url: "https://app.uniswap.org/explore/pools/xlayer/0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
+    },
+    {
+      name: "USD₮0 / OKB (0.05%)",
+      protocol: "Uniswap V3",
+      apy: "Variable (Live telemetry unavailable)",
+      productGroup: "DEX_POOL",
+      chainIndex: "196",
+      url: "https://app.uniswap.org/explore/pools/xlayer/0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
     },
   ],
   USDC: [
     {
       name: "USDC / USDT (0.01%)",
       protocol: "Uniswap V3",
-      apy: "5.40% APY",
-      tvlUsd: "1820000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
     },
     {
-      name: "USDC / USDG (0.01%)",
-      protocol: "Uniswap V3",
-      apy: "8.60% APY",
-      tvlUsd: "990800",
-      productGroup: "DEX_POOL",
-      chainIndex: "196",
-      url: "https://app.uniswap.org/explore/pools/xlayer/0xbb9a35f790ea6ea9763b99e885f33bcf95860d40",
-    },
-    {
       name: "USDC / xETH (0.05%)",
       protocol: "Uniswap V3",
-      apy: "10.10% APY",
-      tvlUsd: "1950000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
@@ -547,8 +553,7 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
     {
       name: "USDC / OKB (0.3%)",
       protocol: "Uniswap V3",
-      apy: "13.60% APY",
-      tvlUsd: "2100000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x63d62734847e55a266fca4219a9ad0a02d5f6e02",
@@ -558,8 +563,7 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
     {
       name: "OKB / USDT (0.05%)",
       protocol: "Uniswap V3",
-      apy: "14.80% APY",
-      tvlUsd: "4350000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
@@ -567,8 +571,7 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
     {
       name: "OKB / xETH (0.05%)",
       protocol: "Uniswap V3",
-      apy: "11.20% APY",
-      tvlUsd: "1640000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
@@ -578,8 +581,7 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
     {
       name: "xETH / USDT (0.05%)",
       protocol: "Uniswap V3",
-      apy: "9.20% APY",
-      tvlUsd: "2840000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
@@ -587,8 +589,7 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
     {
       name: "xETH / OKB (0.05%)",
       protocol: "Uniswap V3",
-      apy: "11.20% APY",
-      tvlUsd: "1640000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
@@ -598,8 +599,7 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
     {
       name: "xETH / USDT (0.05%)",
       protocol: "Uniswap V3",
-      apy: "9.20% APY",
-      tvlUsd: "2840000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
@@ -607,71 +607,20 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
     {
       name: "xETH / OKB (0.05%)",
       protocol: "Uniswap V3",
-      apy: "11.20% APY",
-      tvlUsd: "1640000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
     },
   ],
-  ETH: [
-    {
-      name: "xETH / USDT (0.05%)",
-      protocol: "Uniswap V3",
-      apy: "9.20% APY",
-      tvlUsd: "2840000",
-      productGroup: "DEX_POOL",
-      chainIndex: "196",
-      url: "https://app.uniswap.org/explore/pools/xlayer/0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-    },
-    {
-      name: "xETH / OKB (0.05%)",
-      protocol: "Uniswap V3",
-      apy: "11.20% APY",
-      tvlUsd: "1640000",
-      productGroup: "DEX_POOL",
-      chainIndex: "196",
-      url: "https://app.uniswap.org/explore/pools/xlayer/0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
-    },
-  ],
-  XBTC: [
+  WBTC: [
     {
       name: "xBTC / USDT (0.05%)",
       protocol: "Uniswap V3",
-      apy: "8.40% APY",
-      tvlUsd: "3120000",
+      apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x5fcfb33c9ab1665fee892eb2af163e863a874d73",
-    },
-    {
-      name: "xBTC / xETH (0.05%)",
-      protocol: "Uniswap V3",
-      apy: "7.80% APY",
-      tvlUsd: "1450000",
-      productGroup: "DEX_POOL",
-      chainIndex: "196",
-      url: "https://app.uniswap.org/explore/pools/xlayer/0xf845c41c0683ce99b8c1f36c46b2d93e1533470c",
-    },
-  ],
-  BTC: [
-    {
-      name: "xBTC / USDT (0.05%)",
-      protocol: "Uniswap V3",
-      apy: "8.40% APY",
-      tvlUsd: "3120000",
-      productGroup: "DEX_POOL",
-      chainIndex: "196",
-      url: "https://app.uniswap.org/explore/pools/xlayer/0x5fcfb33c9ab1665fee892eb2af163e863a874d73",
-    },
-    {
-      name: "xBTC / xETH (0.05%)",
-      protocol: "Uniswap V3",
-      apy: "7.80% APY",
-      tvlUsd: "1450000",
-      productGroup: "DEX_POOL",
-      chainIndex: "196",
-      url: "https://app.uniswap.org/explore/pools/xlayer/0xf845c41c0683ce99b8c1f36c46b2d93e1533470c",
     },
   ],
 }
@@ -1023,6 +972,7 @@ const InspectAllowancesSchema = z.object({
 async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResult> {
   const input = InspectAllowancesSchema.parse(argumentsValue)
   const isTestnet = input.network === "testnet"
+  const chainId = isTestnet ? 1952 : 196
 
   const tokens = isTestnet
     ? [
@@ -1031,52 +981,117 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
         { symbol: "USDG", address: "0xa78e2baabaf5c4f36b7fc394725deb68d332eec1", decimals: 6 },
       ]
     : [
+        { symbol: "USD₮0", address: "0x779ded0c9e1022225f8e0630b35a9b54be713736", decimals: 6 },
         { symbol: "USDT", address: "0x1e4a5963abfd975d8c9021ce480b42188849d41d", decimals: 6 },
-        { symbol: "USDC", address: "0x74b7f16337b8f9de7fb3fc82b0b1404685345107", decimals: 6 },
-        { symbol: "USDG", address: "0xa78e2baabaf5c4f36b7fc394725deb68d332eec1", decimals: 6 },
+        { symbol: "USDC", address: "0xB6CEceAB302E2E4948951eE7843FC24E92933061", decimals: 6 },
         { symbol: "WETH", address: "0x5a77f1443d16ee5761d310e38b62f77f726bc71c", decimals: 18 },
+        { symbol: "WBTC", address: "0xea034fb02eb1808c2cc3adbc15f447b93cbe08e1", decimals: 8 },
+        { symbol: "WOKB", address: "0xe538905cf8410324e03a5a23c1c177a474d59b2b", decimals: 18 },
       ]
 
-  const spenders = isTestnet
-    ? [
-        { name: "Xecute Testnet Swap Router", address: "0x9be3af8223f49b9357941db269a39775f7802acb" },
-      ]
+  const tokenAddresses = tokens.map((t) => t.address)
+  const defaultSpenders = isTestnet
+    ? [{ name: "Xecute Testnet Swap Router", address: "0x9be3af8223f49b9357941db269a39775f7802acb" }]
     : [
+        { name: "Aave V3 Pool", address: "0xE3F3Caefdd7180F884c01E57f65Df979Af84f116" },
         { name: "Uniswap V3 SwapRouter02", address: "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45" },
-        { name: "Aave V3 Pool", address: "0x779ded0c9e1022225f8e0630b35a9b54be713736" },
       ]
 
   try {
-    const checks = await Promise.all(
-      tokens.flatMap((token) =>
-        spenders.map(async (spender) => {
-          const res = await getXLayerTokenAllowance(
-            token.address,
-            input.address,
-            spender.address,
-            token.decimals,
-            input.network,
-          ).catch(() => ({ allowance: "0", rawHex: "0x0", isUnlimited: false }))
+    // 1. Discover historical Approval events for this wallet onchain
+    const discoveredEvents = await getXLayerApprovalLogs(input.address, tokenAddresses, input.network).catch(() => [])
 
-          const isUnlim = res.isUnlimited
-          const hasAllowance = Number(res.allowance) > 0 || isUnlim
+    // 2. Build candidate (token, spender) pairs combining discovered events + verified protocols
+    const pairMap = new Map<string, { tokenAddress: string; spenderAddress: string; spenderName?: string }>()
 
-          return {
-            token: token.symbol,
-            tokenAddress: token.address,
-            spenderName: spender.name,
-            spenderAddress: spender.address,
-            allowance: res.allowance,
-            isUnlimited: isUnlim,
-            riskLevel: isUnlim ? ("High" as const) : hasAllowance ? ("Medium" as const) : ("Safe" as const),
-            source: "rpc_allowance",
+    for (const t of tokens) {
+      for (const s of defaultSpenders) {
+        const key = `${t.address.toLowerCase()}-${s.address.toLowerCase()}`
+        pairMap.set(key, { tokenAddress: t.address, spenderAddress: s.address, spenderName: s.name })
+      }
+    }
+
+    for (const event of discoveredEvents) {
+      const key = `${event.tokenAddress.toLowerCase()}-${event.spenderAddress.toLowerCase()}`
+      if (!pairMap.has(key)) {
+        pairMap.set(key, { tokenAddress: event.tokenAddress, spenderAddress: event.spenderAddress })
+      }
+    }
+
+    const candidatePairs = Array.from(pairMap.values())
+
+    // 3. Query current live allowance(owner, spender) for every candidate pair
+    const currentBlock = await getXLayerBlockNumber(input.network).catch(() => 0)
+    const evaluatedAllowances = await Promise.all(
+      candidatePairs.map(async (pair) => {
+        const tokenCfg = tokens.find((t) => t.address.toLowerCase() === pair.tokenAddress.toLowerCase()) || {
+          symbol: "TOKEN",
+          address: pair.tokenAddress,
+          decimals: 18,
+        }
+
+        const res = await getXLayerTokenAllowance(
+          pair.tokenAddress,
+          input.address,
+          pair.spenderAddress,
+          tokenCfg.decimals,
+          input.network,
+        ).catch(() => ({ allowance: "0", rawHex: "0x0", isUnlimited: false }))
+
+        const isUnlim = res.isUnlimited
+        const hasAllowance = isUnlim || (Number(res.allowance) > 0 && res.allowance !== "0" && res.allowance !== "0.00")
+
+        // Spender identity resolution
+        const knownContract = findKnownContract(pair.spenderAddress, chainId)
+        const accountType = hasAllowance
+          ? await getXLayerAccountType(pair.spenderAddress, input.network)
+          : "Contract"
+
+        const spenderName = pair.spenderName || knownContract?.name || (accountType === "EOA" ? "External EOA" : "Unknown Contract")
+
+        let riskLevel: "High" | "Attention" | "Informational" | "Safe" = "Safe"
+        let riskDetail = "No active permission (allowance is zero)."
+
+        if (isUnlim) {
+          if (accountType === "EOA") {
+            riskLevel = "High"
+            riskDetail = "Unlimited allowance to an Externally Owned Account (EOA)."
+          } else if (!knownContract?.verified) {
+            riskLevel = "High"
+            riskDetail = "Unlimited allowance to an unverified/unknown smart contract."
+          } else {
+            riskLevel = "Attention"
+            riskDetail = `Unlimited allowance to recognized protocol (${knownContract.name}).`
           }
-        }),
-      ),
+        } else if (hasAllowance) {
+          if (knownContract?.verified) {
+            riskLevel = "Informational"
+            riskDetail = `Bounded allowance to recognized protocol (${knownContract.name}).`
+          } else {
+            riskLevel = "Attention"
+            riskDetail = "Bounded active allowance to an unknown spender."
+          }
+        }
+
+        return {
+          token: tokenCfg.symbol,
+          tokenAddress: pair.tokenAddress,
+          spenderName,
+          spenderAddress: pair.spenderAddress,
+          spenderType: accountType,
+          allowance: res.allowance,
+          isUnlimited: isUnlim,
+          hasAllowance,
+          riskLevel,
+          riskDetail,
+          source: "contract_read" as const,
+          blockNumber: currentBlock,
+        }
+      }),
     )
 
-    const activeAllowances = checks.filter((c) => c.allowance !== "0" && c.allowance !== "0.00")
-    const riskyCount = checks.filter((c) => c.isUnlimited).length
+    const activeAllowances = evaluatedAllowances.filter((c) => c.hasAllowance)
+    const highRiskCount = activeAllowances.filter((c) => c.riskLevel === "High").length
     const scannedAssetSymbols = tokens.map((t) => t.symbol).join(", ")
 
     return {
@@ -1084,30 +1099,41 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
       data: {
         address: input.address,
         network: isTestnet ? "X Layer Testnet" : "X Layer Mainnet",
-        chainId: isTestnet ? 1952 : 196,
-        scannedCount: checks.length,
+        chainId,
+        blockNumber: currentBlock,
+        scannedCount: evaluatedAllowances.length,
         scannedAssets: tokens.map((t) => t.symbol),
-        scanScope: `Scanned ${tokens.length} verified assets (${scannedAssetSymbols}) across ${spenders.length} protocol spender${spenders.length === 1 ? "" : "s"} on ${isTestnet ? "Testnet" : "Mainnet"}.`,
+        eventsDiscoveredCount: discoveredEvents.length,
+        scanScope: `Scanned ${tokens.length} verified token contracts (${scannedAssetSymbols}) and ${discoveredEvents.length} historical approval events. Evaluated ${evaluatedAllowances.length} current allowance relationships onchain.`,
         activeCount: activeAllowances.length,
-        riskyCount,
-        allowances: checks,
-        findings: checks.map((c) => ({
+        highRiskCount,
+        allowances: evaluatedAllowances,
+        activeAllowances,
+        findings: activeAllowances.map((c) => ({
           label: `${c.allowance === "Unlimited" ? "Unlimited" : c.allowance} ${c.token} approval`,
           spender: c.spenderAddress,
           spenderName: c.spenderName,
+          spenderType: c.spenderType,
           token: c.token,
           allowance: c.allowance,
           risk: c.riskLevel,
+          detail: c.riskDetail,
         })),
-        isClean: riskyCount === 0,
+        isClean: highRiskCount === 0,
         scannedAt: new Date().toISOString(),
+        provenance: {
+          chainId,
+          source: "contract_read",
+          blockNumber: currentBlock,
+          verified: true,
+        },
       },
       sources: [xLayerSources.security],
       trace: {
         name: "inspect_xlayer_allowances",
         label: "Wallet allowance audit",
         status: "complete",
-        summary: `${activeAllowances.length} active allowance${activeAllowances.length === 1 ? "" : "s"} found across ${tokens.length} assets scanned (${riskyCount} unlimited)`,
+        summary: `${activeAllowances.length} active allowance${activeAllowances.length === 1 ? "" : "s"} found across ${tokens.length} assets scanned (${highRiskCount} high attention)`,
       },
     }
   } catch (error) {

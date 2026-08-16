@@ -19,13 +19,14 @@ export class TestnetSwapAdapter implements XecuteAdapter {
     )
   }
 
-  async getPreview(intent: Intent, _context: ExecutionContext): Promise<AdapterPreview> {
+  async getPreview(intent: Intent, context: ExecutionContext): Promise<AdapterPreview> {
     if (intent.mode !== "trade") throw new Error("Unsupported mode")
 
     const fromSymbol = (intent.fromToken || "USDT").toUpperCase()
     const toSymbol = (intent.toToken || "OKB").toUpperCase()
     const inputAmount = intent.amount || "1"
     const maxSlippage = intent.maxSlippage ?? 0.5
+    const recipient = (context.walletAddress || "0x1111111111111111111111111111111111111111") as `0x${string}`
 
     const fromToken = findToken(fromSymbol, 1952)
     const toToken = findToken(toSymbol, 1952)
@@ -48,6 +49,36 @@ export class TestnetSwapAdapter implements XecuteAdapter {
     const estimatedOutput = Number.isFinite(rawOut) ? rawOut.toFixed(toSymbol === "OKB" ? 6 : 4) : "0.00"
     const minimumReceived = (rawOut * (1 - maxSlippage / 100)).toFixed(toSymbol === "OKB" ? 6 : 4)
 
+    // Real live gas estimation via eth_estimateGas
+    let gasEstimate = "Gas estimate unavailable"
+    try {
+      const payload = getSwapTransactionPayload({
+        fromTokenSymbol: fromSymbol,
+        toTokenSymbol: toSymbol,
+        amount: inputAmount,
+        recipient,
+        slippage: maxSlippage,
+      })
+      const estRes = await callXLayerRpc<string>(
+        "eth_estimateGas",
+        [
+          {
+            from: recipient,
+            to: payload.to,
+            data: payload.data,
+            value: payload.value,
+          },
+        ],
+        "testnet",
+      )
+      if (estRes) {
+        const gasUnits = Number(BigInt(estRes))
+        gasEstimate = `~${gasUnits.toLocaleString("en-US")} gas`
+      }
+    } catch {
+      gasEstimate = "Gas estimate unavailable"
+    }
+
     return {
       quote: {
         source: "simulated",
@@ -57,7 +88,7 @@ export class TestnetSwapAdapter implements XecuteAdapter {
         estimatedOutput,
         minimumReceived,
         slippage: `${maxSlippage}%`,
-        gasEstimate: "142,500 gas",
+        gasEstimate,
         priceImpact: "0.00%",
         route: `Xecute Testnet Router (${ROUTER_ADDRESS_TESTNET.slice(0, 6)}...${ROUTER_ADDRESS_TESTNET.slice(-4)})`,
         quotedAt: new Date().toISOString(),
@@ -89,7 +120,7 @@ export class TestnetSwapAdapter implements XecuteAdapter {
         slippage: intent.maxSlippage ?? 0.5,
       })
 
-      // Perform genuine dry-run simulation via eth_call against live X Layer Testnet RPC
+      // 1. Perform genuine dry-run simulation via eth_call against live X Layer Testnet RPC
       await callXLayerRpc(
         "eth_call",
         [
@@ -104,14 +135,33 @@ export class TestnetSwapAdapter implements XecuteAdapter {
         "testnet",
       )
 
+      // 2. Perform live gas estimation
+      let gasUsed = "142,500"
+      try {
+        const estRes = await callXLayerRpc<string>(
+          "eth_estimateGas",
+          [
+            {
+              from: recipient,
+              to: payload.to,
+              data: payload.data,
+              value: payload.value,
+            },
+          ],
+          "testnet",
+        )
+        if (estRes) {
+          gasUsed = Number(BigInt(estRes)).toLocaleString("en-US")
+        }
+      } catch {}
+
       return {
         success: true,
-        gasUsed: "142,500",
+        gasUsed,
         logs: ["XecuteTestnetRouterSimulationSuccess"],
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Simulation reverted"
-      // If error is liquidity or slippage, return clear deterministic error
       return {
         success: false,
         error: `Testnet simulation reverted: ${msg}`,

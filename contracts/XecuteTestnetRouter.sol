@@ -13,6 +13,8 @@ contract XecuteTestnetRouter {
     string public constant version = "1.1.0";
     uint256 public constant CHAIN_ID = 1952;
 
+    mapping(address => bool) public supportedTokens;
+
     event Swap(
         address indexed sender,
         address indexed tokenIn,
@@ -24,6 +26,7 @@ contract XecuteTestnetRouter {
 
     event LiquiditySupplied(address indexed provider, address indexed token, uint256 amount);
     event EmergencyWithdraw(address indexed owner, address indexed token, uint256 amount);
+    event SupportedTokenUpdated(address indexed token, bool supported);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Unauthorized");
@@ -32,12 +35,23 @@ contract XecuteTestnetRouter {
 
     constructor() {
         owner = msg.sender;
+        // Pre-configure verified X Layer Testnet faucet assets
+        supportedTokens[0x9e29b3aada05bf2d2c827af80bd28dc0b9b4fb0c] = true; // Testnet USDT
+        supportedTokens[0xcb8bf24c6ce16ad21d707c9505421a17f2bec79d] = true; // Testnet USDC
+        supportedTokens[0xa78e2baabaf5c4f36b7fc394725deb68d332eec1] = true; // Testnet USDG
     }
 
     receive() external payable {
         if (msg.value > 0) {
             emit LiquiditySupplied(msg.sender, address(0), msg.value);
         }
+    }
+
+    /// @notice Configure token allowlist for router swaps
+    function setSupportedToken(address token, bool supported) external onlyOwner {
+        require(token != address(0), "Invalid token");
+        supportedTokens[token] = supported;
+        emit SupportedTokenUpdated(token, supported);
     }
 
     /// @notice Swap native OKB for ERC-20 testnet tokens (USDT, USDC, USDG)
@@ -52,6 +66,7 @@ contract XecuteTestnetRouter {
         require(msg.value > 0, "Zero OKB amount");
         require(recipient != address(0), "Invalid recipient");
         require(tokenOut != address(0), "Invalid tokenOut");
+        require(supportedTokens[tokenOut], "Unsupported output token");
 
         uint8 dec = _getDecimals(tokenOut);
 
@@ -83,6 +98,7 @@ contract XecuteTestnetRouter {
         require(amountIn > 0, "Zero amountIn");
         require(recipient != address(0), "Invalid recipient");
         require(tokenIn != address(0), "Invalid tokenIn");
+        require(supportedTokens[tokenIn], "Unsupported input token");
 
         uint8 dec = _getDecimals(tokenIn);
 
@@ -119,6 +135,8 @@ contract XecuteTestnetRouter {
         require(tokenIn != address(0), "Invalid tokenIn");
         require(tokenOut != address(0), "Invalid tokenOut");
         require(tokenIn != tokenOut, "Identical assets");
+        require(supportedTokens[tokenIn], "Unsupported input token");
+        require(supportedTokens[tokenOut], "Unsupported output token");
 
         uint8 decIn = _getDecimals(tokenIn);
         uint8 decOut = _getDecimals(tokenOut);
