@@ -56,7 +56,7 @@ export default function ProtectPage() {
           </p>
           <ul className="space-y-1.5 text-xs text-foreground/75 list-disc list-inside">
             <li><strong>Live RPC Reads:</strong> Queries <code>allowance(owner, spender)</code> directly.</li>
-            <li><strong>Unlimited Allowance Flags:</strong> Surfaces infinite allowances (&gt; 10^9).</li>
+            <li><strong>Unlimited Allowance Flags:</strong> Surfaces true maximum allowances (<code>type(uint256).max</code>).</li>
             <li><strong>Contract vs. EOA:</strong> Uses <code>eth_getCode</code> to verify whether a spender is a contract.</li>
             <li><strong>1-Click Revocations:</strong> Prepares direct zero-allowance transactions.</li>
           </ul>

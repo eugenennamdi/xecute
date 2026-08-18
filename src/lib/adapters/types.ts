@@ -21,8 +21,28 @@ export type AdapterPreview = {
   approvalFindings?: Array<{
     label: string
     spender: string
-    lastUsed: string
+    spenderName?: string
+    spenderType?: string
+    token?: string
+    tokenAddress?: string
+    allowance?: string
+    status?: "active" | "unlimited" | "inactive" | "unknown"
+    lastUsed?: string
     risk: string
+    detail?: string
+  }>
+  inactiveFindings?: Array<{
+    label: string
+    spender: string
+    spenderName?: string
+    spenderType?: string
+    token?: string
+    tokenAddress?: string
+    allowance?: string
+    status?: "active" | "unlimited" | "inactive" | "unknown"
+    lastUsed?: string
+    risk: string
+    detail?: string
   }>
 }
 

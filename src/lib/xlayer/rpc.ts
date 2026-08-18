@@ -209,6 +209,10 @@ export async function getXLayerAccountSnapshot(
   }
 }
 
+const MAX_UINT256 = (BigInt(1) << BigInt(256)) - BigInt(1)
+export const DEFAULT_APPROVAL_LOOKBACK_BLOCKS = 50000
+export const APPROVAL_LOGS_CHUNK_SIZE = 5000
+
 /**
  * Read ERC-20 token allowance using eth_call allowance(owner, spender)
  * Selector: 0xdd62ed3e
@@ -219,7 +223,14 @@ export async function getXLayerTokenAllowance(
   spenderAddress: string,
   decimals = 18,
   environment: Environment = "testnet",
-): Promise<{ allowance: string; rawHex: string; isUnlimited: boolean }> {
+): Promise<{
+  success: boolean
+  allowance: string
+  rawHex: string
+  isUnlimited: boolean
+  rawBigInt?: bigint
+  error?: string
+}> {
   try {
     const cleanOwner = ownerAddress.toLowerCase().replace(/^0x/, "").padStart(64, "0")
     const cleanSpender = spenderAddress.toLowerCase().replace(/^0x/, "").padStart(64, "0")
@@ -232,19 +243,28 @@ export async function getXLayerTokenAllowance(
     )
 
     if (!result || result === "0x" || result === "0x0") {
-      return { allowance: "0", rawHex: "0x0", isUnlimited: false }
+      return { success: true, allowance: "0", rawHex: "0x0", isUnlimited: false, rawBigInt: BigInt(0) }
     }
 
     const rawBigInt = BigInt(result)
-    // Unlimited allowance threshold (>= 2^128 - 1 or 2^256 - 1)
-    const isUnlimited = rawBigInt >= (BigInt(2) ** BigInt(128) - BigInt(1))
+    // isUnlimited is strictly true ONLY when allowance === MAX_UINT256 (no tolerance or near-max rule)
+    const isUnlimited = rawBigInt === MAX_UINT256
     return {
+      success: true,
       allowance: isUnlimited ? "Unlimited" : formatWei(result, decimals),
       rawHex: result,
       isUnlimited,
+      rawBigInt,
     }
-  } catch {
-    return { allowance: "0", rawHex: "0x0", isUnlimited: false }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "RPC allowance query failed"
+    return {
+      success: false,
+      allowance: "Unknown",
+      rawHex: "",
+      isUnlimited: false,
+      error: message,
+    }
   }
 }
 
@@ -265,48 +285,105 @@ export async function getXLayerAccountType(
 
 /**
  * Discover onchain Approval(owner, spender, value) events for candidate tokens
+ * Paginates historical discovery in chunks (e.g. 5,000 blocks per request) over the scan horizon
  */
 export async function getXLayerApprovalLogs(
   ownerAddress: string,
   tokenAddresses: string[],
   environment: Environment = "testnet",
-): Promise<Array<{ tokenAddress: string; spenderAddress: string; blockNumber: number }>> {
+  lookbackBlocks = DEFAULT_APPROVAL_LOOKBACK_BLOCKS,
+  chunkSize = APPROVAL_LOGS_CHUNK_SIZE,
+): Promise<{
+  success: boolean
+  events: Array<{ tokenAddress: string; spenderAddress: string; blockNumber: number }>
+  startBlock: number
+  endBlock: number
+  error?: string
+}> {
+  const currentBlock = await getXLayerBlockNumber(environment).catch(() => 0)
+  const endBlock = currentBlock
+  const startBlock = Math.max(0, currentBlock - lookbackBlocks)
+
+  if (endBlock === 0 || tokenAddresses.length === 0) {
+    return { success: true, events: [], startBlock: 0, endBlock: 0 }
+  }
+
   try {
     const cleanOwner = "0x" + ownerAddress.toLowerCase().replace(/^0x/, "").padStart(64, "0")
     const approvalTopic = "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
 
-    const currentBlock = await getXLayerBlockNumber(environment).catch(() => 0)
-    const fromBlock = currentBlock > 50000 ? `0x${(currentBlock - 50000).toString(16)}` : "0x0"
+    // Construct contiguous, non-overlapping chunks from startBlock to endBlock
+    const chunks: Array<{ from: number; to: number }> = []
+    for (let from = startBlock; from <= endBlock; from += chunkSize) {
+      const to = Math.min(from + chunkSize - 1, endBlock)
+      chunks.push({ from, to })
+    }
 
-    const logs = await callXLayerRpc<Array<{ address: string; topics: string[]; blockNumber: string }>>(
-      "eth_getLogs",
-      [
-        {
-          fromBlock,
-          toBlock: "latest",
-          address: tokenAddresses.length === 1 ? tokenAddresses[0] : tokenAddresses,
-          topics: [approvalTopic, cleanOwner],
-        },
-      ],
-      environment,
+    const pairMap = new Map<string, { tokenAddress: string; spenderAddress: string; blockNumber: number }>()
+    let hasError = false
+    let lastError: string | undefined
+
+    const chunkResults = await Promise.all(
+      chunks.map(async (chunk) => {
+        try {
+          const fromHex = `0x${chunk.from.toString(16)}`
+          const toHex = `0x${chunk.to.toString(16)}`
+
+          const logs = await callXLayerRpc<Array<{ address: string; topics: string[]; blockNumber: string }>>(
+            "eth_getLogs",
+            [
+              {
+                fromBlock: fromHex,
+                toBlock: toHex,
+                address: tokenAddresses.length === 1 ? tokenAddresses[0] : tokenAddresses,
+                topics: [approvalTopic, cleanOwner],
+              },
+            ],
+            environment,
+          )
+
+          return { ok: true, logs: Array.isArray(logs) ? logs : [] }
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : "RPC error on log chunk query"
+          return { ok: false, error: errorMsg, logs: [] }
+        }
+      }),
     )
 
-    if (!Array.isArray(logs)) return []
-
-    const pairs: Array<{ tokenAddress: string; spenderAddress: string; blockNumber: number }> = []
-    for (const log of logs) {
-      if (log.topics && log.topics.length >= 3) {
-        const spenderRaw = log.topics[2]
-        const spenderAddress = "0x" + spenderRaw.slice(26)
-        pairs.push({
-          tokenAddress: log.address.toLowerCase(),
-          spenderAddress: spenderAddress.toLowerCase(),
-          blockNumber: Number.parseInt(log.blockNumber || "0", 16),
-        })
+    for (const res of chunkResults) {
+      if (!res.ok) {
+        hasError = true
+        lastError = res.error
+      }
+      for (const log of res.logs) {
+        if (log.topics && log.topics.length >= 3) {
+          const spenderRaw = log.topics[2]
+          const spenderAddress = "0x" + spenderRaw.slice(26).toLowerCase()
+          const tokenAddress = log.address.toLowerCase()
+          const blockNumber = Number.parseInt(log.blockNumber || "0", 16)
+          const key = `${tokenAddress}-${spenderAddress}`
+          const existing = pairMap.get(key)
+          if (!existing || blockNumber > existing.blockNumber) {
+            pairMap.set(key, { tokenAddress, spenderAddress, blockNumber })
+          }
+        }
       }
     }
-    return pairs
-  } catch {
-    return []
+
+    const events = Array.from(pairMap.values())
+    if (hasError && events.length === 0) {
+      return { success: false, events: [], startBlock, endBlock, error: lastError }
+    }
+
+    return {
+      success: !hasError,
+      events,
+      startBlock,
+      endBlock,
+      ...(hasError && { error: lastError }),
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Approval event logs query failed"
+    return { success: false, events: [], startBlock, endBlock, error: message }
   }
 }

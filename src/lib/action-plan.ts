@@ -237,10 +237,14 @@ export const ApprovalFindingSchema = z.object({
   label: z.string(),
   spender: z.string(),
   spenderName: z.string().optional(),
+  spenderType: z.string().optional(),
   token: z.string().optional(),
+  tokenAddress: z.string().optional(),
   allowance: z.string().optional(),
+  status: z.enum(["active", "unlimited", "inactive", "unknown"]).optional(),
   lastUsed: z.string().optional(),
   risk: z.string(),
+  detail: z.string().optional(),
 })
 
 export const PreparedActionStatusSchema = z.enum([
@@ -260,6 +264,12 @@ export const PreparedActionSchema = z.object({
   preview: TradeExecutionPreviewSchema.nullable(),
   earnOpportunities: z.array(EarnOpportunitySchema).optional(),
   approvalFindings: z.array(ApprovalFindingSchema).optional(),
+  inactiveFindings: z.array(ApprovalFindingSchema).optional(),
+  scanStatus: z.enum(["complete", "partial", "failed"]).optional(),
+  scanScope: z.string().optional(),
+  scannedBlockNumber: z.number().optional(),
+  startBlock: z.number().optional(),
+  endBlock: z.number().optional(),
   errorMessage: z.string().optional(),
 })
 
@@ -315,6 +325,12 @@ export function prepareAction(
   forceSimulated = false,
   earnOpportunities?: EarnOpportunity[],
   approvalFindings?: ApprovalFinding[],
+  inactiveFindings?: ApprovalFinding[],
+  scanStatus?: "complete" | "partial" | "failed",
+  scanScope?: string,
+  scannedBlockNumber?: number,
+  startBlock?: number,
+  endBlock?: number,
 ): PreparedAction {
   if (intent.mode !== "trade") {
     return {
@@ -324,6 +340,12 @@ export function prepareAction(
       preview: null,
       earnOpportunities,
       approvalFindings,
+      inactiveFindings,
+      scanStatus,
+      scanScope,
+      scannedBlockNumber,
+      startBlock,
+      endBlock,
     }
   }
 

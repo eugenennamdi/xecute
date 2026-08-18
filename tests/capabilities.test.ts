@@ -192,9 +192,9 @@ test("inspect_xlayer_allowances scans permissions and returns focused audit tabl
     network: "testnet",
   })
 
-  assert.ok(agentResponse.message.includes("Wallet Approval Audit"))
+  assert.ok(agentResponse.message.includes("ERC-20 Approval Scan"))
   assert.ok(agentResponse.message.includes("0 Active Approvals"))
-  assert.ok(agentResponse.message.includes("0 Unlimited Allowances"))
+  assert.ok(agentResponse.message.includes("0 Unlimited Approvals"))
   // Must NOT include irrelevant market price dumps or token risk metadata errors
   assert.ok(!agentResponse.message.includes("Current USDT market price"))
   assert.ok(!agentResponse.message.includes("Token risk metadata is unavailable"))

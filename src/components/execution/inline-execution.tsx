@@ -49,7 +49,7 @@ const modeTitles: Record<Mode, string> = {
   trade: "Execution Intent",
   earn: "Yield & Earn Discovery",
   predict: "Predictive Intelligence",
-  protect: "Wallet Protect",
+  protect: "ERC-20 Approval Scan",
 }
 
 const actionTitles: Record<string, string> = {
@@ -641,46 +641,122 @@ function ModeResult({ intent, plan }: { intent: Exclude<Intent, { mode: "trade" 
     )
   }
 
+  const scanStatus = plan.scanStatus ?? "complete"
   const findings = plan.approvalFindings ?? []
+  const inactiveFindings = plan.inactiveFindings ?? []
   const activeFindings = findings.filter(
-    (f) => f.risk === "High" || f.risk === "Medium" || (f.allowance && f.allowance !== "0" && f.allowance !== "0.00"),
+    (f) =>
+      f.status === "active" ||
+      f.status === "unlimited" ||
+      f.status === "unknown" ||
+      (f.allowance && f.allowance !== "0" && f.allowance !== "0.00"),
   )
+
+  if (scanStatus === "failed") {
+    return (
+      <div className="border-t border-foreground/[0.07] px-4 py-5 text-center">
+        <div className="mx-auto mb-2 flex size-7 items-center justify-center rounded-full bg-amber-500/10 text-amber-600">
+          <AlertCircle className="size-4" />
+        </div>
+        <p className="text-xs font-semibold text-foreground/85">Approval Scan Incomplete</p>
+        <p className="mx-auto mt-1 max-w-sm text-[11px] leading-relaxed text-foreground/55">
+          {plan.scanScope || "Unable to verify onchain allowance state via X Layer RPC. Retry the scan before treating this result as complete."}
+        </p>
+      </div>
+    )
+  }
 
   if (activeFindings.length > 0) {
     return (
-      <div className="divide-y divide-foreground/[0.07] border-t border-foreground/[0.07]">
-        {activeFindings.map((finding) => (
-          <div key={finding.label} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 px-3.5 sm:px-4 py-3">
-            <div className="min-w-0">
-              <p className="text-xs font-medium text-foreground/85">{finding.label}</p>
-              <p className="mt-0.5 truncate font-mono text-[10px] text-foreground/45">{finding.spender}</p>
+      <div className="border-t border-foreground/[0.07]">
+        <div className="divide-y divide-foreground/[0.07]">
+          {activeFindings.map((finding) => {
+            const isUnlimited = finding.status === "unlimited" || finding.allowance === "Unlimited"
+            const isUnknown = finding.status === "unknown" || finding.allowance === "Unknown"
+            return (
+              <div key={`${finding.token}-${finding.spender}`} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 px-3.5 sm:px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-foreground/85">{finding.label}</p>
+                  <p className="mt-0.5 truncate font-mono text-[10px] text-foreground/45">
+                    Spender: {finding.spenderName ? `${finding.spenderName} (${finding.spender.slice(0, 6)}...${finding.spender.slice(-4)})` : finding.spender}
+                  </p>
+                  {finding.detail ? (
+                    <p className="mt-1 text-[10px] text-foreground/55 leading-relaxed">
+                      {finding.detail}
+                    </p>
+                  ) : null}
+                </div>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "h-5 w-fit shrink-0 rounded px-1.5 text-[9px] font-medium",
+                    isUnlimited
+                      ? "border-[#d94b2a]/20 bg-[#d94b2a]/[0.06] text-[#d94b2a]"
+                      : isUnknown
+                        ? "border-amber-500/20 bg-amber-500/[0.06] text-amber-700"
+                        : "border-black/[0.08] bg-black/[0.02] text-foreground/75",
+                  )}
+                >
+                  {isUnlimited ? "Unlimited approval" : isUnknown ? "Unverified" : "Active approval"}
+                </Badge>
+              </div>
+            )
+          })}
+        </div>
+
+        {inactiveFindings.length > 0 ? (
+          <div className="border-t border-foreground/[0.07] px-3.5 sm:px-4 py-2.5 bg-black/[0.01]">
+            <p className="text-[11px] font-medium text-foreground/55 mb-1.5">
+              Inactive relationships ({inactiveFindings.length})
+            </p>
+            <div className="space-y-1.5">
+              {inactiveFindings.map((item) => (
+                <div key={`${item.token}-${item.spender}`} className="flex items-center justify-between text-[10px]">
+                  <span className="text-foreground/70">{item.token ?? "Token"} · <span className="font-mono text-foreground/45">{item.spender.slice(0, 6)}...{item.spender.slice(-4)}</span></span>
+                  <span className="text-foreground/40 font-mono">Current allowance: 0 · Inactive</span>
+                </div>
+              ))}
             </div>
-            <Badge
-              variant="outline"
-              className={cn(
-                "h-5 w-fit rounded px-1.5 text-[9px] font-medium",
-                finding.risk === "High"
-                  ? "border-[#d94b2a]/20 bg-[#d94b2a]/[0.06] text-[#d94b2a]"
-                  : "border-amber-500/20 bg-amber-500/[0.06] text-amber-700",
-              )}
-            >
-              {finding.risk === "High" ? "Unlimited Risk" : "Active"}
-            </Badge>
           </div>
-        ))}
+        ) : null}
       </div>
     )
   }
 
   return (
     <div className="border-t border-foreground/[0.07] px-4 py-5 text-center">
-      <div className="mx-auto mb-2 flex size-7 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
-        <ShieldCheck className="size-4" />
+      <div className="mx-auto mb-2 flex size-7 items-center justify-center rounded-full bg-black/[0.04] text-foreground/60">
+        <Shield className="size-4" />
       </div>
-      <p className="text-xs font-semibold text-foreground/85">Wallet Protected · 0 Risky Approvals</p>
+      <p className="text-xs font-semibold text-foreground/85">No active ERC-20 approvals found</p>
       <p className="mx-auto mt-1 max-w-sm text-[11px] leading-relaxed text-foreground/50">
-        No active or unlimited token approvals were detected for your wallet on X Layer.
+        Xecute found no spendable ERC-20 allowances within this scan&apos;s scope.
       </p>
+      {plan.startBlock !== undefined && plan.endBlock !== undefined ? (
+        <p className="mt-2 text-[10px] font-mono text-foreground/40">
+          ERC-20 allowances · scanned blocks {plan.startBlock}–{plan.endBlock}
+        </p>
+      ) : plan.scannedBlockNumber ? (
+        <p className="mt-2 text-[10px] font-mono text-foreground/40">
+          ERC-20 allowances · scanned through block {plan.scannedBlockNumber}
+        </p>
+      ) : null}
+
+      {inactiveFindings.length > 0 ? (
+        <div className="mt-4 border-t border-foreground/[0.06] pt-3 text-left">
+          <p className="text-[11px] font-medium text-foreground/55 mb-1.5">
+            Inactive relationships ({inactiveFindings.length})
+          </p>
+          <div className="space-y-1 text-[10px]">
+            {inactiveFindings.map((item) => (
+              <div key={`${item.token}-${item.spender}`} className="flex items-center justify-between py-0.5 text-foreground/60">
+                <span>{item.token ?? "Token"} · <span className="font-mono">{item.spender.slice(0, 6)}...{item.spender.slice(-4)}</span></span>
+                <span className="text-foreground/40">Current allowance: 0 · Inactive</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

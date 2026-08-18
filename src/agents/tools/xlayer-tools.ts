@@ -999,22 +999,26 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
 
   try {
     // 1. Discover historical Approval events for this wallet onchain
-    const discoveredEvents = await getXLayerApprovalLogs(input.address, tokenAddresses, input.network).catch(() => [])
+    const logsResult = await getXLayerApprovalLogs(input.address, tokenAddresses, input.network)
+    const discoveredEvents = logsResult.events
 
     // 2. Build candidate (token, spender) pairs combining discovered events + verified protocols
-    const pairMap = new Map<string, { tokenAddress: string; spenderAddress: string; spenderName?: string }>()
+    const pairMap = new Map<string, { tokenAddress: string; spenderAddress: string; spenderName?: string; hasHistoricalEvent: boolean }>()
 
     for (const t of tokens) {
       for (const s of defaultSpenders) {
         const key = `${t.address.toLowerCase()}-${s.address.toLowerCase()}`
-        pairMap.set(key, { tokenAddress: t.address, spenderAddress: s.address, spenderName: s.name })
+        pairMap.set(key, { tokenAddress: t.address, spenderAddress: s.address, spenderName: s.name, hasHistoricalEvent: false })
       }
     }
 
     for (const event of discoveredEvents) {
       const key = `${event.tokenAddress.toLowerCase()}-${event.spenderAddress.toLowerCase()}`
-      if (!pairMap.has(key)) {
-        pairMap.set(key, { tokenAddress: event.tokenAddress, spenderAddress: event.spenderAddress })
+      const existing = pairMap.get(key)
+      if (existing) {
+        existing.hasHistoricalEvent = true
+      } else {
+        pairMap.set(key, { tokenAddress: event.tokenAddress, spenderAddress: event.spenderAddress, hasHistoricalEvent: true })
       }
     }
 
@@ -1036,21 +1040,42 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
           pair.spenderAddress,
           tokenCfg.decimals,
           input.network,
-        ).catch(() => ({ allowance: "0", rawHex: "0x0", isUnlimited: false }))
-
-        const isUnlim = res.isUnlimited
-        const hasAllowance = isUnlim || (Number(res.allowance) > 0 && res.allowance !== "0" && res.allowance !== "0.00")
+        )
 
         // Spender identity resolution
         const knownContract = findKnownContract(pair.spenderAddress, chainId)
+
+        if (!res.success) {
+          return {
+            token: tokenCfg.symbol,
+            tokenAddress: pair.tokenAddress,
+            spenderName: pair.spenderName || knownContract?.name || "Unknown Spender",
+            spenderAddress: pair.spenderAddress,
+            spenderType: "Contract" as const,
+            allowance: "Unknown",
+            isUnlimited: false,
+            hasAllowance: false,
+            status: "unknown" as const,
+            riskLevel: "Attention" as const,
+            riskDetail: "Could not query current onchain allowance via RPC.",
+            hasHistoricalEvent: pair.hasHistoricalEvent,
+            source: "contract_read" as const,
+            blockNumber: currentBlock,
+          }
+        }
+
+        const isUnlim = res.isUnlimited
+        const hasAllowance = isUnlim || (Number(res.allowance) > 0 && res.allowance !== "0" && res.allowance !== "0.00")
+        const status: "unlimited" | "active" | "inactive" = isUnlim ? "unlimited" : hasAllowance ? "active" : "inactive"
+
         const accountType = hasAllowance
           ? await getXLayerAccountType(pair.spenderAddress, input.network)
           : "Contract"
 
         const spenderName = pair.spenderName || knownContract?.name || (accountType === "EOA" ? "External EOA" : "Unknown Contract")
 
-        let riskLevel: "High" | "Attention" | "Informational" | "Safe" = "Safe"
-        let riskDetail = "No active permission (allowance is zero)."
+        let riskLevel: "High" | "Attention" | "Informational" = "Informational"
+        let riskDetail = "No active permission (current onchain allowance is zero)."
 
         if (isUnlim) {
           if (accountType === "EOA") {
@@ -1069,7 +1094,7 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
             riskDetail = `Bounded allowance to recognized protocol (${knownContract.name}).`
           } else {
             riskLevel = "Attention"
-            riskDetail = "Bounded active allowance to an unknown spender."
+            riskDetail = `Bounded active allowance (${res.allowance} ${tokenCfg.symbol}) to an unverified spender.`
           }
         }
 
@@ -1082,17 +1107,81 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
           allowance: res.allowance,
           isUnlimited: isUnlim,
           hasAllowance,
+          status,
           riskLevel,
           riskDetail,
+          hasHistoricalEvent: pair.hasHistoricalEvent,
           source: "contract_read" as const,
           blockNumber: currentBlock,
         }
       }),
     )
 
-    const activeAllowances = evaluatedAllowances.filter((c) => c.hasAllowance)
+    const activeAllowances = evaluatedAllowances.filter((c) => c.status === "active" || c.status === "unlimited")
+    const unknownAllowances = evaluatedAllowances.filter((c) => c.status === "unknown")
+    const inactiveAllowances = evaluatedAllowances.filter((c) => c.status === "inactive")
+    const unlimitedApprovalCount = activeAllowances.filter((c) => c.status === "unlimited").length
     const highRiskCount = activeAllowances.filter((c) => c.riskLevel === "High").length
     const scannedAssetSymbols = tokens.map((t) => t.symbol).join(", ")
+
+    const startBlock = logsResult.startBlock || (currentBlock > 50000 ? currentBlock - 50000 : 0)
+    const endBlock = logsResult.endBlock || currentBlock
+    const scannedBlockCount = endBlock >= startBlock ? endBlock - startBlock + 1 : 0
+
+    let scanStatus: "complete" | "partial" | "failed" = "complete"
+    if (unknownAllowances.length === evaluatedAllowances.length && evaluatedAllowances.length > 0) {
+      scanStatus = "failed"
+    } else if (unknownAllowances.length > 0 || !logsResult.success) {
+      scanStatus = "partial"
+    }
+
+    const scanScope = scanStatus === "failed"
+      ? `ERC-20 approval scan failed. Unable to query onchain allowance state on ${isTestnet ? "X Layer Testnet" : "X Layer Mainnet"}.`
+      : scanStatus === "partial"
+        ? `ERC-20 approval scan partially completed for blocks ${startBlock}–${endBlock} (${scannedBlockCount} blocks). Scanned ${tokens.length} verified token contracts (${scannedAssetSymbols}). ${unknownAllowances.length > 0 ? `${unknownAllowances.length} allowance queries unverified.` : "Historical logs partially retrieved."}`
+        : `ERC-20 approval scan complete for blocks ${startBlock}–${endBlock} (${scannedBlockCount} blocks). Scanned ${tokens.length} verified token contracts (${scannedAssetSymbols}) and evaluated ${evaluatedAllowances.length} allowance relationships onchain.`
+
+    const findings = [
+      ...activeAllowances.map((c) => ({
+        label: `${c.allowance === "Unlimited" ? "Unlimited" : c.allowance} ${c.token} approval`,
+        spender: c.spenderAddress,
+        spenderName: c.spenderName,
+        spenderType: c.spenderType,
+        token: c.token,
+        tokenAddress: c.tokenAddress,
+        allowance: c.allowance,
+        status: c.status,
+        risk: c.riskLevel,
+        detail: c.riskDetail,
+      })),
+      ...unknownAllowances.map((c) => ({
+        label: `Unverified ${c.token} allowance`,
+        spender: c.spenderAddress,
+        spenderName: c.spenderName,
+        spenderType: c.spenderType,
+        token: c.token,
+        tokenAddress: c.tokenAddress,
+        allowance: "Unknown",
+        status: "unknown" as const,
+        risk: "Attention",
+        detail: c.riskDetail,
+      })),
+    ]
+
+    const inactiveFindings = inactiveAllowances.map((c) => ({
+      label: `0 ${c.token} allowance (Inactive)`,
+      spender: c.spenderAddress,
+      spenderName: c.spenderName,
+      spenderType: c.spenderType,
+      token: c.token,
+      tokenAddress: c.tokenAddress,
+      allowance: "0",
+      status: "inactive" as const,
+      risk: "Informational",
+      detail: c.hasHistoricalEvent
+        ? "Historical approval event detected, but current onchain allowance is 0 (inactive)."
+        : "No active onchain allowance granted to this spender.",
+    }))
 
     return {
       ok: true,
@@ -1101,44 +1190,56 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
         network: isTestnet ? "X Layer Testnet" : "X Layer Mainnet",
         chainId,
         blockNumber: currentBlock,
+        startBlock,
+        endBlock,
+        scannedBlockCount,
+        scannedBlockRange: {
+          start: startBlock,
+          end: endBlock,
+          count: scannedBlockCount,
+        },
+        scanStatus,
+        hasFindings: findings.length > 0,
+        activeApprovalCount: activeAllowances.length,
+        unlimitedApprovalCount,
+        highAttentionCount: highRiskCount,
+        unknownRelationshipCount: unknownAllowances.length,
+        inactiveRelationshipCount: inactiveAllowances.length,
         scannedCount: evaluatedAllowances.length,
         scannedAssets: tokens.map((t) => t.symbol),
         eventsDiscoveredCount: discoveredEvents.length,
-        scanScope: `Scanned ${tokens.length} verified token contracts (${scannedAssetSymbols}) and ${discoveredEvents.length} historical approval events. Evaluated ${evaluatedAllowances.length} current allowance relationships onchain.`,
+        scanScope,
         activeCount: activeAllowances.length,
         highRiskCount,
+        isClean: highRiskCount === 0 && activeAllowances.length === 0,
         allowances: evaluatedAllowances,
         activeAllowances,
-        findings: activeAllowances.map((c) => ({
-          label: `${c.allowance === "Unlimited" ? "Unlimited" : c.allowance} ${c.token} approval`,
-          spender: c.spenderAddress,
-          spenderName: c.spenderName,
-          spenderType: c.spenderType,
-          token: c.token,
-          allowance: c.allowance,
-          risk: c.riskLevel,
-          detail: c.riskDetail,
-        })),
-        isClean: highRiskCount === 0,
+        inactiveAllowances,
+        findings,
+        inactiveFindings,
         scannedAt: new Date().toISOString(),
         provenance: {
           chainId,
           source: "contract_read",
           blockNumber: currentBlock,
-          verified: true,
+          verified: scanStatus === "complete",
         },
       },
       sources: [xLayerSources.security],
       trace: {
         name: "inspect_xlayer_allowances",
-        label: "Wallet allowance audit",
-        status: "complete",
-        summary: `${activeAllowances.length} active allowance${activeAllowances.length === 1 ? "" : "s"} found across ${tokens.length} assets scanned (${highRiskCount} high attention)`,
+        label: "ERC-20 approval scan",
+        status: scanStatus === "failed" ? "error" : "complete",
+        summary: scanStatus === "failed"
+          ? "ERC-20 approval scan failed to verify onchain state"
+          : scanStatus === "partial"
+            ? `${activeAllowances.length} active approval${activeAllowances.length === 1 ? "" : "s"} found (scan partial — ${unknownAllowances.length} unverified)`
+            : `${activeAllowances.length} active approval${activeAllowances.length === 1 ? "" : "s"} found across ${tokens.length} verified assets`,
       },
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Allowance scan failed"
-    return unavailable("inspect_xlayer_allowances", "Wallet allowance audit", message, [xLayerSources.security])
+    return unavailable("inspect_xlayer_allowances", "ERC-20 approval scan", message, [xLayerSources.security])
   }
 }
 

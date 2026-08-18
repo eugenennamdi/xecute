@@ -311,14 +311,56 @@ function preparedAction(request: AgentRequest, results: AgentToolResult[]): Prep
 
     const allowancesResult = resultByName(results, "inspect_xlayer_allowances")
     let approvalFindings: ApprovalFinding[] | undefined
+    let inactiveFindings: ApprovalFinding[] | undefined
+    let scanStatus: "complete" | "partial" | "failed" | undefined
+    let scanScope: string | undefined
+    let scannedBlockNumber: number | undefined
+    let startBlock: number | undefined
+    let endBlock: number | undefined
+
     if (allowancesResult?.ok && allowancesResult.data && typeof allowancesResult.data === "object") {
       const data = allowancesResult.data as Record<string, unknown>
       if (Array.isArray(data.findings)) {
         approvalFindings = data.findings as ApprovalFinding[]
       }
+      if (Array.isArray(data.inactiveFindings)) {
+        inactiveFindings = data.inactiveFindings as ApprovalFinding[]
+      }
+      if (typeof data.scanStatus === "string") {
+        scanStatus = data.scanStatus as "complete" | "partial" | "failed"
+      }
+      if (typeof data.scanScope === "string") {
+        scanScope = data.scanScope
+      }
+      if (typeof data.blockNumber === "number") {
+        scannedBlockNumber = data.blockNumber
+      }
+      if (typeof data.startBlock === "number") {
+        startBlock = data.startBlock
+      }
+      if (typeof data.endBlock === "number") {
+        endBlock = data.endBlock
+      }
+    } else if (allowancesResult && !allowancesResult.ok) {
+      scanStatus = "failed"
+      scanScope = "Unable to connect to X Layer RPC to verify token allowances."
     }
 
-    return prepareAction(intent, safety, quote, quoteError, isSimulated, earnOpportunities, approvalFindings)
+    return prepareAction(
+      intent,
+      safety,
+      quote,
+      quoteError,
+      isSimulated,
+      earnOpportunities,
+      approvalFindings,
+      inactiveFindings,
+      scanStatus,
+      scanScope,
+      scannedBlockNumber,
+      startBlock,
+      endBlock,
+    )
   } catch {
     return null
   }
@@ -391,53 +433,74 @@ function localAnswer(
     if (allowances.ok && allowances.data && typeof allowances.data === "object") {
       const data = allowances.data as Record<string, unknown>
       const list = Array.isArray(data.allowances) ? data.allowances : []
-      const activeList = (data.activeAllowances as Array<Record<string, unknown>> | undefined) || list.filter((a: Record<string, unknown>) => a.hasAllowance || (a.allowance && a.allowance !== "0" && a.allowance !== "0.00"))
-      const highRiskCount = Number(data.highRiskCount ?? 0)
+      const activeList = (data.activeAllowances as Array<Record<string, unknown>> | undefined) || list.filter((a: Record<string, unknown>) => a.status === "active" || a.status === "unlimited" || (a.allowance && a.allowance !== "0" && a.allowance !== "0.00" && a.allowance !== "Unknown"))
+      const inactiveList = (data.inactiveAllowances as Array<Record<string, unknown>> | undefined) || list.filter((a: Record<string, unknown>) => a.status === "inactive" || a.allowance === "0" || a.allowance === "0.00")
+      const unknownList = (data.unknownAllowances as Array<Record<string, unknown>> | undefined) || list.filter((a: Record<string, unknown>) => a.status === "unknown" || a.allowance === "Unknown")
+      const highRiskCount = Number(data.highAttentionCount ?? data.highRiskCount ?? 0)
+      const unlimitedCount = Number(data.unlimitedApprovalCount ?? 0)
       const net = String(data.network || "X Layer")
-      const addr = String(data.address || "")
-      const scanScope = String(data.scanScope || `Scanned verified token assets on ${net}.`)
+      const scanStatus = String(data.scanStatus || "complete")
+      const scanScope = String(data.scanScope || `Scanned verified ERC-20 token contracts on ${net}.`)
 
-      if (activeList.length > 0) {
-        const rows = activeList.map((a: Record<string, unknown>) => {
+      if (scanStatus === "failed") {
+        parts.push(
+`**ERC-20 Approval Scan Incomplete**
+
+${scanScope}
+
+Xecute was unable to verify current onchain allowances via X Layer RPC. Please retry the scan before treating this result as complete.`
+        )
+      } else if (activeList.length > 0 || unknownList.length > 0) {
+        const activeRows = activeList.map((a: Record<string, unknown>) => {
           const tok = String(a.token || "Token")
           const spender = String(a.spenderName || a.spenderAddress || "Contract")
           const spenderType = String(a.spenderType || "Contract")
           const allow = String(a.allowance || "0")
+          const isUnlim = a.status === "unlimited" || allow === "Unlimited"
           const risk = String(a.riskLevel || "Informational")
           const riskBadge =
-            risk === "High"
-              ? `**High Attention (${spenderType === "EOA" ? "EOA Spender" : "Unlimited"})**`
+            isUnlim
+              ? `**Unlimited Approval (${spenderType === "EOA" ? "EOA Spender" : "High Attention"})**`
               : risk === "Attention"
-                ? "Attention (Bounded / Unknown)"
-                : "Informational (Recognized Protocol)"
+                ? "Active (Attention)"
+                : "Active (Recognized Protocol)"
           return `| **${tok}** | ${spender} (${spenderType}) | \`${allow}\` | ${riskBadge} |`
-        }).join("\n")
+        })
+
+        const unknownRows = unknownList.map((a: Record<string, unknown>) => {
+          const tok = String(a.token || "Token")
+          const spender = String(a.spenderName || a.spenderAddress || "Contract")
+          return `| **${tok}** | ${spender} | \`Unknown\` | **Unverified (RPC Error)** |`
+        })
+
+        const rows = [...activeRows, ...unknownRows].join("\n")
 
         parts.push(
-`**Wallet Approval Audit: ${activeList.length} Active Permission${activeList.length === 1 ? "" : "s"} Detected**
+`**ERC-20 Approval Scan: ${activeList.length} Active Approval${activeList.length === 1 ? "" : "s"}**
 
 ${scanScope}
 
-| Token | Protocol / Spender | Allowance Limit | Security Assessment |
+| Token | Protocol / Spender | Current Allowance | Authorization Assessment |
 | :--- | :--- | :--- | :--- |
 ${rows}
 
-${highRiskCount > 0 ? `**${highRiskCount} high-attention allowance${highRiskCount === 1 ? "" : "s"} detected.** You can revoke any approval by asking: *"Revoke allowance for [Spender]"*.` : "All active permissions are bounded or granted to recognized protocol contracts."}`
+${highRiskCount > 0 ? `**${highRiskCount} high-attention allowance${highRiskCount === 1 ? "" : "s"} detected.** You can revoke any approval by asking: *"Revoke allowance for [Spender]"*.` : "All active permissions are bounded or granted to recognized protocol contracts."}${unknownList.length > 0 ? `\n\n*Note: ${unknownList.length} allowance relationship${unknownList.length === 1 ? "" : "s"} could not be verified due to RPC errors.*` : ""}`
         )
       } else {
         parts.push(
-`**Wallet Approval Audit: 0 Active Approvals**
+`**ERC-20 Approval Scan: No Active Approvals Found**
 
 ${scanScope}
 
-• **0 Active Approvals** — 0 active ERC-20 allowances found across the scanned assets and historical approval relationships.
-• **0 Unlimited Allowances** — Active wallet approval exposure is **$0.00**.
+Xecute found no spendable ERC-20 allowances within this scan's scope.
 
-**Wallet Status**: No open permissions or allowances need to be revoked across the scanned scope.`
+• **0 Active Approvals** — No spendable allowances found across verified assets and historical approval relationships.
+• **0 Unlimited Approvals**
+${inactiveList.length > 0 ? `• **${inactiveList.length} Inactive Relationship${inactiveList.length === 1 ? "" : "s"}** preserved onchain (current allowances are 0).` : ""}`
         )
       }
     } else {
-      parts.push(`Token allowance scan is unavailable: ${allowances.trace.summary}.`)
+      parts.push(`ERC-20 approval scan is unavailable: ${allowances.trace.summary}.`)
     }
   }
 
