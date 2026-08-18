@@ -422,10 +422,62 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
         const action = currentPlan.intent.action || "swap"
         let payload: { to: string; value: string; data: string }
 
+        // Import necessary helpers for onchain verification
+        const { parseEther, parseUnits } = await import("viem")
+        const {
+          getXLayerNativeBalance,
+          getXLayerTokenBalance,
+          getXLayerTokenAllowance,
+          getXLayerTransactionReceipt,
+        } = await import("@/lib/xlayer/rpc")
+        const { findToken } = await import("@/config/tokens")
+
+        // 2. Query live native balance immediately before state changes
+        const nativeBalRes = await getXLayerNativeBalance(fromAddr, "testnet")
+        if (!nativeBalRes.success || nativeBalRes.rawBigInt === undefined) {
+          set({ status: "ready" })
+          alert("Execution blocked: Live native OKB balance is unavailable from X Layer Testnet.")
+          return
+        }
+        const nativeBalanceWei = nativeBalRes.rawBigInt
+        const requiredReserveWei = parseEther("0.005")
+
         if (action === "transfer") {
           if (!currentPlan.intent.fromToken) throw new Error("Missing transfer token parameter.")
           if (!currentPlan.intent.amount) throw new Error("Missing transfer amount parameter.")
           if (!currentPlan.intent.recipient) throw new Error("Missing transfer recipient parameter.")
+
+          const tokenSym = currentPlan.intent.fromToken.toUpperCase()
+          const tokenCfg = findToken(tokenSym, 1952)
+          if (!tokenCfg) throw new Error(`Unsupported token for transfer: ${tokenSym}`)
+
+          // Verify token or native balance
+          if (tokenCfg.address === "native") {
+            const amountWei = parseEther(currentPlan.intent.amount)
+            if (nativeBalanceWei < amountWei + requiredReserveWei) {
+              set({ status: "ready" })
+              alert("Execution blocked: Insufficient native OKB balance to cover transfer amount and the 0.005 OKB gas reserve.")
+              return
+            }
+          } else {
+            const tokBalRes = await getXLayerTokenBalance(tokenCfg.address, fromAddr, tokenCfg.decimals, "testnet")
+            if (!tokBalRes.success || tokBalRes.rawBigInt === undefined) {
+              set({ status: "ready" })
+              alert("Execution blocked: Token balance is unavailable from X Layer Testnet.")
+              return
+            }
+            const requiredTokens = parseUnits(currentPlan.intent.amount, tokenCfg.decimals)
+            if (tokBalRes.rawBigInt < requiredTokens) {
+              set({ status: "ready" })
+              alert(`Execution blocked: Insufficient ${tokenSym} balance for transfer.`)
+              return
+            }
+            if (nativeBalanceWei < requiredReserveWei) {
+              set({ status: "ready" })
+              alert("Execution blocked: Insufficient native OKB for gas reserve (minimum 0.005 OKB required).")
+              return
+            }
+          }
 
           const { getTransferTransactionPayload } = await import("@/lib/contracts/router")
           payload = getTransferTransactionPayload({
@@ -436,6 +488,12 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
         } else if (action === "approve" || action === "revoke") {
           if (!currentPlan.intent.fromToken) throw new Error("Missing approval token parameter.")
           if (action !== "revoke" && !currentPlan.intent.amount) throw new Error("Missing approval amount parameter.")
+
+          if (nativeBalanceWei < requiredReserveWei) {
+            set({ status: "ready" })
+            alert("Execution blocked: Insufficient native OKB for gas reserve (minimum 0.005 OKB required).")
+            return
+          }
 
           const { getApprovalTransactionPayload, ROUTER_ADDRESS_TESTNET } = await import("@/lib/contracts/router")
           payload = getApprovalTransactionPayload({
@@ -449,6 +507,38 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
           if (!currentPlan.intent.toToken) throw new Error("Missing swap output token parameter.")
           if (!currentPlan.intent.amount) throw new Error("Missing swap amount parameter.")
 
+          const fromSym = currentPlan.intent.fromToken.toUpperCase()
+          const fromCfg = findToken(fromSym, 1952)
+          if (!fromCfg) throw new Error(`Unsupported swap input token: ${fromSym}`)
+
+          // Verify swap balance
+          if (fromCfg.address === "native") {
+            const amountWei = parseEther(currentPlan.intent.amount)
+            if (nativeBalanceWei < amountWei + requiredReserveWei) {
+              set({ status: "ready" })
+              alert("Execution blocked: Insufficient native OKB balance to cover swap amount and the 0.005 OKB gas reserve.")
+              return
+            }
+          } else {
+            const tokBalRes = await getXLayerTokenBalance(fromCfg.address, fromAddr, fromCfg.decimals, "testnet")
+            if (!tokBalRes.success || tokBalRes.rawBigInt === undefined) {
+              set({ status: "ready" })
+              alert("Execution blocked: Token balance is unavailable from X Layer Testnet.")
+              return
+            }
+            const requiredTokens = parseUnits(currentPlan.intent.amount, fromCfg.decimals)
+            if (tokBalRes.rawBigInt < requiredTokens) {
+              set({ status: "ready" })
+              alert(`Execution blocked: Insufficient ${fromSym} balance for swap.`)
+              return
+            }
+            if (nativeBalanceWei < requiredReserveWei) {
+              set({ status: "ready" })
+              alert("Execution blocked: Insufficient native OKB for gas reserve (minimum 0.005 OKB required).")
+              return
+            }
+          }
+
           const { getSwapTransactionPayload } = await import("@/lib/contracts/router")
           payload = getSwapTransactionPayload({
             fromTokenSymbol: currentPlan.intent.fromToken,
@@ -458,21 +548,16 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
             slippage: currentPlan.intent.maxSlippage ?? 0.5,
           })
 
-          const fromSym = currentPlan.intent.fromToken.toUpperCase()
           if (fromSym !== "OKB") {
-            const { findToken } = await import("@/config/tokens")
-            const tokenCfg = findToken(fromSym, 1952)
-            if (!tokenCfg || tokenCfg.address === "native") {
+            const tokenCfg = fromCfg
+            if (tokenCfg.address === "native") {
               throw new Error(`Unsupported ERC-20 swap token: ${fromSym}`)
             }
 
-            const { parseUnits } = await import("viem")
-            const { getXLayerTokenAllowance, getXLayerTransactionReceipt } = await import("@/lib/xlayer/rpc")
             const { getApprovalTransactionPayload } = await import("@/lib/contracts/router")
-
             const requiredAmount = parseUnits(currentPlan.intent.amount, tokenCfg.decimals)
 
-            // Query live onchain allowance via RPC
+            // Query live onchain allowance via RPC — fail closed if RPC fails
             const allowanceRes = await getXLayerTokenAllowance(
               tokenCfg.address,
               fromAddr,
@@ -481,7 +566,13 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
               "testnet",
             )
 
-            const currentAllowance = allowanceRes.success && allowanceRes.rawBigInt !== undefined ? allowanceRes.rawBigInt : BigInt(0)
+            if (!allowanceRes.success || allowanceRes.rawBigInt === undefined) {
+              set({ status: "ready" })
+              alert("Execution blocked: Allowance verification is unavailable from X Layer Testnet.")
+              return
+            }
+
+            const currentAllowance = allowanceRes.rawBigInt
 
             if (currentAllowance < requiredAmount) {
               const approvePayload = getApprovalTransactionPayload({
@@ -489,6 +580,14 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
                 amount: currentPlan.intent.amount,
                 spender: payload.to,
               })
+
+              // Network check immediately before approval send
+              const preApproveChainHex = await ethereum.request({ method: "eth_chainId" })
+              if (Number.parseInt(preApproveChainHex, 16) !== 1952) {
+                set({ status: "ready" })
+                alert("Execution blocked: Connected wallet must be on X Layer Testnet (Chain ID: 1952).")
+                return
+              }
 
               // Request user signature for approval prerequisite
               let approvalTxHash: string
@@ -527,6 +626,14 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
                 return
               }
 
+              // Re-check chain ID AGAIN after approval mining to prevent mid-operation network switch
+              const postApproveChainHex = await ethereum.request({ method: "eth_chainId" })
+              if (Number.parseInt(postApproveChainHex, 16) !== 1952) {
+                set({ status: "ready" })
+                alert("Execution blocked: Wallet network switched after approval. Please switch back to X Layer Testnet (Chain ID: 1952).")
+                return
+              }
+
               // Re-read allowance onchain to strictly verify sufficient balance authorization
               const verifyRes = await getXLayerTokenAllowance(
                 tokenCfg.address,
@@ -535,14 +642,27 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
                 tokenCfg.decimals,
                 "testnet",
               )
-              const verifiedAllowance = verifyRes.success && verifyRes.rawBigInt !== undefined ? verifyRes.rawBigInt : BigInt(0)
-              if (verifiedAllowance < requiredAmount) {
+              if (!verifyRes.success || verifyRes.rawBigInt === undefined) {
+                set({ status: "ready" })
+                alert("Execution blocked: Post-approval allowance verification unavailable from X Layer Testnet.")
+                return
+              }
+
+              if (verifyRes.rawBigInt < requiredAmount) {
                 set({ status: "ready" })
                 alert("Allowance remains insufficient after approval. Swap cancelled.")
                 return
               }
             }
           }
+        }
+
+        // Network re-check immediately before primary transaction broadcast
+        const finalChainHex = await ethereum.request({ method: "eth_chainId" })
+        if (Number.parseInt(finalChainHex, 16) !== 1952) {
+          set({ status: "ready" })
+          alert("Execution blocked: Connected wallet must be on X Layer Testnet (Chain ID: 1952).")
+          return
         }
 
         // Broadcast the primary transaction
@@ -581,6 +701,29 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       if (!response.ok) throw new Error("Confirmation request failed")
       const payload = (await response.json()) as { receipt: ExecutionReceipt }
       set({ receipt: payload.receipt, status: "confirmed" })
+
+      // If status is still pending/broadcast, poll until mined receipt arrives
+      if (payload.receipt.status === "pending" || payload.receipt.status === "broadcast") {
+        const { getXLayerTransactionReceipt } = await import("@/lib/xlayer/rpc")
+        for (let i = 0; i < 30; i++) {
+          await new Promise((resolve) => setTimeout(resolve, 2000))
+          const polled = await getXLayerTransactionReceipt(onchainTxHash, "testnet")
+          if (polled.status === "mined") {
+            set((state) => {
+              if (!state.receipt) return state
+              return {
+                receipt: {
+                  ...state.receipt,
+                  status: polled.success ? "executed" : "reverted",
+                  gasUsed: polled.gasUsed,
+                  blockNumber: polled.blockNumber,
+                },
+              }
+            })
+            break
+          }
+        }
+      }
     } catch {
       set({ status: "ready" })
     }

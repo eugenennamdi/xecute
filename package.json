@@ -9,6 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/**/*.test.ts",
+    "test:contracts": "node --import tsx --test tests/router-runtime-evm.test.ts",
+    "verify:bytecode": "tsx scripts/verify-router-deployment.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx scripts/seed-knowledge.ts",

@@ -302,7 +302,6 @@ function preparedAction(request: AgentRequest, results: AgentToolResult[]): Prep
             protocol,
             apy,
             tvlUsd: item.tvlUsd ? String(item.tvlUsd) : undefined,
-            risk: "Low",
             url,
           }
         })

@@ -101,7 +101,7 @@ export class TestnetSwapAdapter implements XecuteAdapter {
         minimumReceived,
         slippage: `${maxSlippage}%`,
         gasEstimate,
-        priceImpact: "0.00%",
+        priceImpact: "N/A (Deterministic Testnet rate)",
         route: `Xecute Testnet Router (${ROUTER_ADDRESS_TESTNET.slice(0, 6)}...${ROUTER_ADDRESS_TESTNET.slice(-4)})`,
         quotedAt: new Date().toISOString(),
       },
@@ -167,7 +167,14 @@ export class TestnetSwapAdapter implements XecuteAdapter {
         "testnet",
       )
 
-      const estimatedGasUnits = estRes ? Number(BigInt(estRes)).toLocaleString("en-US") + " gas" : "Estimated"
+      if (!estRes || estRes === "0x" || estRes === "0x0") {
+        return {
+          success: false,
+          error: "Gas estimation unavailable from RPC node",
+        }
+      }
+
+      const estimatedGasUnits = Number(BigInt(estRes)).toLocaleString("en-US") + " gas"
 
       return {
         success: true,
@@ -196,11 +203,10 @@ export class TestnetSwapAdapter implements XecuteAdapter {
       slippage: intent.maxSlippage ?? 0.5,
     })
 
-    // Estimate gas for the exact transaction payload
-    let gasLimit = "180000"
+    // 1. Dry-run simulation via eth_call
     try {
-      const est = await callXLayerRpc<string>(
-        "eth_estimateGas",
+      await callXLayerRpc(
+        "eth_call",
         [
           {
             from: recipient,
@@ -208,18 +214,36 @@ export class TestnetSwapAdapter implements XecuteAdapter {
             data: payload.data,
             value: payload.value,
           },
+          "latest",
         ],
         "testnet",
       )
-      if (est) {
-        // Apply 20% deterministic policy buffer for execution safety
-        const gasUnits = BigInt(est)
-        const buffered = (gasUnits * BigInt(120)) / BigInt(100)
-        gasLimit = buffered.toString()
-      }
-    } catch {
-      // If estimate fails during final build, keep conservative limit
+    } catch (simError) {
+      throw new Error(`Simulation failed: ${simError instanceof Error ? simError.message : "reverted"}`)
     }
+
+    // 2. Exact gas estimation via eth_estimateGas — fails closed with zero fallback
+    const est = await callXLayerRpc<string>(
+      "eth_estimateGas",
+      [
+        {
+          from: recipient,
+          to: payload.to,
+          data: payload.data,
+          value: payload.value,
+        },
+      ],
+      "testnet",
+    )
+
+    if (!est || est === "0x" || est === "0x0") {
+      throw new Error("Gas estimation unavailable from RPC node")
+    }
+
+    const gasUnits = BigInt(est)
+    // Apply 20% deterministic policy buffer for execution safety
+    const buffered = (gasUnits * BigInt(120)) / BigInt(100)
+    const gasLimit = buffered.toString()
 
     return {
       to: payload.to,

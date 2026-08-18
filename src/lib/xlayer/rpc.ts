@@ -71,7 +71,7 @@ export function formatWei(hexOrBigInt: string | bigint, decimals = 18): string {
     const trimmed = remainderStr.slice(0, 6).replace(/0+$/, "")
     return trimmed.length > 0 ? `${integerPart}.${trimmed}` : integerPart.toString()
   } catch {
-    return "0"
+    return "Unavailable"
   }
 }
 
@@ -84,13 +84,15 @@ export function formatWei(hexOrBigInt: string | bigint, decimals = 18): string {
 export async function getXLayerNativeBalance(
   address: string,
   environment: Environment = "testnet",
-): Promise<{ success: boolean; balance: string; rawWei: string; error?: string }> {
+): Promise<{ success: boolean; balance: string; rawWei: string; rawBigInt?: bigint; error?: string }> {
   try {
     const result = await callXLayerRpc<string>("eth_getBalance", [address, "latest"], environment)
+    const rawBigInt = result ? BigInt(result) : BigInt(0)
     return {
       success: true,
       balance: formatWei(result, 18),
       rawWei: result,
+      rawBigInt,
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch native balance"
@@ -273,8 +275,14 @@ export async function getXLayerTransactionReceipt(
     }
     const statusHex = receipt.status ? String(receipt.status) : undefined
     const isSuccess = statusHex === "0x1" || statusHex === "1"
-    const gasUsedHex = receipt.gasUsed ? String(receipt.gasUsed) : "0x0"
-    const gasUsed = BigInt(gasUsedHex).toString()
+    let gasUsed: string | undefined
+    if (receipt.gasUsed) {
+      try {
+        gasUsed = BigInt(String(receipt.gasUsed)).toString()
+      } catch {
+        gasUsed = undefined
+      }
+    }
     const blockNumber = receipt.blockNumber ? Number.parseInt(String(receipt.blockNumber), 16) : undefined
     return {
       status: "mined",

@@ -1,6 +1,8 @@
 import { z } from "zod"
+import { parseUnits, formatUnits } from "viem"
 
 import { ROUTER_ADDRESS_TESTNET } from "@/config/contracts"
+import { findToken } from "@/config/tokens"
 import { IntentSchema, type Intent } from "@/lib/intents"
 import { SafetyReportSchema, type SafetyReport } from "@/lib/safety/types"
 
@@ -56,91 +58,42 @@ const XLAYER_MAINNET_ASSETS: Record<string, string> = {
   WETH: "0x5a77f1443d16ee5761d310e38b62f77f726bc71c",
   BTC: "0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1",
   WBTC: "0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1",
-  GHO: "0x6f917540ab50A0bc8351Bf5a43bC745672A0D8D7",
 }
 
 const AAVE_V3_XLAYER_RESERVES: Record<string, string> = {
-  USDT: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
   USDT0: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-  XUSDT: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+  "USD₮0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+  USDT: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
   USDG: "0x4ae46a509f6b1d9056937ba4500cb143933d2dc8",
-  XUSDG: "0x4ae46a509f6b1d9056937ba4500cb143933d2dc8",
   ETH: "0x5a77f1443d16ee5761d310e38b62f77f726bc71c",
   WETH: "0x5a77f1443d16ee5761d310e38b62f77f726bc71c",
-  XETH: "0x5a77f1443d16ee5761d310e38b62f77f726bc71c",
-  SOL: "0x9e29b3aada05bf2d2c827af80bd28dc0b9b4fb0c",
-  XSOL: "0x9e29b3aada05bf2d2c827af80bd28dc0b9b4fb0c",
-  BTC: "0xe32812497678bb0bc161c5c0c2937748805f3246",
   WBTC: "0xe32812497678bb0bc161c5c0c2937748805f3246",
-  XBTC: "0xe32812497678bb0bc161c5c0c2937748805f3246",
-  OKB: "0xe538905cf8410324e03a5a23c1c177a474d59b2b",
+  BTC: "0xe32812497678bb0bc161c5c0c2937748805f3246",
   WOKB: "0xe538905cf8410324e03a5a23c1c177a474d59b2b",
-  XOKB: "0xe538905cf8410324e03a5a23c1c177a474d59b2b",
-  GHO: "0x6f917540ab50A0bc8351Bf5a43bC745672A0D8D7",
+  OKB: "0xe538905cf8410324e03a5a23c1c177a474d59b2b",
 }
 
 export const UNISWAP_V3_XLAYER_POOLS: Record<string, string> = {
-  // USDT / WOKB Pools (e.g. 0xe3be6a0137f1b0602fc1a4841686f43b340a5082)
   "USDT-OKB": "0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
   "OKB-USDT": "0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
   "USDT0-WOKB": "0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
   "WOKB-USDT0": "0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
-
-  // USDC / USDT Stable Pairs
   "USDC-USDT": "0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
   "USDT-USDC": "0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
   "USDC-USDT0": "0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
   "USDT0-USDC": "0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
-
-  // USDG / USDT & USDC
-  "USDC-USDG": "0xbb9a35f790ea6ea9763b99e885f33bcf95860d40",
-  "USDG-USDC": "0xbb9a35f790ea6ea9763b99e885f33bcf95860d40",
   "USDG-USDT": "0x0cbe0dbe1400e57f371a38bd3b9bc80f7c3676da",
   "USDT-USDG": "0x0cbe0dbe1400e57f371a38bd3b9bc80f7c3676da",
   "USDG-USDT0": "0x0cbe0dbe1400e57f371a38bd3b9bc80f7c3676da",
   "USDT0-USDG": "0x0cbe0dbe1400e57f371a38bd3b9bc80f7c3676da",
-
-  // ETH / USDT Pairs
   "ETH-USDT": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
   "USDT-ETH": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
   "WETH-USDT": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
   "USDT-WETH": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-  "XETH-USDT": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-  "USDT-XETH": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-  "XETH-USDT0": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-  "USDT0-XETH": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-
-  // ETH / USDC Pairs
-  "ETH-USDC": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-  "USDC-ETH": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-  "WETH-USDC": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-  "USDC-WETH": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-  "XETH-USDC": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-  "USDC-XETH": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-
-  // OKB / ETH Pairs
   "OKB-ETH": "0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
   "ETH-OKB": "0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
-  "WOKB-WETH": "0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
-  "WETH-WOKB": "0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
-  "OKB-XETH": "0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
-  "XETH-OKB": "0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
-
-  // BTC / USDT & ETH Pairs
   "BTC-USDT": "0x5fcfb33c9ab1665fee892eb2af163e863a874d73",
   "USDT-BTC": "0x5fcfb33c9ab1665fee892eb2af163e863a874d73",
-  "XBTC-USDT": "0x5fcfb33c9ab1665fee892eb2af163e863a874d73",
-  "USDT-XBTC": "0x5fcfb33c9ab1665fee892eb2af163e863a874d73",
-  "BTC-ETH": "0xf845c41c0683ce99b8c1f36c46b2d93e1533470c",
-  "ETH-BTC": "0xf845c41c0683ce99b8c1f36c46b2d93e1533470c",
-  "XBTC-XETH": "0xf845c41c0683ce99b8c1f36c46b2d93e1533470c",
-  "XETH-XBTC": "0xf845c41c0683ce99b8c1f36c46b2d93e1533470c",
-
-  // SOL / USDT & ETH Pairs
-  "SOL-USDT": "0x4651300221f345a4c6f566079bd1ddc291049c7d",
-  "USDT-SOL": "0x4651300221f345a4c6f566079bd1ddc291049c7d",
-  "SOL-ETH": "0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
-  "ETH-SOL": "0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
 }
 
 function extractTokensFromName(text: string): string[] {
@@ -287,9 +240,24 @@ export function livePreview(
   const outputAmount = stringValue(quote.outputAmount)
   if (!intent.amount || !intent.fromToken || !intent.toToken || !outputAmount) return null
 
+  const toCfg = findToken(intent.toToken, intent.network === "testnet" ? 1952 : 196)
   const slippage = intent.maxSlippage
-  const minimum = Number(outputAmount) * (1 - slippage / 100)
-  const priceImpact = Number(stringValue(quote.priceImpactPercentage) ?? "0")
+  const slippageBps = BigInt(Math.min(500, Math.max(0, Math.round(slippage * 100))))
+  let minimumReceived = "Unavailable"
+
+  if (toCfg) {
+    try {
+      const outBigInt = parseUnits(outputAmount, toCfg.decimals)
+      const minUnits = (outBigInt * (BigInt(10000) - slippageBps)) / BigInt(10000)
+      minimumReceived = formatUnits(minUnits, toCfg.decimals)
+    } catch {
+      minimumReceived = "Unavailable"
+    }
+  }
+
+  const rawPriceImpact = stringValue(quote.priceImpactPercentage)
+  const priceImpact = rawPriceImpact ? `${rawPriceImpact}%` : "Unavailable"
+  const priceImpactNum = rawPriceImpact ? parseFloat(rawPriceImpact) : NaN
 
   return {
     source: "live",
@@ -298,12 +266,12 @@ export function livePreview(
     toToken: intent.toToken,
     inputAmount: intent.amount,
     estimatedOutput: outputAmount,
-    minimumReceived: Number.isFinite(minimum) ? minimum.toLocaleString("en-US", { maximumFractionDigits: 8 }) : "Unavailable",
+    minimumReceived,
     slippage: `${slippage}%`,
-    gasEstimate: stringValue(quote.estimatedGasUnits) ? `${quote.estimatedGasUnits} gas` : "21,000 gas",
-    priceImpact: Number.isFinite(priceImpact) ? `${priceImpact}%` : "< 0.01%",
+    gasEstimate: stringValue(quote.estimatedGasUnits) ? `${quote.estimatedGasUnits} gas` : "Unavailable",
+    priceImpact,
     approvalRequired: intent.fromToken !== "OKB",
-    riskLevel: priceImpact > 3 ? "High" : priceImpact > 1 || slippage > 1 ? "Medium" : "Low",
+    riskLevel: !isNaN(priceImpactNum) && priceImpactNum > 3 ? "High" : !isNaN(priceImpactNum) && priceImpactNum > 1 || slippage > 1 ? "Medium" : "Low",
     route: Array.isArray(quote.liquiditySources) && quote.liquiditySources.length
       ? quote.liquiditySources.filter((item): item is string => typeof item === "string").join(" + ")
       : "OKX DEX Aggregator (X Layer)",
@@ -390,8 +358,8 @@ export function prepareAction(
         estimatedOutput: intent.amount!,
         minimumReceived: intent.amount!,
         slippage: "0.0%",
-        gasEstimate: intent.fromToken === "OKB" ? "21,000 gas" : "65,000 gas",
-        priceImpact: "0.0%",
+        gasEstimate: "Unavailable (Pre-estimate)",
+        priceImpact: "N/A (Transfer)",
         approvalRequired: false,
         riskLevel: "Low",
         route: `Direct Transfer (${intent.fromToken} → ${intent.recipient?.slice(0, 6)}...${intent.recipient?.slice(-4)})`,
@@ -417,8 +385,8 @@ export function prepareAction(
         estimatedOutput: `${intent.amount!} allowance`,
         minimumReceived: intent.amount!,
         slippage: "0.0%",
-        gasEstimate: "45,000 gas",
-        priceImpact: "0.0%",
+        gasEstimate: "Unavailable (Pre-estimate)",
+        priceImpact: "N/A (Approval)",
         approvalRequired: true,
         riskLevel: "Low",
         route: `ERC-20 Token Approval (${spenderAddr.slice(0, 6)}...${spenderAddr.slice(-4)})`,
@@ -444,8 +412,8 @@ export function prepareAction(
         estimatedOutput: "0 allowance (revoked)",
         minimumReceived: "0",
         slippage: "0.0%",
-        gasEstimate: "45,000 gas",
-        priceImpact: "0.0%",
+        gasEstimate: "Unavailable (Pre-estimate)",
+        priceImpact: "N/A (Revocation)",
         approvalRequired: true,
         riskLevel: "Low",
         route: `ERC-20 Allowance Revocation (${spenderAddr.slice(0, 6)}...${spenderAddr.slice(-4)})`,
@@ -468,22 +436,41 @@ export function prepareAction(
   // 2. Testnet swap or explicit simulation requested
   if (intent.network === "testnet" || forceSimulated) {
     const isTestnet = intent.network === "testnet"
+    const chainId = isTestnet ? 1952 : 196
     const from = (intent.fromToken || "OKB").toUpperCase()
     const to = (intent.toToken || "USDT").toUpperCase()
-    const amount = Number(intent.amount || "0")
     const slippage = intent.maxSlippage ?? 0.5
+    const slippageBps = BigInt(Math.min(500, Math.max(0, Math.round(slippage * 100))))
 
-    let rawOut = 0
-    if (from === "OKB") {
-      rawOut = amount * 60
-    } else if (to === "OKB") {
-      rawOut = amount / 60
-    } else {
-      rawOut = amount
+    let estimatedOutput = "Unavailable"
+    let minimumReceived = "Unavailable"
+
+    const fromCfg = findToken(from, chainId)
+    const toCfg = findToken(to, chainId)
+
+    if (fromCfg && toCfg && intent.amount) {
+      try {
+        const decIn = BigInt(fromCfg.decimals)
+        const decOut = BigInt(toCfg.decimals)
+        const amountInUnits = parseUnits(intent.amount, fromCfg.decimals)
+
+        let outUnits = BigInt(0)
+        if (from === "OKB") {
+          outUnits = (amountInUnits * BigInt(60) * (BigInt(10) ** decOut)) / (BigInt(10) ** BigInt(18))
+        } else if (to === "OKB") {
+          outUnits = (amountInUnits * (BigInt(10) ** BigInt(18))) / (BigInt(60) * (BigInt(10) ** decIn))
+        } else {
+          outUnits = (amountInUnits * (BigInt(10) ** decOut)) / (BigInt(10) ** decIn)
+        }
+
+        const minUnits = (outUnits * (BigInt(10000) - slippageBps)) / BigInt(10000)
+        estimatedOutput = formatUnits(outUnits, toCfg.decimals)
+        minimumReceived = formatUnits(minUnits, toCfg.decimals)
+      } catch {
+        estimatedOutput = "Unavailable"
+        minimumReceived = "Unavailable"
+      }
     }
-
-    const estimatedOutput = Number.isFinite(rawOut) ? rawOut.toFixed(to === "OKB" ? 6 : 4) : "0.00"
-    const minimumReceived = (rawOut * (1 - slippage / 100)).toFixed(to === "OKB" ? 6 : 4)
 
     return {
       status: isTestnet && !forceSimulated ? "ready_to_execute" : "simulated_preview",
@@ -498,8 +485,8 @@ export function prepareAction(
         estimatedOutput,
         minimumReceived,
         slippage: `${slippage}%`,
-        gasEstimate: "142,500 gas",
-        priceImpact: "0.00%",
+        gasEstimate: "Unavailable (Pre-estimate)",
+        priceImpact: "N/A (Deterministic Testnet rate)",
         approvalRequired: from !== "OKB",
         riskLevel: slippage <= 1 ? "Low" : "Medium",
         route: isTestnet

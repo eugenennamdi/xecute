@@ -42,7 +42,28 @@ export async function POST(request: Request) {
     }
 
     // Query onchain RPC for verified receipt status
-    const { getXLayerTransactionReceipt } = await import("@/lib/xlayer/rpc")
+    const { getXLayerTransactionReceipt, callXLayerRpc } = await import("@/lib/xlayer/rpc")
+
+    // Verify transaction details if available onchain
+    try {
+      const txObj = await callXLayerRpc<{ from?: string; to?: string; chainId?: string } | null>(
+        "eth_getTransactionByHash",
+        [txHash],
+        "testnet",
+      )
+      if (txObj && txObj.chainId) {
+        const txChainId = Number.parseInt(txObj.chainId, 16)
+        if (txChainId !== 1952) {
+          return Response.json(
+            { error: `Transaction chainId mismatch: broadcast to chain ${txChainId}, expected X Layer Testnet (1952).` },
+            { status: 400 },
+          )
+        }
+      }
+    } catch {
+      // Continue to receipt evaluation if getTransactionByHash is delayed
+    }
+
     const rpcReceipt = await getXLayerTransactionReceipt(txHash, "testnet")
 
     let status: "executed" | "pending" | "reverted" | "broadcast" = "broadcast"

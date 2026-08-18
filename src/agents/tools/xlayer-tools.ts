@@ -14,6 +14,7 @@ import {
 import { OkxConfigurationError, okxRequest } from "@/lib/okx/client"
 import { getXLayerToken } from "@/lib/okx/xlayer-tokens"
 import { findKnownContract } from "@/config/contracts"
+import { XLAYER_TESTNET_TOKENS, XLAYER_MAINNET_TOKENS, findToken } from "@/config/tokens"
 import {
   callXLayerRpc,
   getXLayerAccountSnapshot,
@@ -631,8 +632,8 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
 async function discoverEarn(argumentsValue: unknown): Promise<AgentToolResult> {
   const input = EarnDiscoverySchema.parse(argumentsValue)
   const rawAsset = input.asset.trim().toUpperCase()
-  const normalizedAsset = rawAsset === "USDT0" || rawAsset === "XUSDT" ? "USDT" : rawAsset === "XUSDC" ? "USDC" : rawAsset.replace(/^X/, "")
-  const searchKeywords = Array.from(new Set([normalizedAsset, rawAsset]))
+  const canonicalToken = findToken(rawAsset, 196)
+  const searchKeywords = canonicalToken ? Array.from(new Set([canonicalToken.symbol, rawAsset])) : [rawAsset]
 
   try {
     const requestBody: Record<string, unknown> = {
@@ -668,7 +669,7 @@ async function discoverEarn(argumentsValue: unknown): Promise<AgentToolResult> {
       const protocol = String(item.platformName || "OKX DeFi")
       const name = String(item.name || protocol || "Pool")
       const rawRate = String(item.rate || "Variable")
-      const url = String(item.link || item.dappUrl || getProtocolUrl(protocol, name, normalizedAsset, String(item.investmentId || "")))
+      const url = String(item.link || item.dappUrl || getProtocolUrl(protocol, name, rawAsset, String(item.investmentId || "")))
       return {
         investmentId: item.investmentId ? String(item.investmentId) : undefined,
         name,
@@ -681,7 +682,7 @@ async function discoverEarn(argumentsValue: unknown): Promise<AgentToolResult> {
       }
     })
 
-    const dexPools = VERIFIED_XLAYER_DEX_POOLS[normalizedAsset] ?? []
+    const dexPools = VERIFIED_XLAYER_DEX_POOLS[rawAsset] ?? []
     const combinedOpps: Array<{
       investmentId?: string
       name: string
@@ -703,7 +704,7 @@ async function discoverEarn(argumentsValue: unknown): Promise<AgentToolResult> {
     return {
       ok: true,
       data: {
-        asset: normalizedAsset,
+        asset: rawAsset,
         network: "X Layer mainnet",
         chainIndex: "196",
         total: opportunities.length,
@@ -976,21 +977,9 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
   const input = InspectAllowancesSchema.parse(argumentsValue)
   const isTestnet = input.network === "testnet"
   const chainId = isTestnet ? 1952 : 196
-
   const tokens = isTestnet
-    ? [
-        { symbol: "USDT", address: "0x9e29b3aada05bf2d2c827af80bd28dc0b9b4fb0c", decimals: 6 },
-        { symbol: "USDC", address: "0xcb8bf24c6ce16ad21d707c9505421a17f2bec79d", decimals: 6 },
-        { symbol: "USDG", address: "0xa78e2baabaf5c4f36b7fc394725deb68d332eec1", decimals: 6 },
-      ]
-    : [
-        { symbol: "USD₮0", address: "0x779ded0c9e1022225f8e0630b35a9b54be713736", decimals: 6 },
-        { symbol: "USDT", address: "0x1e4a5963abfd975d8c9021ce480b42188849d41d", decimals: 6 },
-        { symbol: "USDC", address: "0xB6CEceAB302E2E4948951eE7843FC24E92933061", decimals: 6 },
-        { symbol: "WETH", address: "0x5a77f1443d16ee5761d310e38b62f77f726bc71c", decimals: 18 },
-        { symbol: "WBTC", address: "0xea034fb02eb1808c2cc3adbc15f447b93cbe08e1", decimals: 8 },
-        { symbol: "WOKB", address: "0xe538905cf8410324e03a5a23c1c177a474d59b2b", decimals: 18 },
-      ]
+    ? Object.values(XLAYER_TESTNET_TOKENS).filter((t) => t.address !== "native")
+    : Object.values(XLAYER_MAINNET_TOKENS).filter((t) => t.address !== "native")
 
   const tokenAddresses = tokens.map((t) => t.address)
   const defaultSpenders = isTestnet
@@ -1030,6 +1019,52 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
     // 3. Query current live allowance(owner, spender) for every candidate pair
     const blockRes = await getXLayerBlockNumber(input.network)
     const currentBlock = blockRes.success && blockRes.blockNumber !== undefined ? blockRes.blockNumber : 0
+
+    if (currentBlock === 0) {
+      return {
+        ok: true,
+        data: {
+          address: input.address,
+          network: isTestnet ? "X Layer Testnet" : "X Layer Mainnet",
+          chainId,
+          blockNumber: 0,
+          startBlock: 0,
+          endBlock: 0,
+          scannedBlockCount: 0,
+          scanStatus: "failed",
+          hasFindings: false,
+          activeApprovalCount: 0,
+          unlimitedApprovalCount: 0,
+          highAttentionCount: 0,
+          unknownRelationshipCount: candidatePairs.length,
+          inactiveRelationshipCount: 0,
+          scannedCount: candidatePairs.length,
+          scannedAssets: tokens.map((t) => t.symbol),
+          eventsDiscoveredCount: 0,
+          scanScope: `Approval scan failed: unable to query current block height on ${isTestnet ? "X Layer Testnet" : "X Layer Mainnet"}.`,
+          allowances: [],
+          activeAllowances: [],
+          inactiveAllowances: [],
+          findings: [],
+          inactiveFindings: [],
+          scannedAt: new Date().toISOString(),
+          provenance: {
+            chainId,
+            source: "contract_read",
+            blockNumber: 0,
+            verified: false,
+          },
+        },
+        sources: [xLayerSources.security],
+        trace: {
+          name: "inspect_xlayer_allowances",
+          label: "ERC-20 approval scan",
+          status: "error",
+          summary: "Failed to read block height",
+        },
+      }
+    }
+
     const evaluatedAllowances = await Promise.all(
       candidatePairs.map(async (pair) => {
         const tokenCfg = tokens.find((t) => t.address.toLowerCase() === pair.tokenAddress.toLowerCase()) || {
@@ -1055,7 +1090,7 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
             tokenAddress: pair.tokenAddress,
             spenderName: pair.spenderName || knownContract?.name || "Unknown Spender",
             spenderAddress: pair.spenderAddress,
-            spenderType: "Contract" as const,
+            spenderType: "Unknown" as const,
             allowance: "Unknown",
             isUnlimited: false,
             hasAllowance: false,
@@ -1069,14 +1104,11 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
         }
 
         const isUnlim = res.isUnlimited
-        const hasAllowance = isUnlim || (res.rawBigInt !== undefined ? res.rawBigInt > BigInt(0) : (Number(res.allowance) > 0 && res.allowance !== "0" && res.allowance !== "0.00"))
+        const hasAllowance = isUnlim || (res.rawBigInt !== undefined && res.rawBigInt > BigInt(0))
         const status: "unlimited" | "active" | "inactive" = isUnlim ? "unlimited" : hasAllowance ? "active" : "inactive"
 
-        const accountType = hasAllowance
-          ? await getXLayerAccountType(pair.spenderAddress, input.network)
-          : "Contract"
-
-        const spenderName = pair.spenderName || knownContract?.name || (accountType === "EOA" ? "External EOA" : "Unknown Contract")
+        const accountType = await getXLayerAccountType(pair.spenderAddress, input.network)
+        const spenderName = pair.spenderName || knownContract?.name || (accountType === "EOA" ? "External EOA" : accountType === "Contract" ? "Contract Spender" : "Unknown Spender")
 
         let riskLevel: "High" | "Attention" | "Informational" = "Informational"
         let riskDetail = "No active permission (current onchain allowance is zero)."
@@ -1215,7 +1247,6 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
         scanScope,
         activeCount: activeAllowances.length,
         highRiskCount,
-        isClean: highRiskCount === 0 && activeAllowances.length === 0,
         allowances: evaluatedAllowances,
         activeAllowances,
         inactiveAllowances,
