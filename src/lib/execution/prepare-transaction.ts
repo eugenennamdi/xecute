@@ -150,15 +150,17 @@ export async function prepareExecutionTransaction(params: {
     }
   } else if (action === "approve" || action === "revoke") {
     if (!fromToken) throw new MissingExecutionParameterError("fromToken")
-    const targetSpender = spender ?? ROUTER_ADDRESS_TESTNET
-    if (!targetSpender || !isAddress(targetSpender, { strict: false })) {
+    if (!spender || !isAddress(spender, { strict: false })) {
       throw new MissingExecutionParameterError("spender")
+    }
+    if (action === "approve" && (amount === undefined || amount === null || amount.trim() === "")) {
+      throw new MissingExecutionParameterError("amount")
     }
 
     const p = getApprovalTransactionPayload({
       tokenSymbol: fromToken,
-      amount: action === "revoke" ? "0" : (amount ?? "0"),
-      spender: getAddress(targetSpender),
+      amount: action === "revoke" ? "0" : amount!,
+      spender: getAddress(spender),
     })
     payload = {
       to: getAddress(p.to),

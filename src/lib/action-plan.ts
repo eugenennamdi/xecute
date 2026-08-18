@@ -265,6 +265,11 @@ export function prepareAction(
   scannedBlockNumber?: number,
   startBlock?: number,
   endBlock?: number,
+  routerLiquidity?: {
+    sufficient: boolean
+    availableBalance: string
+    toSymbol: string
+  },
 ): PreparedAction {
   if (intent.mode !== "trade") {
     return {
@@ -331,7 +336,7 @@ export function prepareAction(
         minimumReceived: intent.amount!,
         slippage: "0.0%",
         gasEstimate: "Unavailable (Pre-estimate)",
-        priceImpact: "N/A (Transfer)",
+        priceImpact: "N/A",
         approvalRequired: false,
         riskLevel: "Low",
         route: `Direct Transfer (${intent.fromToken} → ${intent.recipient?.slice(0, 6)}...${intent.recipient?.slice(-4)})`,
@@ -358,7 +363,7 @@ export function prepareAction(
         minimumReceived: intent.amount!,
         slippage: "0.0%",
         gasEstimate: "Unavailable (Pre-estimate)",
-        priceImpact: "N/A (Approval)",
+        priceImpact: "N/A",
         approvalRequired: true,
         riskLevel: "Low",
         route: `ERC-20 Token Approval (${spenderAddr.slice(0, 6)}...${spenderAddr.slice(-4)})`,
@@ -385,7 +390,7 @@ export function prepareAction(
         minimumReceived: "0",
         slippage: "0.0%",
         gasEstimate: "Unavailable (Pre-estimate)",
-        priceImpact: "N/A (Revocation)",
+        priceImpact: "N/A",
         approvalRequired: true,
         riskLevel: "Low",
         route: `ERC-20 Allowance Revocation (${spenderAddr.slice(0, 6)}...${spenderAddr.slice(-4)})`,
@@ -409,8 +414,37 @@ export function prepareAction(
   if (intent.network === "testnet" || forceSimulated) {
     const isTestnet = intent.network === "testnet"
     const chainId = isTestnet ? 1952 : 196
-    const from = (intent.fromToken || "OKB").toUpperCase()
-    const to = (intent.toToken || "USDT").toUpperCase()
+
+    if (!intent.fromToken || !intent.toToken || !intent.amount) {
+      return {
+        status: "needs_input",
+        intent,
+        safety: {
+          ...safety,
+          allowed: false,
+          level: "blocked",
+        },
+        preview: {
+          source: "simulated",
+          network: intent.network,
+          fromToken: intent.fromToken || "Unavailable",
+          toToken: intent.toToken || "Unavailable",
+          inputAmount: intent.amount || "Unavailable",
+          estimatedOutput: "Unavailable",
+          minimumReceived: "Unavailable",
+          slippage: `${intent.maxSlippage ?? 0.5}%`,
+          gasEstimate: "Unavailable",
+          priceImpact: "Unavailable",
+          approvalRequired: false,
+          riskLevel: "Low",
+          route: "Unavailable",
+          quotedAt: new Date().toISOString(),
+        },
+      }
+    }
+
+    const from = intent.fromToken.toUpperCase()
+    const to = intent.toToken.toUpperCase()
     const slippage = intent.maxSlippage ?? 0.5
     const slippageBps = BigInt(Math.min(500, Math.max(0, Math.round(slippage * 100))))
 
@@ -444,6 +478,20 @@ export function prepareAction(
       }
     }
 
+    if (isTestnet && routerLiquidity && !routerLiquidity.sufficient) {
+      return {
+        status: "quote_failed",
+        intent,
+        safety: {
+          ...safety,
+          allowed: false,
+          level: "blocked",
+        },
+        preview: null,
+        errorMessage: `The Xecute Testnet Router pool currently holds ${routerLiquidity.availableBalance} ${routerLiquidity.toSymbol}, which is insufficient to fulfill this swap of ${estimatedOutput} ${routerLiquidity.toSymbol}. Please try a smaller amount (up to ${routerLiquidity.availableBalance} ${routerLiquidity.toSymbol}) or supply additional liquidity to the router pool.`,
+      }
+    }
+
     return {
       status: isTestnet && !forceSimulated ? "ready_to_execute" : "simulated_preview",
       intent,
@@ -451,14 +499,14 @@ export function prepareAction(
       preview: {
         source: "simulated",
         network: intent.network,
-        fromToken: intent.fromToken!,
-        toToken: intent.toToken!,
-        inputAmount: intent.amount!,
+        fromToken: intent.fromToken,
+        toToken: intent.toToken,
+        inputAmount: intent.amount,
         estimatedOutput,
         minimumReceived,
         slippage: `${slippage}%`,
         gasEstimate: "Unavailable (Pre-estimate)",
-        priceImpact: "N/A (Deterministic Testnet rate)",
+        priceImpact: "N/A",
         approvalRequired: from !== "OKB",
         riskLevel: slippage <= 1 ? "Low" : "Medium",
         route: isTestnet

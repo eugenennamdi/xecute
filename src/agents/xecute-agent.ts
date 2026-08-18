@@ -22,6 +22,9 @@ import type {
   AgentToolTrace,
 } from "@/lib/agent-types"
 import { prepareAction, formatApy, getProtocolUrl, type PreparedAction, type ApprovalFinding } from "@/lib/action-plan"
+import { findToken } from "@/config/tokens"
+import { parseUnits, formatUnits } from "viem"
+import { checkRouterOutputLiquidity } from "@/lib/contracts/router"
 import type { Mode } from "@/lib/intents"
 import { searchXLayerKnowledge } from "@/lib/knowledge/xlayer"
 import { evaluateIntentSafety } from "@/lib/safety/policy"
@@ -270,7 +273,7 @@ function hasActionCue(prompt: string, mode: Mode) {
   return patterns[mode]?.test(prompt) ?? false
 }
 
-function preparedAction(request: AgentRequest, results: AgentToolResult[]): PreparedAction | null {
+async function preparedAction(request: AgentRequest, results: AgentToolResult[]): Promise<PreparedAction | null> {
   const prompt = request.messages.at(-1)?.content ?? ""
 
   try {
@@ -284,6 +287,36 @@ function preparedAction(request: AgentRequest, results: AgentToolResult[]): Prep
       : null
     const quoteError = quoteResult && !quoteResult.ok ? quoteResult.trace.summary : null
     const isSimulated = /\b(simulat|mock|dry-run|test-run)\b/i.test(prompt)
+
+    let routerLiquidity: { sufficient: boolean; availableBalance: string; toSymbol: string } | undefined
+    if (
+      intent.network === "testnet" &&
+      intent.mode === "trade" &&
+      (intent.action === "swap" || !intent.action) &&
+      intent.fromToken &&
+      intent.toToken &&
+      intent.amount
+    ) {
+      const fromCfg = findToken(intent.fromToken, 1952)
+      const toCfg = findToken(intent.toToken, 1952)
+      if (fromCfg && toCfg) {
+        try {
+          const amountInUnits = parseUnits(intent.amount, fromCfg.decimals)
+          let outUnits = 0n
+          if (intent.fromToken.toUpperCase() === "OKB") {
+            outUnits = (amountInUnits * 60n * (10n ** BigInt(toCfg.decimals))) / (10n ** 18n)
+          } else if (intent.toToken.toUpperCase() === "OKB") {
+            outUnits = (amountInUnits * (10n ** 18n)) / (60n * (10n ** BigInt(fromCfg.decimals)))
+          } else {
+            outUnits = (amountInUnits * (10n ** BigInt(toCfg.decimals))) / (10n ** BigInt(fromCfg.decimals))
+          }
+          const estimatedOut = formatUnits(outUnits, toCfg.decimals)
+          routerLiquidity = await checkRouterOutputLiquidity(intent.toToken, estimatedOut)
+        } catch {
+          // ignore parsing error
+        }
+      }
+    }
 
     const isTestnetYield = /\b(testnet|1952)\b/i.test(prompt) && intent.mode === "earn"
     const earnResult = resultByName(results, "discover_xlayer_earn")
@@ -359,6 +392,7 @@ function preparedAction(request: AgentRequest, results: AgentToolResult[]): Prep
       scannedBlockNumber,
       startBlock,
       endBlock,
+      routerLiquidity,
     )
   } catch {
     return null
@@ -370,6 +404,7 @@ function localAnswer(
   results: AgentToolResult[],
   messages?: Array<{ role: string; content: string }>,
   walletAddress?: string | null,
+  plan?: PreparedAction | null,
 ) {
   const knowledge = resultByName(results, "search_xlayer_knowledge")
   const network = resultByName(results, "get_xlayer_network_snapshot")
@@ -383,7 +418,9 @@ function localAnswer(
   const parts: string[] = []
 
   const tradeIntent = parseIntent(prompt, "trade", "testnet", messages)
-  if (quote) {
+  if (plan?.status === "quote_failed" && plan.errorMessage?.includes("insufficient to fulfill this swap")) {
+    parts.push(plan.errorMessage)
+  } else if (quote) {
     if (quote.ok && quote.data && typeof quote.data === "object") {
       const data = quote.data as Record<string, unknown>
       parts.push(
@@ -399,12 +436,16 @@ function localAnswer(
     tradeIntent.toToken &&
     /\b(swap|trade|buy|sell|convert|quote)\b/i.test(prompt)
   ) {
-    const walletPrompt = !walletAddress
-      ? " Please connect your Web3 wallet using the **Connect wallet** button at the top right to verify live balances and sign the transaction."
-      : " Review the execution details and confirm below."
-    parts.push(
-      `I've prepared the onchain swap execution plan for ${tradeIntent.amount} ${tradeIntent.fromToken} → ${tradeIntent.toToken} on X Layer Testnet with preflight safeguards.${walletPrompt}`,
-    )
+    if (plan?.status === "quote_failed" && plan.errorMessage?.includes("insufficient to fulfill this swap")) {
+      parts.push(plan.errorMessage)
+    } else {
+      const walletPrompt = !walletAddress
+        ? " Please connect your Web3 wallet using the **Connect wallet** button at the top right to verify live balances and sign the transaction."
+        : " Review the execution details and confirm below."
+      parts.push(
+        `I've prepared the onchain swap execution plan for ${tradeIntent.amount} ${tradeIntent.fromToken} → ${tradeIntent.toToken} on X Layer Testnet with preflight safeguards.${walletPrompt}`,
+      )
+    }
   } else if (tradeIntent.mode === "trade" && tradeIntent.action === "transfer" && tradeIntent.amount && tradeIntent.fromToken) {
     const walletPrompt = !walletAddress
       ? " Please connect your Web3 wallet using the **Connect wallet** button at the top right to sign and broadcast the transfer on X Layer Testnet."
@@ -757,10 +798,11 @@ async function runLocalAgent(
   const localMetadata = metadata({ provider: "local", startedAt, results })
   if (extraTrace) localMetadata.tools.unshift(extraTrace)
 
+  const plan = await preparedAction(request, results)
   return {
-    message: localAnswer(prompt, results, request.messages, request.walletAddress),
+    message: localAnswer(prompt, results, request.messages, request.walletAddress, plan),
     metadata: localMetadata,
-    plan: preparedAction(request, results),
+    plan,
   }
 }
 
@@ -896,11 +938,15 @@ async function runRemoteAgent(
     messages.push(assistantHistoryMessage(assistantMessage))
 
     if (calls.length === 0) {
-      const message = assistantMessage.content?.trim()
+      const plan = await preparedAction(request, toolResults)
+      let message = assistantMessage.content?.trim()
+      if (plan?.status === "quote_failed" && plan.errorMessage?.includes("insufficient to fulfill this swap")) {
+        message = plan.errorMessage
+      }
       return {
         message: message || "I could not produce a grounded answer from the available evidence.",
         metadata: metadata({ provider, model, startedAt, results: toolResults }),
-        plan: preparedAction(request, toolResults),
+        plan,
       }
     }
 
@@ -937,14 +983,18 @@ async function runRemoteAgent(
     }
   }
 
+  const plan = await preparedAction(request, toolResults)
   const prompt = request.messages.at(-1)?.content ?? ""
-  const fallbackMessage = toolResults.length > 0
-    ? localAnswer(prompt, toolResults, request.messages)
+  let fallbackMessage = toolResults.length > 0
+    ? localAnswer(prompt, toolResults, request.messages, request.walletAddress, plan)
     : "I could not produce a grounded answer for this request."
+  if (plan?.status === "quote_failed" && plan.errorMessage?.includes("insufficient to fulfill this swap")) {
+    fallbackMessage = plan.errorMessage
+  }
 
   return {
     message: fallbackMessage,
     metadata: metadata({ provider, model, startedAt, results: toolResults }),
-    plan: preparedAction(request, toolResults),
+    plan,
   }
 }

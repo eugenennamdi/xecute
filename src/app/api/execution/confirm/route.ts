@@ -16,11 +16,23 @@ const ConfirmationSchema = z.object({
   txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, "A valid 66-character onchain transaction hash is required."),
   expectedWallet: z.string().optional(),
   expectedTo: z.string().optional(),
+  expectedValue: z.string().optional(),
+  expectedFunctionSelector: z.string().optional(),
+  actionId: z.string().optional(),
 })
 
 export async function POST(request: Request) {
   try {
-    const { sessionId, conversationId, plan, txHash, expectedWallet, expectedTo } = ConfirmationSchema.parse(await request.json())
+    const {
+      sessionId,
+      conversationId,
+      plan,
+      txHash,
+      expectedWallet,
+      expectedTo,
+      expectedValue,
+      expectedFunctionSelector,
+    } = ConfirmationSchema.parse(await request.json())
     
     // Hard Network Execution Gating: Mainnet execution is strictly disabled in this Xecute version
     if (plan.intent.network === "mainnet") {
@@ -43,17 +55,19 @@ export async function POST(request: Request) {
       return Response.json({ error: "The action failed the current safety policy", safety }, { status: 409 })
     }
 
-    // Query onchain RPC for verified receipt status
+    // Query onchain RPC for verified receipt status and transaction object
     const { getXLayerTransactionReceipt, callXLayerRpc } = await import("@/lib/xlayer/rpc")
 
-    // Verify transaction details if available onchain
+    let transactionVerified = false
+
+    // Verify transaction details onchain
     try {
       const txObj = await callXLayerRpc<{ from?: string; to?: string; chainId?: string; input?: string; value?: string } | null>(
         "eth_getTransactionByHash",
         [txHash],
         "testnet",
       )
-      if (txObj) {
+      if (txObj && typeof txObj === "object") {
         if (txObj.chainId) {
           const txChainId = Number.parseInt(txObj.chainId, 16)
           if (txChainId !== 1952) {
@@ -75,9 +89,23 @@ export async function POST(request: Request) {
             { status: 400 },
           )
         }
+        if (expectedValue && txObj.value && BigInt(txObj.value) !== BigInt(expectedValue)) {
+          return Response.json(
+            { error: `Transaction value mismatch: onchain value ${txObj.value} does not match expected ${expectedValue}.` },
+            { status: 400 },
+          )
+        }
+        if (expectedFunctionSelector && txObj.input && !txObj.input.toLowerCase().startsWith(expectedFunctionSelector.toLowerCase())) {
+          return Response.json(
+            { error: `Transaction function selector mismatch: onchain calldata does not match expected action selector.` },
+            { status: 400 },
+          )
+        }
+        transactionVerified = true
       }
     } catch {
-      // Continue to receipt evaluation if getTransactionByHash is delayed
+      // If eth_getTransactionByHash fails, transaction verification remains unavailable
+      transactionVerified = false
     }
 
     const rpcReceipt = await getXLayerTransactionReceipt(txHash, "testnet")
@@ -87,10 +115,17 @@ export async function POST(request: Request) {
     let blockNumber: number | undefined
 
     if (rpcReceipt.status === "mined") {
-      status = rpcReceipt.success ? "executed" : "reverted"
+      if (!rpcReceipt.success) {
+        status = "reverted"
+      } else if (transactionVerified) {
+        status = "executed"
+      } else {
+        // Transaction verification unavailable -> pending/unverified
+        status = "pending"
+      }
       gasUsed = rpcReceipt.gasUsed
       blockNumber = rpcReceipt.blockNumber
-    } else if (rpcReceipt.status === "pending") {
+    } else {
       status = "pending"
     }
 

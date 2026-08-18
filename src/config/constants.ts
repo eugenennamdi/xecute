@@ -10,7 +10,7 @@ export const suggestedPrompts: SuggestedPrompt[] = [
   {
     mode: "trade",
     label: "Plan a swap",
-    prompt: "Swap 25 USDT to OKB with max 0.5% slippage",
+    prompt: "Swap 5 USDT to OKB with max 0.5% slippage",
   },
   {
     mode: "earn",

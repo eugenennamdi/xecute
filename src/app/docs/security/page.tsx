@@ -52,8 +52,8 @@ export default function SecurityPage() {
             <h3 className="text-sm font-semibold text-foreground">
               3. No Arbitrary AI Calldata Generation
             </h3>
-            <p className="text-xs text-foreground/70 leading-relaxed">
-              The AI model is never allowed to directly output raw hex bytecode or arbitrary contract calls. Executable transactions are exclusively assembled by audited, deterministic TypeScript and Solidity adapters.
+            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              The AI model is never allowed to directly output raw hex bytecode or arbitrary contract calls. Executable transactions are exclusively assembled by open-source, deterministic TypeScript and Solidity adapters.
             </p>
           </div>
 

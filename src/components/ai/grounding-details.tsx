@@ -22,14 +22,14 @@ export function GroundingDetails({ metadata }: { metadata: AgentMetadata }) {
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        className="group -mx-1.5 inline-flex items-center gap-1.5 rounded-full border border-black/[0.07] bg-white px-2.5 py-1 text-[11px] font-medium text-foreground/65 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-all hover:border-black/[0.14] hover:bg-[#fafafa] hover:text-foreground active:scale-[0.98]"
+        className="group inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] bg-white px-2.5 py-1 text-[11.5px] font-medium text-foreground/70 shadow-2xs transition-all hover:border-black/[0.14] hover:bg-[#fafafa] hover:text-foreground active:scale-[0.98]"
       >
-        <span className="flex size-3.5 items-center justify-center rounded-full bg-[#FE6501]/10 text-[#FE6501]">
+        <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-[#FE6501]/10 text-[#FE6501]">
           <Cpu className="size-2.5" />
         </span>
-        <span>{label}</span>
-        <span className="text-foreground/25">·</span>
-        <span className="text-foreground/50 tabular-nums">
+        <span className="font-medium text-foreground/80">{label}</span>
+        <span className="text-foreground/25 font-normal">·</span>
+        <span className="text-foreground/50 tabular-nums font-normal">
           {toolCount} tool{toolCount === 1 ? "" : "s"} · {sourceCount} source{sourceCount === 1 ? "" : "s"}
         </span>
         {unavailableCount > 0 ? (
@@ -37,7 +37,7 @@ export function GroundingDetails({ metadata }: { metadata: AgentMetadata }) {
         ) : null}
         <ChevronDownIcon
           size={11}
-          className={cn("text-foreground/40 transition-transform duration-300", open && "rotate-180")}
+          className={cn("text-foreground/40 transition-transform duration-300 group-hover:text-foreground/60", open && "rotate-180")}
         />
       </button>
 
@@ -67,7 +67,7 @@ export function GroundingDetails({ metadata }: { metadata: AgentMetadata }) {
                           "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full text-[10px]",
                           tool.status === "complete"
                             ? "bg-[#16845c]/10 text-[#16845c]"
-                            : tool.status === "unavailable"
+                            : tool.status === "partial" || tool.status === "unavailable"
                               ? "bg-[#a8651c]/10 text-[#a8651c]"
                               : "bg-destructive/10 text-destructive",
                         )}
@@ -76,6 +76,8 @@ export function GroundingDetails({ metadata }: { metadata: AgentMetadata }) {
                           <Check className="size-2.5 stroke-[2.5]" />
                         ) : tool.status === "unavailable" ? (
                           <ServerOff className="size-2.5" />
+                        ) : tool.status === "partial" ? (
+                          <AlertCircle className="size-2.5" />
                         ) : (
                           <AlertCircle className="size-2.5" />
                         )}
@@ -88,10 +90,20 @@ export function GroundingDetails({ metadata }: { metadata: AgentMetadata }) {
                               "inline-flex h-4 items-center rounded-full px-1.5 text-[9.5px] font-medium",
                               tool.status === "complete"
                                 ? "bg-[#16845c]/10 text-[#16845c]"
-                                : "bg-destructive/10 text-destructive",
+                                : tool.status === "partial"
+                                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                  : tool.status === "unavailable"
+                                    ? "bg-[#a8651c]/10 text-[#a8651c]"
+                                    : "bg-destructive/10 text-destructive",
                             )}
                           >
-                            {tool.status === "complete" ? "Complete" : "Unavailable"}
+                            {tool.status === "complete"
+                              ? "Complete"
+                              : tool.status === "partial"
+                                ? "Partial"
+                                : tool.status === "unavailable"
+                                  ? "Unavailable"
+                                  : "Error"}
                           </span>
                         </div>
                         <p className="mt-0.5 text-[11px] leading-relaxed text-foreground/60">{tool.summary}</p>

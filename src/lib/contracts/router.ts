@@ -62,7 +62,14 @@ export function getSwapTransactionPayload({
 
   if (!fromCfg) throw new UnsupportedTokenError(fromTokenSymbol)
   if (!toCfg) throw new UnsupportedTokenError(toTokenSymbol)
-  if (fromSym === toSym) throw new Error("Input and output tokens cannot be the same asset.")
+
+  if (
+    fromSym === toSym ||
+    fromCfg.canonicalAssetId === toCfg.canonicalAssetId ||
+    (fromCfg.address !== "native" && fromCfg.address.toLowerCase() === toCfg.address.toLowerCase())
+  ) {
+    throw new Error("Input and output tokens cannot be the same asset.")
+  }
 
   const safeRecipient = getAddress(recipient)
   const slippageBps = BigInt(Math.min(500, Math.max(0, Math.round((slippage ?? 0.5) * 100))))
@@ -229,5 +236,45 @@ export function getApprovalTransactionPayload({
     to: tokenCfg.address as `0x${string}`,
     value: "0x0",
     data,
+  }
+}
+
+export async function checkRouterOutputLiquidity(
+  toTokenSymbol: string,
+  requiredOutputAmount?: string,
+): Promise<{
+  sufficient: boolean
+  availableBalance: string
+  toSymbol: string
+  rawBigInt?: bigint
+}> {
+  const sym = toTokenSymbol.toUpperCase()
+  const token = findToken(sym, 1952)
+  if (!token) return { sufficient: false, availableBalance: "0", toSymbol: sym }
+
+  try {
+    const { getXLayerTokenBalance, getXLayerNativeBalance } = await import("@/lib/xlayer/rpc")
+    let available = "0"
+    let rawBigInt = 0n
+
+    if (token.address === "native" || sym === "OKB") {
+      const res = await getXLayerNativeBalance(ROUTER_ADDRESS_TESTNET, "testnet")
+      available = res.balance
+      rawBigInt = res.rawBigInt ?? 0n
+    } else {
+      const res = await getXLayerTokenBalance(token.address, ROUTER_ADDRESS_TESTNET, token.decimals, "testnet")
+      available = res.balance
+      rawBigInt = res.rawBigInt ?? 0n
+    }
+
+    if (!requiredOutputAmount || Number(requiredOutputAmount) <= 0) {
+      return { sufficient: true, availableBalance: available, toSymbol: sym, rawBigInt }
+    }
+
+    const reqUnits = parseUnits(requiredOutputAmount, token.decimals)
+    const sufficient = rawBigInt >= reqUnits
+    return { sufficient, availableBalance: available, toSymbol: sym, rawBigInt }
+  } catch {
+    return { sufficient: false, availableBalance: "Unavailable", toSymbol: sym }
   }
 }

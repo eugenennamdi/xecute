@@ -22,16 +22,16 @@ export class MainnetDefiDiscoveryAdapter implements XecuteAdapter {
   }
 
   async getPreview(intent: Intent, _context: ExecutionContext): Promise<AdapterPreview> {
-    const rawAsset = intent.mode === "earn" ? intent.asset || "USDT" : "USDT"
-    const canonicalToken = findToken(rawAsset, 196)
-    const searchSymbol = canonicalToken ? canonicalToken.symbol : rawAsset.toUpperCase()
+    const rawAsset = intent.mode === "earn" && intent.asset ? intent.asset : undefined
+    const canonicalToken = rawAsset ? findToken(rawAsset, 196) : null
+    const searchSymbol = canonicalToken ? canonicalToken.symbol : rawAsset ? rawAsset.toUpperCase() : undefined
 
     try {
       const data = await okxRequest<{ total?: number; list?: Array<Record<string, unknown>> }>({
         path: "/api/v6/defi/product/search",
         method: "POST",
         body: {
-          tokenKeywordList: [searchSymbol],
+          tokenKeywordList: searchSymbol ? [searchSymbol] : [],
           chainIndex: "196",
           pageNum: 1,
         },

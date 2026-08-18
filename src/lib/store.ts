@@ -420,166 +420,21 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
     let onchainTxHash: string | undefined
 
-    // Prompt user's connected wallet to sign and broadcast onchain on X Layer Testnet
+    // Prompt user's connected wallet to sign and broadcast onchain on X Layer Testnet via orchestrator
     if (typeof window !== "undefined" && currentPlan.intent.mode === "trade") {
       try {
-        const ethereum = (window as unknown as {
-          ethereum?: {
-            request: (args: { method: string; params?: unknown[] }) => Promise<string>
+        const { executePlanWithWallet } = await import("@/lib/execution/orchestrator")
+        const result = await executePlanWithWallet(updatedPlan, walletAddress)
+        if (!result.success || !result.txHash) {
+          if (result.error && result.errorCode !== "APPROVAL_REJECTED" && result.errorCode !== "TRANSACTION_REJECTED") {
+            alert(result.error)
           }
-        }).ethereum
-
-        if (!ethereum) {
-          throw new Error("No EVM wallet provider detected in browser.")
-        }
-
-        // 1. Verify connected wallet's active chain at runtime
-        const walletChainHex = await ethereum.request({ method: "eth_chainId" })
-        const activeChainId = Number.parseInt(walletChainHex, 16)
-        if (activeChainId !== 1952) {
           set({ status: "ready" })
-          alert(`Execution blocked: Connected wallet is on chain ${activeChainId}. Please switch network to X Layer Testnet (Chain ID: 1952).`)
           return
         }
-
-        const fromAddr = walletAddress as `0x${string}`
-        const action = currentPlan.intent.action || "swap"
-
-        const { prepareExecutionTransaction } = await import("@/lib/execution/prepare-transaction")
-        const { getXLayerTokenAllowance, getXLayerTransactionReceipt } = await import("@/lib/xlayer/rpc")
-        const { findToken } = await import("@/config/tokens")
-        const { parseUnits } = await import("viem")
-
-        if (action === "swap") {
-          const fromSym = currentPlan.intent.fromToken?.toUpperCase() || ""
-          const fromCfg = findToken(fromSym, 1952)
-          if (!fromCfg) throw new Error(`Unsupported token for swap: ${fromSym}`)
-
-          // Check if token approval prerequisite is required for ERC-20 swap
-          if (fromCfg.address !== "native") {
-            const { ROUTER_ADDRESS_TESTNET } = await import("@/config/contracts")
-            const requiredTokens = parseUnits(currentPlan.intent.amount || "0", fromCfg.decimals)
-
-            const allowRes = await getXLayerTokenAllowance(
-              fromCfg.address,
-              fromAddr,
-              ROUTER_ADDRESS_TESTNET,
-              fromCfg.decimals,
-              "testnet",
-            )
-            if (!allowRes.success || allowRes.rawBigInt === undefined) {
-              set({ status: "ready" })
-              alert("Execution blocked: Onchain allowance verification is unavailable.")
-              return
-            }
-
-            if (allowRes.rawBigInt < requiredTokens) {
-              // Prepare Approval Transaction (simulates, estimates gas, checks native reserve)
-              const approvePrep = await prepareExecutionTransaction({
-                action: "approve",
-                fromToken: fromSym,
-                amount: currentPlan.intent.amount ?? undefined,
-                spender: ROUTER_ADDRESS_TESTNET,
-                walletAddress: fromAddr,
-              })
-
-              // Prompt wallet for approval signature
-              let approvalTxHash: string
-              try {
-                approvalTxHash = await ethereum.request({
-                  method: "eth_sendTransaction",
-                  params: [{
-                    from: fromAddr,
-                    to: approvePrep.to,
-                    data: approvePrep.data,
-                    value: approvePrep.value,
-                    gas: approvePrep.gasLimit,
-                  }],
-                })
-              } catch (approvalErr) {
-                console.warn("Approval signature rejected by user:", approvalErr)
-                set({ status: "ready" })
-                return
-              }
-
-              // Poll for approval transaction confirmation onchain
-              let approvalConfirmed = false
-              for (let i = 0; i < 30; i++) {
-                await new Promise((resolve) => setTimeout(resolve, 2000))
-                const receipt = await getXLayerTransactionReceipt(approvalTxHash, "testnet")
-                if (receipt.status === "mined") {
-                  if (receipt.success) {
-                    approvalConfirmed = true
-                  }
-                  break
-                }
-              }
-
-              if (!approvalConfirmed) {
-                set({ status: "ready" })
-                alert("Token approval was not confirmed onchain. Swap cancelled.")
-                return
-              }
-
-              // Re-check chain ID AFTER approval mining to prevent mid-operation network switch
-              const postApproveChainHex = await ethereum.request({ method: "eth_chainId" })
-              if (Number.parseInt(postApproveChainHex, 16) !== 1952) {
-                set({ status: "ready" })
-                alert("Execution blocked: Wallet network switched after approval. Please switch back to X Layer Testnet (Chain ID: 1952).")
-                return
-              }
-
-              // Re-read allowance onchain to strictly verify authorization
-              const postAllowRes = await getXLayerTokenAllowance(
-                fromCfg.address,
-                fromAddr,
-                ROUTER_ADDRESS_TESTNET,
-                fromCfg.decimals,
-                "testnet",
-              )
-              if (!postAllowRes.success || postAllowRes.rawBigInt === undefined || postAllowRes.rawBigInt < requiredTokens) {
-                set({ status: "ready" })
-                alert("Allowance remains unverified after approval transaction. Swap cancelled.")
-                return
-              }
-            }
-          }
-        }
-
-        // Prepare the primary transaction (swap / transfer / approve / revoke)
-        // This re-evaluates live native balance (accounting for gas consumed in approval phase) and live gas reserve
-        const prep = await prepareExecutionTransaction({
-          action,
-          fromToken: currentPlan.intent.fromToken ?? undefined,
-          toToken: currentPlan.intent.toToken ?? undefined,
-          amount: currentPlan.intent.amount ?? undefined,
-          recipient: currentPlan.intent.recipient ?? undefined,
-          spender: currentPlan.intent.spender ?? undefined,
-          slippage: currentPlan.intent.maxSlippage ?? 0.5,
-          walletAddress: fromAddr,
-        })
-
-        // Re-check chain ID immediately before primary send
-        const finalChainHex = await ethereum.request({ method: "eth_chainId" })
-        if (Number.parseInt(finalChainHex, 16) !== 1952) {
-          set({ status: "ready" })
-          alert("Execution blocked: Connected wallet must be on X Layer Testnet (Chain ID: 1952).")
-          return
-        }
-
-        // Request user signature & broadcast
-        onchainTxHash = await ethereum.request({
-          method: "eth_sendTransaction",
-          params: [{
-            from: fromAddr,
-            to: prep.to,
-            value: prep.value,
-            data: prep.data,
-            gas: prep.gasLimit,
-          }],
-        })
+        onchainTxHash = result.txHash
       } catch (walletError) {
-        console.warn("Wallet signing rejected or failed:", walletError)
+        console.warn("Wallet execution rejected or failed:", walletError)
         const msg = walletError instanceof Error ? walletError.message : "Transaction rejected"
         set({ status: "ready" })
         alert(msg)

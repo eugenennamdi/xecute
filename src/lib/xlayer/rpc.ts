@@ -11,6 +11,7 @@ export async function callXLayerRpc<T = unknown>(
   method: string,
   params: unknown[] = [],
   environment: Environment = "testnet",
+  timeoutMs = 30000,
 ): Promise<T> {
   const config = XLAYER_NETWORKS[environment]
   const urls = config.rpcUrls
@@ -19,7 +20,7 @@ export async function callXLayerRpc<T = unknown>(
   for (const url of urls) {
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000)
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
       const response = await fetch(url, {
         method: "POST",
@@ -47,7 +48,11 @@ export async function callXLayerRpc<T = unknown>(
         return payload.result
       }
     } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err))
+      if (err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"))) {
+        lastError = new Error(`RPC request to ${url} timed out after ${timeoutMs / 1000}s`)
+      } else {
+        lastError = err instanceof Error ? err : new Error(String(err))
+      }
     }
   }
 
@@ -87,7 +92,15 @@ export async function getXLayerNativeBalance(
 ): Promise<{ success: boolean; balance: string; rawWei: string; rawBigInt?: bigint; error?: string }> {
   try {
     const result = await callXLayerRpc<string>("eth_getBalance", [address, "latest"], environment)
-    const rawBigInt = result ? BigInt(result) : BigInt(0)
+    if (!result || result === "0x") {
+      return {
+        success: false,
+        balance: "Unavailable",
+        rawWei: "0x0",
+        error: "RPC returned empty balance response",
+      }
+    }
+    const rawBigInt = BigInt(result)
     return {
       success: true,
       balance: formatWei(result, 18),
@@ -114,6 +127,9 @@ export async function getXLayerTransactionCount(
 ): Promise<{ success: boolean; count?: number; error?: string }> {
   try {
     const result = await callXLayerRpc<string>("eth_getTransactionCount", [address, "latest"], environment)
+    if (!result || result === "0x") {
+      return { success: false, error: "RPC returned empty transaction count" }
+    }
     return { success: true, count: Number.parseInt(result, 16) }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch transaction count"
@@ -130,6 +146,7 @@ export async function isXLayerContract(
 ): Promise<{ success: boolean; isContract?: boolean; error?: string }> {
   try {
     const result = await callXLayerRpc<string>("eth_getCode", [address, "latest"], environment)
+    if (!result) return { success: false, error: "Empty code response" }
     return {
       success: true,
       isContract: result !== "0x" && result !== "0x0" && result.length > 2,
@@ -148,6 +165,9 @@ export async function getXLayerBlockNumber(
 ): Promise<{ success: boolean; blockNumber?: number; error?: string }> {
   try {
     const result = await callXLayerRpc<string>("eth_blockNumber", [], environment)
+    if (!result || result === "0x") {
+      return { success: false, error: "RPC returned empty block number" }
+    }
     return { success: true, blockNumber: Number.parseInt(result, 16) }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch block number"
@@ -163,6 +183,9 @@ export async function getXLayerGasPriceGwei(
 ): Promise<{ success: boolean; gasPriceGwei: string; error?: string }> {
   try {
     const result = await callXLayerRpc<string>("eth_gasPrice", [], environment)
+    if (!result || result === "0x") {
+      return { success: false, gasPriceGwei: "Unavailable", error: "Empty gas price response" }
+    }
     const wei = BigInt(result)
     const gweiDecimal = Number(wei) / 1e9
     const gasPriceGwei = gweiDecimal < 0.01 ? "<0.01" : gweiDecimal.toFixed(3)
@@ -194,7 +217,7 @@ export async function getXLayerTokenBalance(
     )
 
     if (!result || result === "0x") {
-      return { success: true, balance: "0", rawHex: "0x0", rawBigInt: BigInt(0) }
+      return { success: false, balance: "Unavailable", rawHex: "0x0", error: "Contract returned empty balanceOf response" }
     }
     const rawBigInt = BigInt(result)
     return {
@@ -345,8 +368,14 @@ export async function getXLayerTokenAllowance(
       environment,
     )
 
-    if (!result || result === "0x" || result === "0x0") {
-      return { success: true, allowance: "0", rawHex: "0x0", isUnlimited: false, rawBigInt: BigInt(0) }
+    if (!result || result === "0x") {
+      return {
+        success: false,
+        allowance: "Unknown",
+        rawHex: "",
+        isUnlimited: false,
+        error: "Contract returned empty allowance response",
+      }
     }
 
     const rawBigInt = BigInt(result)
@@ -379,8 +408,8 @@ export async function getXLayerApprovalLogs(
   ownerAddress: string,
   tokenAddresses: string[],
   environment: Environment = "testnet",
-  lookbackBlocks = DEFAULT_APPROVAL_LOOKBACK_BLOCKS,
-  chunkSize = APPROVAL_LOGS_CHUNK_SIZE,
+  lookbackBlocks?: number,
+  chunkSize?: number,
 ): Promise<{
   success: boolean
   events: Array<{ tokenAddress: string; spenderAddress: string; blockNumber: number }>
@@ -388,10 +417,14 @@ export async function getXLayerApprovalLogs(
   endBlock: number
   error?: string
 }> {
+  const isTestnet = environment === "testnet"
+  const effectiveLookback = lookbackBlocks ?? (isTestnet ? 500 : DEFAULT_APPROVAL_LOOKBACK_BLOCKS)
+  const effectiveChunkSize = chunkSize ?? (isTestnet ? 90 : APPROVAL_LOGS_CHUNK_SIZE)
+
   const blockRes = await getXLayerBlockNumber(environment)
   const currentBlock = blockRes.success && blockRes.blockNumber !== undefined ? blockRes.blockNumber : 0
   const endBlock = currentBlock
-  const startBlock = Math.max(0, currentBlock - lookbackBlocks)
+  const startBlock = Math.max(0, currentBlock - effectiveLookback)
 
   if (endBlock === 0 || tokenAddresses.length === 0) {
     return { success: blockRes.success, events: [], startBlock: 0, endBlock: 0 }
@@ -403,8 +436,8 @@ export async function getXLayerApprovalLogs(
 
     // Construct contiguous, non-overlapping chunks from startBlock to endBlock
     const chunks: Array<{ from: number; to: number }> = []
-    for (let from = startBlock; from <= endBlock; from += chunkSize) {
-      const to = Math.min(from + chunkSize - 1, endBlock)
+    for (let from = startBlock; from <= endBlock; from += effectiveChunkSize) {
+      const to = Math.min(from + effectiveChunkSize - 1, endBlock)
       chunks.push({ from, to })
     }
 

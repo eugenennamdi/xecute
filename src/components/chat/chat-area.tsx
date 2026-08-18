@@ -53,7 +53,7 @@ const modePlaceholders: Record<Mode, string> = {
 }
 
 const exampleChips: { label: string; mode: Mode; prompt: string }[] = [
-  { label: "Swap 25 USDT → OKB", mode: "trade", prompt: "Swap 25 USDT to OKB with max 0.5% slippage" },
+  { label: "Swap 5 USDT → OKB", mode: "trade", prompt: "Swap 5 USDT to OKB with max 0.5% slippage" },
   { label: "Best USDT yield on X Layer", mode: "earn", prompt: "Find the best live USDT yield opportunities on X Layer" },
   { label: "Scan wallet for risky approvals", mode: "protect", prompt: "Check my risky token approvals and allowances" },
   { label: "Stress-test OKB -10% drop", mode: "predict", prompt: "What happens if OKB drops 10%?" },

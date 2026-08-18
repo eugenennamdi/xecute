@@ -58,8 +58,8 @@ Xecute deliberately separates execution from intelligence during the current rel
 - **Gas-Aware Faucet Assistance**: Deep links to the official OKX X Layer faucet with real-time balance checks.
 - **Human-Confirmed Signing**: Every state mutation produces an interactive confirmation card requiring an explicit Web3 wallet signature.
 
-### 2. Advise · Verified Ecosystem Intelligence (Mainnet)
-- **Deterministic Protocol Registry**: Curated indexing of verified X Layer protocols (DEXs, Lending, Yield) with official contract addresses and deep links.
+### 2. Advise · Ecosystem Intelligence (Mainnet)
+- **Deterministic Protocol Registry**: Curated indexing of configured X Layer protocols (DEXs, Lending, Yield) with contract addresses and deep links.
 - **Real-Time Market & Yield Scouting**: Live reserve data from protocols like Aave V3 and Uniswap V3 on X Layer without AI hallucinations.
 - Dynamic values are only shown when Xecute can retrieve them from a supported onchain or API source.
 
@@ -168,12 +168,14 @@ npm run dev
 
 ## Verification & Tests
 
-Xecute includes 63 automated unit and integration tests covering intent parsing, safety guardrails, token registries, live gas estimation, Protect allowance audits, smart contract invariants, RPC lookups, and execution routing:
+Xecute includes 93 automated unit and integration tests covering intent parsing, safety guardrails, token registries, live gas estimation, Protect allowance audits, smart contract invariants, execution orchestrator lifecycle, RPC lookups, and execution routing:
 
 ```bash
-npm run typecheck   # Type check (0 errors)
-npm test            # 63/63 passing unit & integration tests
-npm run build       # Production build
+npm run typecheck      # Type check (0 errors)
+npm test               # 93/93 passing unit & integration tests
+npm run test:contracts  # Local EVM runtime + onchain live read
+npm run verify:router   # Bytecode SHA256 verification vs deployed contract
+npm run build          # Production build
 ```
 
 ---
@@ -184,7 +186,7 @@ npm run build       # Production build
 - State-changing execution is currently limited to X Layer Testnet (`1952`).
 - X Layer Mainnet (`196`) remains read-only and advisory.
 - Testnet assets hold no real-world monetary value.
-- Execution is restricted to registered capabilities and verified token contracts.
+- Execution is restricted to registered capabilities and tokens configured in Xecute's client-side token registry.
 - Unsupported or unverifiable requests fail closed safely rather than hallucinating results.
 - Xecute never custodies user funds or wallet credentials.
 

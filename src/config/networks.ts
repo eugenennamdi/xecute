@@ -27,7 +27,7 @@ export const XLAYER_NETWORKS: Record<Environment, NetworkConfig> = {
     executionEnabled: true,
     rpcUrls: [
       "https://testrpc.xlayer.tech/terigon",
-      "https://xlayertestrpc.okx.com/terigon",
+      "https://testrpc.xlayer.tech",
     ],
     explorerUrl: "https://www.okx.com/web3/explorer/xlayer-test",
     nativeCurrency: {

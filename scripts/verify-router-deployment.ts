@@ -4,20 +4,23 @@ import solc from "solc"
 import { callXLayerRpc } from "../src/lib/xlayer/rpc"
 import { ROUTER_ADDRESS_TESTNET } from "../src/config/contracts"
 
-function stripSolidityMetadata(bytecodeHex: string): string {
-  const clean = bytecodeHex.startsWith("0x") ? bytecodeHex.slice(2) : bytecodeHex
-  if (clean.length < 100) return clean
-
-  // Solidity appends a 2-byte big-endian metadata length at the end of the runtime bytecode
-  const lenHex = clean.slice(-4)
-  const metaLenBytes = Number.parseInt(lenHex, 16)
-  if (Number.isFinite(metaLenBytes) && metaLenBytes > 20 && metaLenBytes < 150) {
-    const metaLenHex = metaLenBytes * 2 + 4
-    if (clean.length > metaLenHex) {
-      return clean.slice(0, clean.length - metaLenHex)
+function normalizeBytecode(bytecodeHex: string, immutableRefs: Record<string, Array<{ start: number; length: number }>> = {}): string {
+  let clean = bytecodeHex.startsWith("0x") ? bytecodeHex.slice(2) : bytecodeHex
+  // 1. Strip CBOR metadata footer: 0xa2 0x64 "ipfs" ... 0x64 "solc" ...
+  const cborIndex = clean.lastIndexOf("a264697066735822")
+  if (cborIndex !== -1 && cborIndex > clean.length - 250) {
+    clean = clean.slice(0, cborIndex)
+  }
+  // 2. Zero out immutable references at known byte offsets (standard EVM verification normalization)
+  const bytes = Buffer.from(clean, "hex")
+  for (const refId of Object.keys(immutableRefs)) {
+    for (const ref of immutableRefs[refId]) {
+      if (ref.start + ref.length <= bytes.length) {
+        bytes.fill(0, ref.start, ref.start + ref.length)
+      }
     }
   }
-  return clean
+  return bytes.toString("hex").toLowerCase()
 }
 
 async function verifyRouterDeployment() {
@@ -60,6 +63,7 @@ async function verifyRouterDeployment() {
 
   const contractObj = output.contracts["XecuteTestnetRouter.sol"]["XecuteTestnetRouter"]
   const localDeployedBytecode = "0x" + contractObj.evm.deployedBytecode.object
+  const immutableRefs = contractObj.evm.deployedBytecode.immutableReferences || {}
 
   console.log(`[2/3] Compilation Successful!`)
   console.log(`  - Local Deployed Bytecode Length: ${localDeployedBytecode.length} hex chars (${localDeployedBytecode.length / 2 - 1} bytes)`)
@@ -76,25 +80,30 @@ async function verifyRouterDeployment() {
     process.exit(1)
   }
 
-  // 4. Compare Normalized Opcode Bytecode
-  const localStripped = stripSolidityMetadata(localDeployedBytecode)
-  const onchainStripped = stripSolidityMetadata(onchainCode)
+  // 4. Compare Normalized Opcode Bytecode and Cryptographic Hashes
+  const localNorm = normalizeBytecode(localDeployedBytecode, immutableRefs)
+  const onchainNorm = normalizeBytecode(onchainCode, immutableRefs)
 
-  const isBytecodeMatch = localStripped.toLowerCase() === onchainStripped.toLowerCase() ||
-    onchainStripped.toLowerCase().includes(localStripped.slice(0, 1000).toLowerCase()) ||
-    localStripped.toLowerCase().includes(onchainStripped.slice(0, 1000).toLowerCase())
+  const isBytecodeMatch = localNorm === onchainNorm
+
+  const { createHash } = await import("node:crypto")
+  const localHash = createHash("sha256").update(localNorm).digest("hex")
+  const onchainHash = createHash("sha256").update(onchainNorm).digest("hex")
 
   console.log("\n==================================================")
   console.log("Verification Summary:")
   console.log("  - Contract is deployed onchain: YES")
   console.log("  - Deployed Address: " + ROUTER_ADDRESS_TESTNET)
   console.log("  - Runtime Code Length: " + onchainCode.length + " hex chars")
+  console.log("  - Normalized Runtime SHA256 (Local):   " + localHash)
+  console.log("  - Normalized Runtime SHA256 (Onchain): " + onchainHash)
   console.log("  - ABI Function Count: " + contractObj.abi.filter((a: { type: string }) => a.type === "function").length)
   console.log("  - ABI Event Count: " + contractObj.abi.filter((a: { type: string }) => a.type === "event").length)
-  console.log("  - Status: " + (isBytecodeMatch ? "MATCH (Verified Onchain Deployment)" : "MISMATCH"))
+  console.log("  - Status: " + (isBytecodeMatch ? "MATCH" : "MISMATCH"))
   console.log("==================================================")
 
-  if (!isBytecodeMatch && !isContract) {
+  if (!isBytecodeMatch) {
+    console.error("❌ FAILED: Compiled runtime bytecode does not exactly match deployed onchain bytecode.")
     process.exit(1)
   }
 }

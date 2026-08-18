@@ -13,8 +13,9 @@ import {
 } from "@/lib/knowledge/xlayer"
 import { OkxConfigurationError, okxRequest } from "@/lib/okx/client"
 import { getXLayerToken } from "@/lib/okx/xlayer-tokens"
-import { findKnownContract } from "@/config/contracts"
+import { findKnownContract, ROUTER_ADDRESS_TESTNET } from "@/config/contracts"
 import { XLAYER_TESTNET_TOKENS, XLAYER_MAINNET_TOKENS, findToken } from "@/config/tokens"
+import { checkRouterOutputLiquidity } from "@/lib/contracts/router"
 import {
   callXLayerRpc,
   getXLayerAccountSnapshot,
@@ -151,6 +152,22 @@ export const xLayerToolDefinitions: FunctionTool[] = [
         maxSlippage: { type: "number", minimum: 0.01, maximum: 10 },
       },
       required: ["fromToken", "toToken", "amount", "maxSlippage"],
+    },
+  },
+  {
+    type: "function",
+    name: "check_xlayer_router_liquidity",
+    description:
+      "Check live onchain pool reserves of the Xecute Testnet Router (0x9be3af8223f49b9357941db269a39775f7802acb) for a target output token (OKB, USDT, USDC, USDG) to verify whether the router has sufficient balance to fulfill a testnet swap.",
+    strict: true,
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        toToken: { type: "string" },
+        requiredOutputAmount: { type: ["string", "null"] },
+      },
+      required: ["toToken", "requiredOutputAmount"],
     },
   },
   {
@@ -481,13 +498,42 @@ async function getSwapQuote(argumentsValue: unknown): Promise<AgentToolResult> {
   }
 }
 
-const VERIFIED_XLAYER_DEX_POOLS: Record<
+const RouterLiquiditySchema = z.object({
+  toToken: z.string(),
+  requiredOutputAmount: z.string().nullable().optional(),
+})
+
+async function checkRouterLiquidityTool(argumentsValue: unknown): Promise<AgentToolResult> {
+  const input = RouterLiquiditySchema.parse(argumentsValue)
+  const res = await checkRouterOutputLiquidity(input.toToken, input.requiredOutputAmount || undefined)
+
+  return {
+    ok: true,
+    data: {
+      routerAddress: ROUTER_ADDRESS_TESTNET,
+      targetToken: res.toSymbol,
+      availableBalance: res.availableBalance,
+      requiredAmount: input.requiredOutputAmount,
+      sufficient: res.sufficient,
+    },
+    sources: [xLayerSources.trade],
+    trace: {
+      name: "check_xlayer_router_liquidity",
+      label: "Router liquidity check",
+      status: "complete",
+      summary: res.sufficient
+        ? `Router pool has sufficient ${res.toSymbol} (${res.availableBalance})`
+        : `Insufficient router liquidity: pool holds ${res.availableBalance} ${res.toSymbol}`,
+    },
+  }
+}
+
+const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
   string,
   Array<{
     name: string
     protocol: string
     apy: string
-    tvlUsd?: string
     productGroup: string
     chainIndex: string
     url: string
@@ -495,7 +541,7 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
 > = {
   USDT: [
     {
-      name: "USDT / USDC (0.01%)",
+      name: "USD₮0 / USDC (0.01%)",
       protocol: "Uniswap V3",
       apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
@@ -503,7 +549,7 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
       url: "https://app.uniswap.org/explore/pools/xlayer/0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
     },
     {
-      name: "USDT / OKB (0.05%)",
+      name: "USD₮0 / OKB (0.05%)",
       protocol: "Uniswap V3",
       apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
@@ -511,12 +557,20 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
       url: "https://app.uniswap.org/explore/pools/xlayer/0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
     },
     {
-      name: "USDT / xETH (0.05%)",
+      name: "xETH / USD₮0 (0.05%)",
       protocol: "Uniswap V3",
       apy: "Variable (Live telemetry unavailable)",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
+    },
+    {
+      name: "xBTC / USD₮0 (0.05%)",
+      protocol: "Uniswap V3",
+      apy: "Variable (Live telemetry unavailable)",
+      productGroup: "DEX_POOL",
+      chainIndex: "196",
+      url: "https://app.uniswap.org/explore/pools/xlayer/0x5fcfb33c9ab1665fee892eb2af163e863a874d73",
     },
   ],
   USDT0: [
@@ -617,7 +671,7 @@ const VERIFIED_XLAYER_DEX_POOLS: Record<
       url: "https://app.uniswap.org/explore/pools/xlayer/0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
     },
   ],
-  WBTC: [
+  XBTC: [
     {
       name: "xBTC / USDT (0.05%)",
       protocol: "Uniswap V3",
@@ -682,7 +736,7 @@ async function discoverEarn(argumentsValue: unknown): Promise<AgentToolResult> {
       }
     })
 
-    const dexPools = VERIFIED_XLAYER_DEX_POOLS[rawAsset] ?? []
+    const dexPools = CONFIGURED_XLAYER_POOL_REFERENCES[rawAsset] ?? []
     const combinedOpps: Array<{
       investmentId?: string
       name: string
@@ -1264,7 +1318,7 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
       trace: {
         name: "inspect_xlayer_allowances",
         label: "ERC-20 approval scan",
-        status: scanStatus === "failed" ? "error" : "complete",
+        status: scanStatus === "failed" ? "error" : scanStatus === "partial" ? "partial" : "complete",
         summary: scanStatus === "failed"
           ? "ERC-20 approval scan failed to verify onchain state"
           : scanStatus === "partial"
@@ -1298,6 +1352,8 @@ export async function executeXLayerTool(
       return getMarketSnapshot(parsedArguments)
     case "get_xlayer_swap_quote":
       return getSwapQuote(parsedArguments)
+    case "check_xlayer_router_liquidity":
+      return checkRouterLiquidityTool(parsedArguments)
     case "discover_xlayer_earn":
       return discoverEarn(parsedArguments)
     case "inspect_xlayer_address":

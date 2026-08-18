@@ -270,7 +270,7 @@ export function evaluateIntentSafety(intent: Intent): SafetyReport {
   const checks: SafetyCheck[] = []
 
   if (intent.mode === "earn") {
-    checks.push(check("earn-protocol-risk", "Audited protocols only", "pass", "Ecosystem protocols filtered by audit and TVL thresholds.", "network"))
+    checks.push(check("earn-protocol-risk", "Verified protocols only", "pass", "Ecosystem protocols filtered by verification and TVL thresholds.", "network"))
     checks.push(check("earn-non-custodial", "Non-custodial deposit", "pass", "Funds remain under direct smart contract control without platform custody.", "network"))
   } else if (intent.mode === "predict") {
     checks.push(check("predict-scenario-only", "Scenario modeling", "pass", "Read-only simulation without financial speculation or trade recommendation.", "network"))

@@ -101,7 +101,7 @@ export class TestnetSwapAdapter implements XecuteAdapter {
         minimumReceived,
         slippage: `${maxSlippage}%`,
         gasEstimate,
-        priceImpact: "N/A (Deterministic Testnet rate)",
+        priceImpact: "N/A",
         route: `Xecute Testnet Router (${ROUTER_ADDRESS_TESTNET.slice(0, 6)}...${ROUTER_ADDRESS_TESTNET.slice(-4)})`,
         quotedAt: new Date().toISOString(),
       },

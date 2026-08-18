@@ -16,7 +16,7 @@ export type AgentSource = z.infer<typeof AgentSourceSchema>
 export const AgentToolTraceSchema = z.object({
   name: z.string(),
   label: z.string(),
-  status: z.enum(["complete", "unavailable", "error"]),
+  status: z.enum(["complete", "partial", "unavailable", "error"]),
   summary: z.string(),
 })
 

@@ -20,10 +20,10 @@ export default function ContractsPage() {
 
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          Contracts & Verified Deployments
+          Contracts & Deployments
         </h1>
         <p className="text-sm text-foreground/70 leading-relaxed">
-          Canonical list of deployed smart contracts and verified token registries used by Xecute across X Layer Testnet and Mainnet.
+          Deployed smart contracts and configured token registries used by Xecute across X Layer Testnet and Mainnet.
         </p>
       </div>
 
@@ -80,10 +80,10 @@ export default function ContractsPage() {
         </div>
       </div>
 
-      {/* Verified Mainnet Token Registry */}
+      {/* Configured Mainnet Token Registry */}
       <div className="space-y-4 pt-2">
         <h2 id="mainnet-tokens" className="text-lg font-semibold tracking-tight text-foreground">
-          Verified Mainnet Token Registry (Chain ID: 196)
+          Configured Mainnet Token Registry (Chain ID: 196)
         </h2>
         <div className="overflow-x-auto rounded-2xl border border-black/[0.07] bg-white shadow-2xs">
           <table className="w-full text-left text-xs">
@@ -123,10 +123,10 @@ export default function ContractsPage() {
         </div>
       </div>
 
-      {/* Verified Testnet Token Registry */}
+      {/* Configured Testnet Token Registry */}
       <div className="space-y-4 pt-2">
         <h2 id="testnet-tokens" className="text-lg font-semibold tracking-tight text-foreground">
-          Verified Testnet Token Registry (Chain ID: 1952)
+          Configured Testnet Token Registry (Chain ID: 1952)
         </h2>
         <div className="overflow-x-auto rounded-2xl border border-black/[0.07] bg-white shadow-2xs">
           <table className="w-full text-left text-xs">

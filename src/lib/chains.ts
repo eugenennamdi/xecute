@@ -17,7 +17,7 @@ export const wagmiAdapter = new WagmiAdapter({
   projectId: reownProjectId,
   storage: createStorage({ storage: cookieStorage }),
   transports: {
-    [xLayerTestnet.id]: http(xLayerTestnet.rpcUrls.default.http[0]),
+    [xLayerTestnet.id]: http("https://testrpc.xlayer.tech/terigon"),
   },
   ssr: true,
 })

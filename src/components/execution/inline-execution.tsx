@@ -429,7 +429,7 @@ function TransferResult({
         <div className="mt-2.5 grid grid-cols-3 divide-x divide-black/[0.06] rounded-xl border border-black/[0.06] bg-white">
           {[
             ["Network", "X Layer Testnet"],
-            ["Gas Est.", preview.gasEstimate || "21,000 gas"],
+            ["Gas Est.", preview.gasEstimate || "Unavailable"],
             ["Asset Type", intent.fromToken === "OKB" ? "Native OKB" : "ERC-20 Token"],
           ].map(([label, value]) => (
             <div key={label} className="min-w-0 px-1 sm:px-2 py-1.5 sm:py-2 text-center">
@@ -497,8 +497,8 @@ function ApprovalResult({
   preserveGas: boolean
 }) {
   const isRevoke = intent.action === "revoke"
-  const spenderAddress = intent.spender || "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"
-  const shortSpender = spenderAddress.length > 16
+  const spenderAddress = intent.spender || "Unavailable"
+  const shortSpender = spenderAddress.startsWith("0x") && spenderAddress.length > 16
     ? `${spenderAddress.slice(0, 8)}...${spenderAddress.slice(-6)}`
     : spenderAddress
 
@@ -525,7 +525,7 @@ function ApprovalResult({
               {isRevoke ? "Revoke Token" : "Approve Token"}
             </p>
             <p className="mt-0.5 truncate font-mono text-base sm:text-lg font-semibold tracking-tight text-foreground">
-              {isRevoke ? "0" : (intent.amount ?? "Unlimited")}{" "}
+              {isRevoke ? "0" : (intent.amount ?? "Unavailable")}{" "}
               <span className="font-sans text-xs font-medium text-foreground/50">{intent.fromToken ?? preview.fromToken}</span>
             </p>
           </div>
@@ -543,7 +543,7 @@ function ApprovalResult({
         <div className="mt-2.5 grid grid-cols-3 divide-x divide-black/[0.06] rounded-xl border border-black/[0.06] bg-white">
           {[
             ["Network", "X Layer Testnet"],
-            ["Gas Est.", preview.gasEstimate || "45,000 gas"],
+            ["Gas Est.", preview.gasEstimate || "Unavailable"],
             ["Action Type", isRevoke ? "Revocation (0)" : "Approval Grant"],
           ].map(([label, value]) => (
             <div key={label} className="min-w-0 px-1 sm:px-2 py-1.5 sm:py-2 text-center">

@@ -143,7 +143,7 @@ function parseTrade(
       /\b(?:send|transfer)\s+(?:(\d+(?:\.\d+)?)\s+)?([a-z][a-z0-9.]*)\s*(?:to\s+)?(0x[a-fA-F0-9]{40})?/i,
     )
     const amount = transferMatch?.[1] ?? extractAmount(prompt)
-    const fromToken = normalizeToken(transferMatch?.[2] ?? tokens[0] ?? "OKB")
+    const fromToken = normalizeToken(transferMatch?.[2] ?? tokens[0] ?? null)
     const recipient = ethAddress
 
     return TradeIntentSchema.parse({
@@ -163,8 +163,8 @@ function parseTrade(
 
   // 2. Revoke Intent: Revoke [Token] access/approval for [0x...]
   if (/\b(revoke|cancel\s+approval|remove\s+approval|zero\s+out\s+approval)\b/i.test(text) || (isFollowUpCue && historyHasRevoke)) {
-    const fromToken = normalizeToken(tokens[0] ?? historyRevokeToken ?? "USDC")
-    const spender = ethAddress ?? historyRevokeSpender ?? (defaultNetwork === "testnet" ? ROUTER_ADDRESS_TESTNET : null)
+    const fromToken = normalizeToken(tokens[0] ?? historyRevokeToken ?? null)
+    const spender = ethAddress ?? historyRevokeSpender ?? null
 
     return TradeIntentSchema.parse({
       mode: "trade",
@@ -186,9 +186,9 @@ function parseTrade(
     const approveMatch = cleanPrompt.match(
       /\bapprove\s+(?:(\d+(?:\.\d+)?)\s+)?([a-z][a-z0-9.]*)\s*(?:for|to|spender\s+)?(0x[a-fA-F0-9]{40})?/i,
     )
-    const amount = approveMatch?.[1] ?? historyApproveAmount ?? extractAmount(prompt) ?? "1"
-    const fromToken = normalizeToken(approveMatch?.[2] ?? tokens[0] ?? historyApproveToken ?? "USDT")
-    const spender = ethAddress ?? historyApproveSpender ?? (defaultNetwork === "testnet" ? ROUTER_ADDRESS_TESTNET : null)
+    const amount = approveMatch?.[1] ?? historyApproveAmount ?? extractAmount(prompt)
+    const fromToken = normalizeToken(approveMatch?.[2] ?? tokens[0] ?? historyApproveToken ?? null)
+    const spender = ethAddress ?? historyApproveSpender ?? null
 
     return TradeIntentSchema.parse({
       mode: "trade",

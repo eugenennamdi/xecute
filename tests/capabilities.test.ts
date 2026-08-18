@@ -203,18 +203,24 @@ test("inspect_xlayer_allowances scans permissions and returns focused audit tabl
 test("parses conversational revoke prompts and follow-up preparation requests into actionable execution plans", async () => {
   const { parseIntent } = await import("../src/agents/intent-parser")
   const { runXecuteAgent } = await import("../src/agents/xecute-agent")
-
-  // Conversational prompt: "let's revoke for usdc"
-  const intent1 = parseIntent("let's revoke for usdc", "trade", "testnet")
+  // Explicit prompt with spender
+  const intent1 = parseIntent("let's revoke USDC for 0x9be3af8223f49b9357941db269a39775f7802acb", "trade", "testnet")
   assert.equal(intent1.mode, "trade")
   assert.equal(intent1.action, "revoke")
   assert.equal(intent1.fromToken, "USDC")
   assert.equal(intent1.amount, "0")
   assert.equal(intent1.spender, "0x9be3af8223f49b9357941db269a39775f7802acb")
 
-  // Follow-up confirmation prompt: "prepare the transaction, my wallet is already connected"
+  // Vague prompt without spender fails closed (spender is null)
+  const vagueIntent = parseIntent("let's revoke for usdc", "trade", "testnet")
+  assert.equal(vagueIntent.mode, "trade")
+  if (vagueIntent.mode === "trade") {
+    assert.equal(vagueIntent.spender, null)
+  }
+
+  // Follow-up confirmation prompt with history containing spender
   const intent2 = parseIntent("prepare the transaction, my wallet is already connected", "trade", "testnet", [
-    { role: "user", content: "let's revoke for usdc" },
+    { role: "user", content: "let's revoke USDC for 0x9be3af8223f49b9357941db269a39775f7802acb" },
     { role: "assistant", content: "I can prepare a zero-allowance revocation for your USDC." },
   ])
   assert.equal(intent2.mode, "trade")
@@ -225,7 +231,7 @@ test("parses conversational revoke prompts and follow-up preparation requests in
 
   // End-to-end agent returns valid execution plan card for revocation
   const agentResponse = await runXecuteAgent({
-    messages: [{ role: "user", content: "let's revoke for usdc" }],
+    messages: [{ role: "user", content: "let's revoke USDC for 0x9be3af8223f49b9357941db269a39775f7802acb" }],
     walletAddress: "0x727ee5DC96E729d8f6C6930cd02ad1695498f3B8",
     mode: "trade",
     network: "testnet",

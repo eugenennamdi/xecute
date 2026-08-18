@@ -57,10 +57,10 @@ export default function AdvisePage() {
           <div className="flex flex-col justify-between rounded-2xl border border-black/[0.07] bg-white p-5 shadow-2xs">
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-foreground">
-                2. Verified Protocol Registry
+                2. Supported Protocol Registry
               </h3>
               <p className="text-xs text-foreground/70 leading-relaxed">
-                Indexes verified DEXs (Uniswap V3, Curve Finance), lending markets, cross-chain bridges, and analytics tools native to X Layer.
+                Indexes supported DEXs (Uniswap V3, Curve Finance), lending markets, cross-chain bridges, and analytics tools native to X Layer.
               </p>
             </div>
             <div className="mt-4 rounded-xl bg-[#fafafa] p-3 border border-black/[0.04]">
@@ -85,7 +85,7 @@ export default function AdvisePage() {
               <tr>
                 <th className="px-4 py-3 font-semibold">Protocol</th>
                 <th className="px-4 py-3 font-semibold">Category</th>
-                <th className="px-4 py-3 font-semibold">Verified Contract / URL</th>
+                <th className="px-4 py-3 font-semibold">Configured Contract / URL</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/[0.04] text-foreground/80">

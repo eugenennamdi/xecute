@@ -352,7 +352,7 @@ export function ExecutionTrace({ mode }: { mode: Mode }) {
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        className="-mx-1.5 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11.5px] font-medium text-foreground/50 transition-colors hover:bg-black/[0.04] hover:text-foreground/80 active:scale-[0.98]"
+        className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11.5px] font-medium text-foreground/50 transition-colors hover:bg-black/[0.04] hover:text-foreground/80 active:scale-[0.98]"
       >
         <Sparkles className="size-3 text-[#FE6501]" />
         <span>Verified X Layer Trace</span>
