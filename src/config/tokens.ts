@@ -173,10 +173,26 @@ export const XLAYER_MAINNET_TOKENS: Record<string, Token> = {
   },
 }
 
-export function findToken(symbol: string, chainId: number = 1952): Token | null {
-  const upper = symbol.trim().toUpperCase()
+export function findTokenByAddress(address: string, chainId: number = 1952): Token | null {
+  const normalized = address.toLowerCase()
+  const pool = chainId === 1952 ? XLAYER_TESTNET_TOKENS : XLAYER_MAINNET_TOKENS
+  for (const token of Object.values(pool)) {
+    if (token.address !== "native" && token.address.toLowerCase() === normalized) {
+      return token
+    }
+  }
+  return null
+}
+
+export function findToken(symbolOrAddress: string, chainId: number = 1952): Token | null {
+  const clean = symbolOrAddress.trim()
+  if (clean.startsWith("0x") && clean.length === 42) {
+    return findTokenByAddress(clean, chainId)
+  }
+
+  const upper = clean.toUpperCase()
   if (chainId === 1952) {
-    const direct = XLAYER_TESTNET_TOKENS[symbol] || XLAYER_TESTNET_TOKENS[upper]
+    const direct = XLAYER_TESTNET_TOKENS[clean] || XLAYER_TESTNET_TOKENS[upper]
     if (direct) return direct
     if (upper === "XUSDT" || upper === "USDT" || upper === "USDT0" || upper === "USD₮0") return XLAYER_TESTNET_TOKENS.USDT
     if (upper === "XUSDC" || upper === "USDC" || upper === "USDC_TEST") return XLAYER_TESTNET_TOKENS.USDC
@@ -186,14 +202,14 @@ export function findToken(symbol: string, chainId: number = 1952): Token | null 
   }
 
   if (chainId === 196) {
-    const direct = XLAYER_MAINNET_TOKENS[symbol] || XLAYER_MAINNET_TOKENS[upper]
+    const direct = XLAYER_MAINNET_TOKENS[clean] || XLAYER_MAINNET_TOKENS[upper]
     if (direct) return direct
     if (upper === "USDT0" || upper === "USD₮0") return XLAYER_MAINNET_TOKENS.USDT0
     if (upper === "USDT" || upper === "USDT_BRIDGED") return XLAYER_MAINNET_TOKENS.USDT
-    if (upper === "USDC") return XLAYER_MAINNET_TOKENS.USDC
-    if (upper === "USDC_BRIDGED" || upper === "USDC.E") return XLAYER_MAINNET_TOKENS.USDC_BRIDGED
+    if (upper === "USDC" || upper === "USDC_NATIVE") return XLAYER_MAINNET_TOKENS.USDC
+    if (upper === "USDC_BRIDGED" || upper === "USDC.E" || upper === "USDC_LEGACY") return XLAYER_MAINNET_TOKENS.USDC_BRIDGED
     if (upper === "WETH" || upper === "ETH" || upper === "XETH") return XLAYER_MAINNET_TOKENS.WETH
-    if (upper === "WBTC" || upper === "BTC" || upper === "XBTC") return XLAYER_MAINNET_TOKENS.WBTC
+    if (upper === "WBTC" || upper === "BTC") return XLAYER_MAINNET_TOKENS.WBTC
     if (upper === "OKB") return XLAYER_MAINNET_TOKENS.OKB
     if (upper === "WOKB") return XLAYER_MAINNET_TOKENS.WOKB
     return null

@@ -97,7 +97,7 @@ flowchart TB
 1. **Gas Reserve Protection**: Enforces $\ge 0.005\text{ OKB}$ native buffer to prevent stranded wallets.
 2. **Slippage Ceiling**: Caps execution slippage to $\le 5.0\%$.
 3. **Network Isolation**: Enforces execution enabled on Testnet (`1952`) and advisory-only on Mainnet (`196`).
-4. **Address Checksum Validation**: Prevents burns or malformed recipient inputs.
+4. **Address Format Validation**: Prevents burns or malformed recipient inputs.
 5. **Real-Time Balance Verification**: Re-checks onchain balances immediately before proposing an action.
 6. **Transaction Simulation**: Dry-runs transactions (`eth_call` / `eth_estimateGas`) against live state; fails closed on error.
 7. **Human-in-the-Loop**: No autonomous signing—every state mutation requires an explicit Web3 wallet signature.

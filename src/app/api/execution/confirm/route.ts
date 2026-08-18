@@ -41,7 +41,27 @@ export async function POST(request: Request) {
       return Response.json({ error: "The action failed the current safety policy", safety }, { status: 409 })
     }
 
-    const receipt = createExecutionReceipt(plan.intent, txHash as `0x${string}`)
+    // Query onchain RPC for verified receipt status
+    const { getXLayerTransactionReceipt } = await import("@/lib/xlayer/rpc")
+    const rpcReceipt = await getXLayerTransactionReceipt(txHash, "testnet")
+
+    let status: "executed" | "pending" | "reverted" | "broadcast" = "broadcast"
+    let gasUsed: string | undefined
+    let blockNumber: number | undefined
+
+    if (rpcReceipt.status === "mined") {
+      status = rpcReceipt.success ? "executed" : "reverted"
+      gasUsed = rpcReceipt.gasUsed
+      blockNumber = rpcReceipt.blockNumber
+    } else if (rpcReceipt.status === "pending") {
+      status = "pending"
+    }
+
+    const receipt = createExecutionReceipt(plan.intent, txHash as `0x${string}`, {
+      status,
+      gasUsed,
+      blockNumber,
+    })
 
     let persistence: "stored" | "unavailable" = "unavailable"
 

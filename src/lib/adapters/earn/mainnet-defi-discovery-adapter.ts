@@ -1,5 +1,6 @@
 import { okxRequest } from "@/lib/okx/client"
 import { formatApy, getProtocolUrl } from "@/lib/action-plan"
+import { findToken } from "@/config/tokens"
 import type { Intent } from "@/lib/intents"
 import type { AdapterPreview, ExecutionContext, XecuteAdapter } from "@/lib/adapters/types"
 import type { SimulationResult, TransactionRequest } from "@/types/execution"
@@ -14,21 +15,23 @@ export class MainnetDefiDiscoveryAdapter implements XecuteAdapter {
   supports(intent: Intent, context: ExecutionContext): boolean {
     return (
       intent.mode === "earn" &&
-      (context.chainId === 196 || intent.network === "mainnet")
+      intent.network === "mainnet" &&
+      context.chainId === 196 &&
+      this.chainIds.includes(196)
     )
   }
 
   async getPreview(intent: Intent, _context: ExecutionContext): Promise<AdapterPreview> {
-    const asset = intent.mode === "earn" ? intent.asset || "USDT" : "USDT"
-    try {
-      const searchKeywords = [asset.toUpperCase()]
-      if (asset.toUpperCase() === "USDT0") searchKeywords.push("USDT")
+    const rawAsset = intent.mode === "earn" ? intent.asset || "USDT" : "USDT"
+    const canonicalToken = findToken(rawAsset, 196)
+    const searchSymbol = canonicalToken ? canonicalToken.symbol : rawAsset.toUpperCase()
 
+    try {
       const data = await okxRequest<{ total?: number; list?: Array<Record<string, unknown>> }>({
         path: "/api/v6/defi/product/search",
         method: "POST",
         body: {
-          tokenKeywordList: searchKeywords,
+          tokenKeywordList: [searchSymbol],
           chainIndex: "196",
           pageNum: 1,
         },
@@ -39,13 +42,12 @@ export class MainnetDefiDiscoveryAdapter implements XecuteAdapter {
         const protocol = String(item.platformName || "X Layer DeFi")
         const name = String(item.name || item.platformName || "Pool")
         const rawRate = String(item.rate || "Variable")
-        const url = String(item.link || item.dappUrl || getProtocolUrl(protocol, name, asset, String(item.investmentId || "")))
+        const url = String(item.link || item.dappUrl || getProtocolUrl(protocol, name, searchSymbol, String(item.investmentId || "")))
         return {
           name,
           protocol,
           apy: formatApy(rawRate),
           tvlUsd: item.tvl ? String(item.tvl) : undefined,
-          risk: "Low",
           isTestVault: false,
           url,
         }
@@ -55,11 +57,9 @@ export class MainnetDefiDiscoveryAdapter implements XecuteAdapter {
         earnOpportunities: opportunities,
         routeDescription: "Live X Layer Mainnet DeFi Registry",
       }
-    } catch {
-      return {
-        earnOpportunities: [],
-        routeDescription: "Live X Layer Mainnet DeFi Registry",
-      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Data provider error"
+      throw new Error(`Mainnet DeFi product discovery unavailable: ${msg}`)
     }
   }
 

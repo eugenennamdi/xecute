@@ -78,14 +78,28 @@ export function formatWei(hexOrBigInt: string | bigint, decimals = 18): string {
 /**
  * Read native OKB balance for an address on X Layer Testnet or Mainnet
  */
+/**
+ * Read native OKB balance for an address on X Layer Testnet or Mainnet
+ */
 export async function getXLayerNativeBalance(
   address: string,
   environment: Environment = "testnet",
-): Promise<{ balance: string; rawWei: string }> {
-  const result = await callXLayerRpc<string>("eth_getBalance", [address, "latest"], environment)
-  return {
-    balance: formatWei(result, 18),
-    rawWei: result,
+): Promise<{ success: boolean; balance: string; rawWei: string; error?: string }> {
+  try {
+    const result = await callXLayerRpc<string>("eth_getBalance", [address, "latest"], environment)
+    return {
+      success: true,
+      balance: formatWei(result, 18),
+      rawWei: result,
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch native balance"
+    return {
+      success: false,
+      balance: "Unavailable",
+      rawWei: "0x0",
+      error: message,
+    }
   }
 }
 
@@ -95,9 +109,14 @@ export async function getXLayerNativeBalance(
 export async function getXLayerTransactionCount(
   address: string,
   environment: Environment = "testnet",
-): Promise<number> {
-  const result = await callXLayerRpc<string>("eth_getTransactionCount", [address, "latest"], environment)
-  return Number.parseInt(result, 16)
+): Promise<{ success: boolean; count?: number; error?: string }> {
+  try {
+    const result = await callXLayerRpc<string>("eth_getTransactionCount", [address, "latest"], environment)
+    return { success: true, count: Number.parseInt(result, 16) }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch transaction count"
+    return { success: false, error: message }
+  }
 }
 
 /**
@@ -106,9 +125,17 @@ export async function getXLayerTransactionCount(
 export async function isXLayerContract(
   address: string,
   environment: Environment = "testnet",
-): Promise<boolean> {
-  const result = await callXLayerRpc<string>("eth_getCode", [address, "latest"], environment)
-  return result !== "0x" && result !== "0x0" && result.length > 2
+): Promise<{ success: boolean; isContract?: boolean; error?: string }> {
+  try {
+    const result = await callXLayerRpc<string>("eth_getCode", [address, "latest"], environment)
+    return {
+      success: true,
+      isContract: result !== "0x" && result !== "0x0" && result.length > 2,
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to query code"
+    return { success: false, error: message }
+  }
 }
 
 /**
@@ -116,9 +143,14 @@ export async function isXLayerContract(
  */
 export async function getXLayerBlockNumber(
   environment: Environment = "testnet",
-): Promise<number> {
-  const result = await callXLayerRpc<string>("eth_blockNumber", [], environment)
-  return Number.parseInt(result, 16)
+): Promise<{ success: boolean; blockNumber?: number; error?: string }> {
+  try {
+    const result = await callXLayerRpc<string>("eth_blockNumber", [], environment)
+    return { success: true, blockNumber: Number.parseInt(result, 16) }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch block number"
+    return { success: false, error: message }
+  }
 }
 
 /**
@@ -126,14 +158,16 @@ export async function getXLayerBlockNumber(
  */
 export async function getXLayerGasPriceGwei(
   environment: Environment = "testnet",
-): Promise<string> {
+): Promise<{ success: boolean; gasPriceGwei: string; error?: string }> {
   try {
     const result = await callXLayerRpc<string>("eth_gasPrice", [], environment)
     const wei = BigInt(result)
     const gweiDecimal = Number(wei) / 1e9
-    return gweiDecimal < 0.01 ? "<0.01" : gweiDecimal.toFixed(3)
-  } catch {
-    return "0.02"
+    const gasPriceGwei = gweiDecimal < 0.01 ? "<0.01" : gweiDecimal.toFixed(3)
+    return { success: true, gasPriceGwei }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch gas price"
+    return { success: false, gasPriceGwei: "Unavailable", error: message }
   }
 }
 
@@ -145,7 +179,7 @@ export async function getXLayerTokenBalance(
   userAddress: string,
   decimals = 18,
   environment: Environment = "testnet",
-): Promise<{ balance: string; rawHex: string }> {
+): Promise<{ success: boolean; balance: string; rawHex: string; rawBigInt?: bigint; error?: string }> {
   try {
     // balanceOf(address) function selector: 0x70a08231 + 32-byte zero-padded address
     const cleanAddress = userAddress.toLowerCase().replace(/^0x/, "").padStart(64, "0")
@@ -157,13 +191,19 @@ export async function getXLayerTokenBalance(
       environment,
     )
 
-    if (!result || result === "0x") return { balance: "0", rawHex: "0x0" }
+    if (!result || result === "0x") {
+      return { success: true, balance: "0", rawHex: "0x0", rawBigInt: BigInt(0) }
+    }
+    const rawBigInt = BigInt(result)
     return {
+      success: true,
       balance: formatWei(result, decimals),
       rawHex: result,
+      rawBigInt,
     }
-  } catch {
-    return { balance: "0", rawHex: "0x0" }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch token balance"
+    return { success: false, balance: "Unavailable", rawHex: "0x0", error: message }
   }
 }
 
@@ -179,33 +219,88 @@ export async function getXLayerAccountSnapshot(
   chainId: number
   nativeBalance: string
   nativeSymbol: string
-  transactionCount: number
-  isContract: boolean
-  blockNumber: number
+  transactionCount: number | "Unavailable"
+  isContract: boolean | "Unknown"
+  blockNumber: number | "Unavailable"
   gasPriceGwei: string
   observedAt: string
 }> {
   const config = XLAYER_NETWORKS[environment]
 
-  const [balanceRes, txCount, isContract, blockNumber, gasPrice] = await Promise.all([
-    getXLayerNativeBalance(address, environment).catch(() => ({ balance: "0", rawWei: "0x0" })),
-    getXLayerTransactionCount(address, environment).catch(() => 0),
-    isXLayerContract(address, environment).catch(() => false),
-    getXLayerBlockNumber(environment).catch(() => 0),
-    getXLayerGasPriceGwei(environment).catch(() => "0.02"),
+  const [balanceRes, txRes, contractRes, blockRes, gasRes] = await Promise.all([
+    getXLayerNativeBalance(address, environment),
+    getXLayerTransactionCount(address, environment),
+    isXLayerContract(address, environment),
+    getXLayerBlockNumber(environment),
+    getXLayerGasPriceGwei(environment),
   ])
 
   return {
     address,
     environment,
     chainId: config.chainId,
-    nativeBalance: balanceRes.balance,
+    nativeBalance: balanceRes.success ? balanceRes.balance : "Unavailable",
     nativeSymbol: "OKB",
-    transactionCount: txCount,
-    isContract,
-    blockNumber,
-    gasPriceGwei: gasPrice,
+    transactionCount: txRes.success && txRes.count !== undefined ? txRes.count : "Unavailable",
+    isContract: contractRes.success && contractRes.isContract !== undefined ? contractRes.isContract : "Unknown",
+    blockNumber: blockRes.success && blockRes.blockNumber !== undefined ? blockRes.blockNumber : "Unavailable",
+    gasPriceGwei: gasRes.success ? gasRes.gasPriceGwei : "Unavailable",
     observedAt: new Date().toISOString(),
+  }
+}
+
+/**
+ * Query real onchain transaction receipt via eth_getTransactionReceipt
+ */
+export async function getXLayerTransactionReceipt(
+  txHash: string,
+  environment: Environment = "testnet",
+): Promise<{
+  status: "mined" | "pending" | "not_found" | "error"
+  success?: boolean
+  gasUsed?: string
+  blockNumber?: number
+  error?: string
+}> {
+  try {
+    const receipt = await callXLayerRpc<Record<string, unknown> | null>(
+      "eth_getTransactionReceipt",
+      [txHash],
+      environment,
+    )
+    if (!receipt) {
+      return { status: "pending" }
+    }
+    const statusHex = receipt.status ? String(receipt.status) : undefined
+    const isSuccess = statusHex === "0x1" || statusHex === "1"
+    const gasUsedHex = receipt.gasUsed ? String(receipt.gasUsed) : "0x0"
+    const gasUsed = BigInt(gasUsedHex).toString()
+    const blockNumber = receipt.blockNumber ? Number.parseInt(String(receipt.blockNumber), 16) : undefined
+    return {
+      status: "mined",
+      success: isSuccess,
+      gasUsed,
+      blockNumber,
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "RPC error polling receipt"
+    return { status: "error", error: msg }
+  }
+}
+
+/**
+ * Classify address as EOA or Contract via eth_getCode
+ */
+export async function getXLayerAccountType(
+  address: string,
+  environment: Environment = "testnet",
+): Promise<"EOA" | "Contract" | "Unknown"> {
+  try {
+    const code = await callXLayerRpc<string>("eth_getCode", [address, "latest"], environment)
+    if (!code) return "Unknown"
+    return code !== "0x" && code !== "0x0" && code.length > 2 ? "Contract" : "EOA"
+  } catch {
+    return "Unknown"
   }
 }
 
@@ -269,21 +364,6 @@ export async function getXLayerTokenAllowance(
 }
 
 /**
- * Classify address as EOA or Contract via eth_getCode
- */
-export async function getXLayerAccountType(
-  address: string,
-  environment: Environment = "testnet",
-): Promise<"EOA" | "Contract"> {
-  try {
-    const code = await callXLayerRpc<string>("eth_getCode", [address, "latest"], environment)
-    return code && code !== "0x" && code !== "0x0" && code.length > 2 ? "Contract" : "EOA"
-  } catch {
-    return "EOA"
-  }
-}
-
-/**
  * Discover onchain Approval(owner, spender, value) events for candidate tokens
  * Paginates historical discovery in chunks (e.g. 5,000 blocks per request) over the scan horizon
  */
@@ -300,12 +380,13 @@ export async function getXLayerApprovalLogs(
   endBlock: number
   error?: string
 }> {
-  const currentBlock = await getXLayerBlockNumber(environment).catch(() => 0)
+  const blockRes = await getXLayerBlockNumber(environment)
+  const currentBlock = blockRes.success && blockRes.blockNumber !== undefined ? blockRes.blockNumber : 0
   const endBlock = currentBlock
   const startBlock = Math.max(0, currentBlock - lookbackBlocks)
 
   if (endBlock === 0 || tokenAddresses.length === 0) {
-    return { success: true, events: [], startBlock: 0, endBlock: 0 }
+    return { success: blockRes.success, events: [], startBlock: 0, endBlock: 0 }
   }
 
   try {

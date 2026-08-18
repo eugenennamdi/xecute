@@ -1,8 +1,10 @@
+import { parseUnits, formatUnits } from "viem"
 import { findToken } from "@/config/tokens"
 import { okxRequest } from "@/lib/okx/client"
 import type { Intent } from "@/lib/intents"
 import type { AdapterPreview, ExecutionContext, XecuteAdapter } from "@/lib/adapters/types"
 import type { SimulationResult, TransactionRequest } from "@/types/execution"
+import { MissingExecutionParameterError, UnsupportedTokenError } from "@/lib/contracts/router"
 
 export class MainnetDexQuoteAdapter implements XecuteAdapter {
   id = "okx-dex-aggregator-mainnet"
@@ -14,24 +16,29 @@ export class MainnetDexQuoteAdapter implements XecuteAdapter {
   supports(intent: Intent, context: ExecutionContext): boolean {
     return (
       intent.mode === "trade" &&
-      (context.chainId === 196 || intent.network === "mainnet")
+      intent.network === "mainnet" &&
+      context.chainId === 196 &&
+      this.chainIds.includes(196)
     )
   }
 
   async getPreview(intent: Intent, _context: ExecutionContext): Promise<AdapterPreview> {
     if (intent.mode !== "trade") throw new Error("Unsupported mode")
+    if (!intent.fromToken) throw new MissingExecutionParameterError("fromToken")
+    if (!intent.toToken) throw new MissingExecutionParameterError("toToken")
+    if (!intent.amount) throw new MissingExecutionParameterError("amount")
 
-    const fromToken = findToken(intent.fromToken || "USDT0", 196)
-    const toToken = findToken(intent.toToken || "OKB", 196)
+    const fromToken = findToken(intent.fromToken, 196)
+    const toToken = findToken(intent.toToken, 196)
 
     if (!fromToken || !toToken) {
-      throw new Error(`Token pair not verified on X Layer Mainnet: ${intent.fromToken}/${intent.toToken}`)
+      throw new UnsupportedTokenError(`${intent.fromToken}/${intent.toToken}`)
     }
 
     try {
       const fromAddr = fromToken.address === "native" ? "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" : fromToken.address
       const toAddr = toToken.address === "native" ? "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" : toToken.address
-      const rawAmount = String(BigInt(Math.floor(Number(intent.amount || "1") * 10 ** fromToken.decimals)))
+      const rawAmount = parseUnits(intent.amount, fromToken.decimals).toString()
 
       const quoteData = await okxRequest<Array<Record<string, unknown>>>({
         path: "/api/v5/dex/aggregator/quote",
@@ -50,9 +57,11 @@ export class MainnetDexQuoteAdapter implements XecuteAdapter {
         throw new Error("No live liquidity route found on X Layer mainnet")
       }
 
-      const outRaw = Number(first.toTokenAmount) / 10 ** toToken.decimals
-      const estimatedOutput = outRaw.toFixed(6)
-      const minimumReceived = (outRaw * (1 - (intent.maxSlippage ?? 0.5) / 100)).toFixed(6)
+      const toTokenAmountBigInt = BigInt(String(first.toTokenAmount))
+      const estimatedOutput = formatUnits(toTokenAmountBigInt, toToken.decimals)
+      const slippageBps = BigInt(Math.min(500, Math.max(0, Math.round((intent.maxSlippage ?? 0.5) * 100))))
+      const minAmountOutUnits = (toTokenAmountBigInt * (BigInt(10000) - slippageBps)) / BigInt(10000)
+      const minimumReceived = formatUnits(minAmountOutUnits, toToken.decimals)
       const priceImpact = typeof first.priceImpactPercentage === "string" ? `${first.priceImpactPercentage}%` : "Unavailable"
       const gas = typeof first.estimatedGas === "string" ? `${first.estimatedGas} gas` : "Gas unavailable"
 
@@ -61,7 +70,7 @@ export class MainnetDexQuoteAdapter implements XecuteAdapter {
           source: "live",
           fromToken: fromToken.symbol,
           toToken: toToken.symbol,
-          inputAmount: intent.amount || "1",
+          inputAmount: intent.amount,
           estimatedOutput,
           minimumReceived,
           slippage: `${intent.maxSlippage ?? 0.5}%`,

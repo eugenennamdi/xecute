@@ -12,7 +12,9 @@ export class TestnetVaultAdapter implements XecuteAdapter {
   supports(intent: Intent, context: ExecutionContext): boolean {
     return (
       intent.mode === "earn" &&
-      (context.chainId === 1952 || intent.network === "testnet")
+      intent.network === "testnet" &&
+      context.chainId === 1952 &&
+      this.chainIds.includes(1952)
     )
   }
 

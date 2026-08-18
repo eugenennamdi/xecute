@@ -295,10 +295,13 @@ async function getNetworkSnapshot(argumentsValue: unknown): Promise<AgentToolRes
   const chainId = isTestnet ? 1952 : 196
 
   try {
-    const [blockNumber, gasPriceGwei] = await Promise.all([
+    const [blockRes, gasRes] = await Promise.all([
       getXLayerBlockNumber(network),
       getXLayerGasPriceGwei(network),
     ])
+
+    const blockNumber = blockRes.success && blockRes.blockNumber !== undefined ? blockRes.blockNumber : "Unavailable"
+    const gasPriceGwei = gasRes.success ? gasRes.gasPriceGwei : "Unavailable"
 
     return {
       ok: true,
@@ -731,9 +734,9 @@ async function inspectAddress(argumentsValue: unknown): Promise<AgentToolResult>
       const snapshot = await getXLayerAccountSnapshot(input.address, "testnet")
 
       const [usdtBal, usdcBal, usdgBal] = await Promise.all([
-        getXLayerTokenBalance("0x9e29b3aada05bf2d2c827af80bd28dc0b9b4fb0c", input.address, 6, "testnet").catch(() => ({ balance: "0", rawHex: "0x0" })),
-        getXLayerTokenBalance("0xcb8bf24c6ce16ad21d707c9505421a17f2bec79d", input.address, 6, "testnet").catch(() => ({ balance: "0", rawHex: "0x0" })),
-        getXLayerTokenBalance("0xa78e2baabaf5c4f36b7fc394725deb68d332eec1", input.address, 6, "testnet").catch(() => ({ balance: "0", rawHex: "0x0" })),
+        getXLayerTokenBalance("0x9e29b3aada05bf2d2c827af80bd28dc0b9b4fb0c", input.address, 6, "testnet"),
+        getXLayerTokenBalance("0xcb8bf24c6ce16ad21d707c9505421a17f2bec79d", input.address, 6, "testnet"),
+        getXLayerTokenBalance("0xa78e2baabaf5c4f36b7fc394725deb68d332eec1", input.address, 6, "testnet"),
       ])
 
       const testnetData = {
@@ -747,9 +750,9 @@ async function inspectAddress(argumentsValue: unknown): Promise<AgentToolResult>
         blockNumber: snapshot.blockNumber,
         gasPriceGwei: snapshot.gasPriceGwei,
         tokens: [
-          { symbol: "USDT (USD₮0)", balance: `${usdtBal.balance} USDT`, isTestAsset: true },
-          { symbol: "USDC (USDC_TEST)", balance: `${usdcBal.balance} USDC`, isTestAsset: true },
-          { symbol: "USDG", balance: `${usdgBal.balance} USDG`, isTestAsset: true },
+          { symbol: "USDT (USD₮0)", balance: usdtBal.success ? `${usdtBal.balance} USDT` : "Unavailable", isTestAsset: true },
+          { symbol: "USDC (USDC_TEST)", balance: usdcBal.success ? `${usdcBal.balance} USDC` : "Unavailable", isTestAsset: true },
+          { symbol: "USDG", balance: usdgBal.success ? `${usdgBal.balance} USDG` : "Unavailable", isTestAsset: true },
         ],
         faucetUrl: "https://web3.okx.com/xlayer/faucet/xlayerfaucet",
         explorerUrl: `https://www.okx.com/web3/explorer/xlayer-test/address/${input.address}`,
@@ -1025,7 +1028,8 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
     const candidatePairs = Array.from(pairMap.values())
 
     // 3. Query current live allowance(owner, spender) for every candidate pair
-    const currentBlock = await getXLayerBlockNumber(input.network).catch(() => 0)
+    const blockRes = await getXLayerBlockNumber(input.network)
+    const currentBlock = blockRes.success && blockRes.blockNumber !== undefined ? blockRes.blockNumber : 0
     const evaluatedAllowances = await Promise.all(
       candidatePairs.map(async (pair) => {
         const tokenCfg = tokens.find((t) => t.address.toLowerCase() === pair.tokenAddress.toLowerCase()) || {
@@ -1065,7 +1069,7 @@ async function inspectAllowances(argumentsValue: unknown): Promise<AgentToolResu
         }
 
         const isUnlim = res.isUnlimited
-        const hasAllowance = isUnlim || (Number(res.allowance) > 0 && res.allowance !== "0" && res.allowance !== "0.00")
+        const hasAllowance = isUnlim || (res.rawBigInt !== undefined ? res.rawBigInt > BigInt(0) : (Number(res.allowance) > 0 && res.allowance !== "0" && res.allowance !== "0.00"))
         const status: "unlimited" | "active" | "inactive" = isUnlim ? "unlimited" : hasAllowance ? "active" : "inactive"
 
         const accountType = hasAllowance

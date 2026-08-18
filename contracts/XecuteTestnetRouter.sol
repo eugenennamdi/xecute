@@ -36,9 +36,9 @@ contract XecuteTestnetRouter {
     constructor() {
         owner = msg.sender;
         // Pre-configure verified X Layer Testnet faucet assets
-        supportedTokens[0x9e29b3aada05bf2d2c827af80bd28dc0b9b4fb0c] = true; // Testnet USDT
-        supportedTokens[0xcb8bf24c6ce16ad21d707c9505421a17f2bec79d] = true; // Testnet USDC
-        supportedTokens[0xa78e2baabaf5c4f36b7fc394725deb68d332eec1] = true; // Testnet USDG
+        supportedTokens[0x9e29b3AaDa05Bf2D2c827Af80Bd28Dc0b9b4FB0c] = true; // Testnet USDT
+        supportedTokens[0xcB8BF24c6cE16Ad21D707c9505421a17f2bec79D] = true; // Testnet USDC
+        supportedTokens[0xA78E2baaBaf5c4f36b7Fc394725Deb68D332EeC1] = true; // Testnet USDG
     }
 
     receive() external payable {
@@ -155,10 +155,11 @@ contract XecuteTestnetRouter {
         return amountOut;
     }
 
-    /// @notice Supply ERC-20 liquidity to the router
+    /// @notice Supply ERC-20 liquidity to the router (only allowlisted test assets)
     function supplyLiquidity(address token, uint256 amount) external {
         require(amount > 0, "Zero amount");
         require(token != address(0), "Invalid token");
+        require(supportedTokens[token], "Unsupported token");
         _safeTransferFrom(token, msg.sender, address(this), amount);
         emit LiquiditySupplied(msg.sender, token, amount);
     }
@@ -190,12 +191,10 @@ contract XecuteTestnetRouter {
     }
 
     function _getDecimals(address token) internal view returns (uint8) {
-        if (token.code.length == 0) return 18;
+        require(token.code.length > 0, "Token is not a contract");
         (bool ok, bytes memory data) = token.staticcall(abi.encodeWithSelector(0x313ce567));
-        if (ok && data.length >= 32) {
-            return abi.decode(data, (uint8));
-        }
-        return 18;
+        require(ok && data.length >= 32, "Decimals lookup failed");
+        return abi.decode(data, (uint8));
     }
 
     function _getBalance(address token, address account) internal view returns (uint256) {

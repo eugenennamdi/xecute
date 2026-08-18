@@ -39,7 +39,7 @@ export default function ProtectPage() {
             <li><strong>Gas Reserve:</strong> Enforces ≥ 0.005 OKB buffer to prevent locked wallets.</li>
             <li><strong>Slippage Ceiling:</strong> Hard block on slippage &gt; 5.0%.</li>
             <li><strong>Simulation:</strong> Real-time dry run via <code>eth_estimateGas</code>; fails closed on revert.</li>
-            <li><strong>Checksum Check:</strong> Validates 40-hex recipient addresses.</li>
+            <li><strong>Address Check:</strong> Validates 40-hex EVM recipient addresses and normalizes canonical format.</li>
           </ul>
         </div>
 

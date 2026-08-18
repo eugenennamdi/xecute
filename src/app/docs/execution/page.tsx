@@ -64,7 +64,7 @@ export default function ExecutionPage() {
             {
               step: "06",
               title: "7 Pre-Flight Safeguards",
-              desc: "Enforces deterministic policies: gas reserve protection (≥ 0.005 OKB), slippage ceiling (≤ 5%), address checksums, and distinct asset rules.",
+              desc: "Enforces deterministic policies: gas reserve protection (≥ 0.005 OKB), slippage ceiling (≤ 5%), EVM address verification, and distinct asset rules.",
               tag: "Safety Policy",
             },
             {

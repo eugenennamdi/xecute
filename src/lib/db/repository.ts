@@ -272,7 +272,7 @@ export async function storeReceipt({
       intent,
       safetyReport: safety,
       transactionHash: receipt.transactionHash,
-      status: "mock_confirmed",
+      status: receipt.status ?? "broadcast",
       checks: receipt.checks,
       createdAt: new Date(receipt.timestamp),
     })

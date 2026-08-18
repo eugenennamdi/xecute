@@ -375,6 +375,13 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       return
     }
 
+    // Network Execution Policy: Mainnet execution is strictly disabled
+    if (currentPlan.intent.network !== "testnet") {
+      set({ status: "ready" })
+      alert("Execution blocked: X Layer Mainnet execution is disabled in this release. Please select X Layer Testnet.")
+      return
+    }
+
     const updatedChecks = currentPlan.safety.checks.map((c) =>
       c.id === "human-confirmation"
         ? { ...c, status: "pass" as const, detail: "User confirmed transaction action." }
@@ -392,113 +399,162 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     // Prompt user's connected wallet to sign and broadcast onchain on X Layer Testnet
     if (typeof window !== "undefined" && currentPlan.intent.mode === "trade") {
       try {
-        const ethereum = (window as unknown as { ethereum?: { request: (args: unknown) => Promise<string> } }).ethereum
-        if (ethereum) {
-          const fromAddr = walletAddress as `0x${string}`
-          const action = currentPlan.intent.action || "swap"
-          let payload: { to: string; value: string; data: string }
+        const ethereum = (window as unknown as {
+          ethereum?: {
+            request: (args: { method: string; params?: unknown[] }) => Promise<string>
+          }
+        }).ethereum
 
-          if (action === "transfer") {
-            const { getTransferTransactionPayload } = await import("@/lib/contracts/router")
-            payload = getTransferTransactionPayload({
-              tokenSymbol: currentPlan.intent.fromToken || "OKB",
-              amount: currentPlan.intent.amount || "0.01",
-              recipient: (currentPlan.intent.recipient || fromAddr) as `0x${string}`,
-            })
-          } else if (action === "approve" || action === "revoke") {
-            const { getApprovalTransactionPayload, ROUTER_ADDRESS_TESTNET } = await import("@/lib/contracts/router")
-            payload = getApprovalTransactionPayload({
-              tokenSymbol: currentPlan.intent.fromToken || "USDC",
-              amount: action === "revoke" ? "0" : currentPlan.intent.amount || "1",
-              spender: (currentPlan.intent.spender || ROUTER_ADDRESS_TESTNET) as `0x${string}`,
-            })
-          } else {
-            // Default Swap action
-            const { getSwapTransactionPayload } = await import("@/lib/contracts/router")
-            payload = getSwapTransactionPayload({
-              fromTokenSymbol: currentPlan.intent.fromToken || "OKB",
-              toTokenSymbol: currentPlan.intent.toToken || "USDT",
-              amount: currentPlan.intent.amount || "0.01",
-              recipient: fromAddr,
-              slippage: currentPlan.intent.maxSlippage ?? 0.5,
-            })
+        if (!ethereum) {
+          throw new Error("No EVM wallet provider detected in browser.")
+        }
 
-            const fromSym = (currentPlan.intent.fromToken || "OKB").toUpperCase()
-            if (fromSym !== "OKB") {
-              const { XLAYER_TESTNET_TOKENS } = await import("@/config/tokens")
-              const tokenCfg = XLAYER_TESTNET_TOKENS[fromSym]
-              if (tokenCfg && tokenCfg.address !== "native") {
-                const { encodeFunctionData, parseUnits, createPublicClient, http } = await import("viem")
-                const requiredAmount = parseUnits(currentPlan.intent.amount || "1", tokenCfg.decimals)
+        // 1. Verify connected wallet's active chain at runtime
+        const walletChainHex = await ethereum.request({ method: "eth_chainId" })
+        const activeChainId = Number.parseInt(walletChainHex, 16)
+        if (activeChainId !== 1952) {
+          set({ status: "ready" })
+          alert(`Execution blocked: Connected wallet is on chain ${activeChainId}. Please switch network to X Layer Testnet (Chain ID: 1952).`)
+          return
+        }
 
-                const publicClient = createPublicClient({
-                  transport: http("https://testrpc.xlayer.tech/terigon"),
+        const fromAddr = walletAddress as `0x${string}`
+        const action = currentPlan.intent.action || "swap"
+        let payload: { to: string; value: string; data: string }
+
+        if (action === "transfer") {
+          if (!currentPlan.intent.fromToken) throw new Error("Missing transfer token parameter.")
+          if (!currentPlan.intent.amount) throw new Error("Missing transfer amount parameter.")
+          if (!currentPlan.intent.recipient) throw new Error("Missing transfer recipient parameter.")
+
+          const { getTransferTransactionPayload } = await import("@/lib/contracts/router")
+          payload = getTransferTransactionPayload({
+            tokenSymbol: currentPlan.intent.fromToken,
+            amount: currentPlan.intent.amount,
+            recipient: currentPlan.intent.recipient,
+          })
+        } else if (action === "approve" || action === "revoke") {
+          if (!currentPlan.intent.fromToken) throw new Error("Missing approval token parameter.")
+          if (action !== "revoke" && !currentPlan.intent.amount) throw new Error("Missing approval amount parameter.")
+
+          const { getApprovalTransactionPayload, ROUTER_ADDRESS_TESTNET } = await import("@/lib/contracts/router")
+          payload = getApprovalTransactionPayload({
+            tokenSymbol: currentPlan.intent.fromToken,
+            amount: action === "revoke" ? "0" : (currentPlan.intent.amount ?? "0"),
+            spender: currentPlan.intent.spender ?? ROUTER_ADDRESS_TESTNET,
+          })
+        } else {
+          // Swap action
+          if (!currentPlan.intent.fromToken) throw new Error("Missing swap input token parameter.")
+          if (!currentPlan.intent.toToken) throw new Error("Missing swap output token parameter.")
+          if (!currentPlan.intent.amount) throw new Error("Missing swap amount parameter.")
+
+          const { getSwapTransactionPayload } = await import("@/lib/contracts/router")
+          payload = getSwapTransactionPayload({
+            fromTokenSymbol: currentPlan.intent.fromToken,
+            toTokenSymbol: currentPlan.intent.toToken,
+            amount: currentPlan.intent.amount,
+            recipient: fromAddr,
+            slippage: currentPlan.intent.maxSlippage ?? 0.5,
+          })
+
+          const fromSym = currentPlan.intent.fromToken.toUpperCase()
+          if (fromSym !== "OKB") {
+            const { findToken } = await import("@/config/tokens")
+            const tokenCfg = findToken(fromSym, 1952)
+            if (!tokenCfg || tokenCfg.address === "native") {
+              throw new Error(`Unsupported ERC-20 swap token: ${fromSym}`)
+            }
+
+            const { parseUnits } = await import("viem")
+            const { getXLayerTokenAllowance, getXLayerTransactionReceipt } = await import("@/lib/xlayer/rpc")
+            const { getApprovalTransactionPayload } = await import("@/lib/contracts/router")
+
+            const requiredAmount = parseUnits(currentPlan.intent.amount, tokenCfg.decimals)
+
+            // Query live onchain allowance via RPC
+            const allowanceRes = await getXLayerTokenAllowance(
+              tokenCfg.address,
+              fromAddr,
+              payload.to,
+              tokenCfg.decimals,
+              "testnet",
+            )
+
+            const currentAllowance = allowanceRes.success && allowanceRes.rawBigInt !== undefined ? allowanceRes.rawBigInt : BigInt(0)
+
+            if (currentAllowance < requiredAmount) {
+              const approvePayload = getApprovalTransactionPayload({
+                tokenSymbol: fromSym,
+                amount: currentPlan.intent.amount,
+                spender: payload.to,
+              })
+
+              // Request user signature for approval prerequisite
+              let approvalTxHash: string
+              try {
+                approvalTxHash = await ethereum.request({
+                  method: "eth_sendTransaction",
+                  params: [{
+                    from: fromAddr,
+                    to: approvePayload.to,
+                    data: approvePayload.data,
+                    value: approvePayload.value,
+                  }],
                 })
+              } catch (approvalErr) {
+                console.warn("Token approval signature rejected by user:", approvalErr)
+                set({ status: "ready" })
+                return
+              }
 
-                const currentAllowance = (await publicClient.readContract({
-                  address: tokenCfg.address as `0x${string}`,
-                  abi: [
-                    {
-                      name: "allowance",
-                      type: "function",
-                      inputs: [
-                        { name: "owner", type: "address" },
-                        { name: "spender", type: "address" },
-                      ],
-                      outputs: [{ type: "uint256" }],
-                    },
-                  ] as const,
-                  functionName: "allowance",
-                  args: [fromAddr, payload.to as `0x${string}`],
-                }).catch(() => BigInt(0))) as bigint
-
-                if (currentAllowance < requiredAmount) {
-                  const erc20Abi = [
-                    {
-                      name: "approve",
-                      type: "function",
-                      inputs: [
-                        { name: "spender", type: "address" },
-                        { name: "amount", type: "uint256" },
-                      ],
-                      outputs: [{ type: "bool" }],
-                    },
-                  ] as const
-
-                  const approveData = encodeFunctionData({
-                    abi: erc20Abi,
-                    functionName: "approve",
-                    args: [payload.to as `0x${string}`, requiredAmount],
-                  })
-
-                  try {
-                    await ethereum.request({
-                      method: "eth_sendTransaction",
-                      params: [{
-                        from: fromAddr,
-                        to: tokenCfg.address,
-                        data: approveData,
-                        value: "0x0",
-                      }],
-                    })
-                  } catch (approvalErr) {
-                    console.warn("Token approval skipped or rejected:", approvalErr)
+              // Poll for approval transaction confirmation onchain
+              let approvalConfirmed = false
+              for (let i = 0; i < 30; i++) {
+                await new Promise((resolve) => setTimeout(resolve, 2000))
+                const receipt = await getXLayerTransactionReceipt(approvalTxHash, "testnet")
+                if (receipt.status === "mined") {
+                  if (receipt.success) {
+                    approvalConfirmed = true
                   }
+                  break
                 }
+              }
+
+              if (!approvalConfirmed) {
+                set({ status: "ready" })
+                alert("Prerequisite token approval was not confirmed onchain. Swap cancelled.")
+                return
+              }
+
+              // Re-read allowance onchain to strictly verify sufficient balance authorization
+              const verifyRes = await getXLayerTokenAllowance(
+                tokenCfg.address,
+                fromAddr,
+                payload.to,
+                tokenCfg.decimals,
+                "testnet",
+              )
+              const verifiedAllowance = verifyRes.success && verifyRes.rawBigInt !== undefined ? verifyRes.rawBigInt : BigInt(0)
+              if (verifiedAllowance < requiredAmount) {
+                set({ status: "ready" })
+                alert("Allowance remains insufficient after approval. Swap cancelled.")
+                return
               }
             }
           }
-
-          onchainTxHash = await ethereum.request({
-            method: "eth_sendTransaction",
-            params: [{
-              from: fromAddr,
-              to: payload.to,
-              value: payload.value,
-              data: payload.data,
-            }],
-          })
         }
+
+        // Broadcast the primary transaction
+        onchainTxHash = await ethereum.request({
+          method: "eth_sendTransaction",
+          params: [{
+            from: fromAddr,
+            to: payload.to,
+            value: payload.value,
+            data: payload.data,
+          }],
+        })
       } catch (walletError) {
         console.warn("Wallet signing rejected or cancelled:", walletError)
         set({ status: "ready" })

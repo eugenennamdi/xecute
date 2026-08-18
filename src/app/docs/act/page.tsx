@@ -69,7 +69,7 @@ export default function ActPage() {
             </span>
           </div>
           <p className="text-xs text-foreground/70 leading-relaxed">
-            Transfers native OKB or verified ERC-20 tokens directly to a recipient address with EIP-55 checksum validation.
+            Transfers native OKB or verified ERC-20 tokens directly to a recipient address with EVM address format verification and checksum formatting.
           </p>
           <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-xs space-y-1 break-words [overflow-wrap:anywhere]">
             <p className="text-[10px] uppercase font-semibold text-foreground/45">Example Prompts</p>

@@ -39,15 +39,29 @@ export const modeCopy: Record<Mode, { label: string; description: string }> = {
 export type ExecutionReceipt = {
   timestamp: string
   transactionHash: `0x${string}`
+  status: "executed" | "pending" | "reverted" | "broadcast"
   checks: string[]
   intent: Intent
+  gasUsed?: string
+  blockNumber?: number
   explorerUrl?: string
 }
 
-export function createExecutionReceipt(intent: Intent, txHash: `0x${string}`): ExecutionReceipt {
+export function createExecutionReceipt(
+  intent: Intent,
+  txHash: `0x${string}`,
+  options?: {
+    status?: "executed" | "pending" | "reverted" | "broadcast"
+    gasUsed?: string
+    blockNumber?: number
+  },
+): ExecutionReceipt {
   return {
     timestamp: new Date().toISOString(),
     transactionHash: txHash,
+    status: options?.status ?? "broadcast",
+    gasUsed: options?.gasUsed,
+    blockNumber: options?.blockNumber,
     checks: [
       "Intent validated",
       "Slippage constraint verified",

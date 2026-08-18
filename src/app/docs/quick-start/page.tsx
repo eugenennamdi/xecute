@@ -100,7 +100,7 @@ export default function QuickStartPage() {
             </h3>
           </div>
           <p className="text-xs text-foreground/70 leading-relaxed sm:pl-8.5">
-            Before any transaction is signed, Xecute executes 7 deterministic safety checks (gas reserves, slippage ceiling, checksum validity, balance checks). If safe, Xecute attaches an interactive <strong>Action Confirmation Card</strong> with:
+            Before any transaction is signed, Xecute executes 7 deterministic safety checks (gas reserves, slippage ceiling, EVM address validity, balance checks). If safe, Xecute attaches an interactive <strong>Action Confirmation Card</strong> with:
           </p>
           <div className="sm:pl-8.5 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             <div className="rounded-lg border border-black/[0.05] bg-[#fafafa] p-2.5">

@@ -46,8 +46,8 @@ export default function SafeguardsPage() {
           },
           {
             num: "4",
-            title: "EIP-55 Address Checksum & Contract Validation",
-            desc: "Recipient and spender addresses must pass strict EIP-55 hex formatting. Empty addresses, zero addresses (0x00...00), and malformed strings are blocked immediately.",
+            title: "EVM Address Format Verification & Normalization",
+            desc: "Recipient and spender addresses must pass strict 40-hex EVM formatting. Empty addresses, zero addresses (0x00...00), and malformed strings are blocked immediately, and valid addresses are normalized into canonical checksum format before transaction construction.",
             rationale: "Prevents token burn or catastrophic misdirection.",
           },
           {

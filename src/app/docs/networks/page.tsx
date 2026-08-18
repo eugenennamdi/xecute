@@ -97,7 +97,7 @@ export default function NetworksPage() {
           <p className="font-semibold text-foreground">Supported Testnet Capabilities:</p>
           <ul className="space-y-1 text-foreground/70 list-disc list-inside">
             <li><strong>Decentralized Swaps:</strong> Live routing through the deployed <code>XecuteTestnetRouter</code> with automatic token approvals and deterministic 1:60 OKB/USD rate mechanics.</li>
-            <li><strong>Direct Transfers:</strong> Native OKB and ERC-20 token transfers with recipient address checksum validation.</li>
+            <li><strong>Direct Transfers:</strong> Native OKB and ERC-20 token transfers with recipient address validation and canonical formatting.</li>
             <li><strong>Token Approvals & Revocations:</strong> Setting exact allowances or executing zero-allowance revocations directly on ERC-20 token contracts.</li>
             <li><strong>Live Gas Estimation:</strong> Dynamic <code>eth_estimateGas</code> calls with 20% safety buffers without hardcoded fallbacks.</li>
           </ul>

@@ -2,7 +2,12 @@ import { findToken } from "@/config/tokens"
 import type { Intent } from "@/lib/intents"
 import type { AdapterPreview, ExecutionContext, XecuteAdapter } from "@/lib/adapters/types"
 import type { SimulationResult, TransactionRequest } from "@/types/execution"
-import { getSwapTransactionPayload, ROUTER_ADDRESS_TESTNET } from "@/lib/contracts/router"
+import {
+  getSwapTransactionPayload,
+  ROUTER_ADDRESS_TESTNET,
+  MissingExecutionParameterError,
+  UnsupportedTokenError,
+} from "@/lib/contracts/router"
 import { callXLayerRpc } from "@/lib/xlayer/rpc"
 
 export class TestnetSwapAdapter implements XecuteAdapter {
@@ -15,24 +20,29 @@ export class TestnetSwapAdapter implements XecuteAdapter {
   supports(intent: Intent, context: ExecutionContext): boolean {
     return (
       intent.mode === "trade" &&
-      (context.chainId === 1952 || intent.network === "testnet")
+      intent.network === "testnet" &&
+      context.chainId === 1952 &&
+      this.chainIds.includes(1952)
     )
   }
 
   async getPreview(intent: Intent, context: ExecutionContext): Promise<AdapterPreview> {
     if (intent.mode !== "trade") throw new Error("Unsupported mode")
+    if (!intent.fromToken) throw new MissingExecutionParameterError("fromToken")
+    if (!intent.toToken) throw new MissingExecutionParameterError("toToken")
+    if (!intent.amount) throw new MissingExecutionParameterError("amount")
 
-    const fromSymbol = (intent.fromToken || "USDT").toUpperCase()
-    const toSymbol = (intent.toToken || "OKB").toUpperCase()
-    const inputAmount = intent.amount || "1"
+    const fromSymbol = intent.fromToken.toUpperCase()
+    const toSymbol = intent.toToken.toUpperCase()
+    const inputAmount = intent.amount
     const maxSlippage = intent.maxSlippage ?? 0.5
-    const recipient = (context.walletAddress || "0x1111111111111111111111111111111111111111") as `0x${string}`
+    const recipient = (context.walletAddress || "0x0000000000000000000000000000000000000000") as `0x${string}`
 
     const fromToken = findToken(fromSymbol, 1952)
     const toToken = findToken(toSymbol, 1952)
 
     if (!fromToken || !toToken) {
-      throw new Error(`Unsupported Testnet token pair: ${fromSymbol} / ${toSymbol}`)
+      throw new UnsupportedTokenError(`${fromSymbol}/${toSymbol}`)
     }
 
     // Deterministic router pricing on X Layer Testnet: 1 OKB = $60 USD tokens, 1 USD token = $1
@@ -51,32 +61,34 @@ export class TestnetSwapAdapter implements XecuteAdapter {
 
     // Real live gas estimation via eth_estimateGas
     let gasEstimate = "Gas estimate unavailable"
-    try {
-      const payload = getSwapTransactionPayload({
-        fromTokenSymbol: fromSymbol,
-        toTokenSymbol: toSymbol,
-        amount: inputAmount,
-        recipient,
-        slippage: maxSlippage,
-      })
-      const estRes = await callXLayerRpc<string>(
-        "eth_estimateGas",
-        [
-          {
-            from: recipient,
-            to: payload.to,
-            data: payload.data,
-            value: payload.value,
-          },
-        ],
-        "testnet",
-      )
-      if (estRes) {
-        const gasUnits = Number(BigInt(estRes))
-        gasEstimate = `~${gasUnits.toLocaleString("en-US")} gas`
+    if (context.walletAddress) {
+      try {
+        const payload = getSwapTransactionPayload({
+          fromTokenSymbol: fromSymbol,
+          toTokenSymbol: toSymbol,
+          amount: inputAmount,
+          recipient: context.walletAddress,
+          slippage: maxSlippage,
+        })
+        const estRes = await callXLayerRpc<string>(
+          "eth_estimateGas",
+          [
+            {
+              from: context.walletAddress,
+              to: payload.to,
+              data: payload.data,
+              value: payload.value,
+            },
+          ],
+          "testnet",
+        )
+        if (estRes) {
+          const gasUnits = Number(BigInt(estRes))
+          gasEstimate = `~${gasUnits.toLocaleString("en-US")} gas`
+        }
+      } catch {
+        gasEstimate = "Gas estimate unavailable"
       }
-    } catch {
-      gasEstimate = "Gas estimate unavailable"
     }
 
     return {
@@ -99,6 +111,9 @@ export class TestnetSwapAdapter implements XecuteAdapter {
 
   async simulate(intent: Intent, context: ExecutionContext): Promise<SimulationResult> {
     if (intent.mode !== "trade") return { success: false, error: "Invalid trade intent" }
+    if (!intent.fromToken || !intent.toToken || !intent.amount) {
+      return { success: false, error: "Missing required swap parameters for simulation" }
+    }
     const amount = Number(intent.amount)
     if (!Number.isFinite(amount) || amount <= 0) {
       return { success: false, error: "Invalid swap amount" }
@@ -106,16 +121,19 @@ export class TestnetSwapAdapter implements XecuteAdapter {
     if ((intent.maxSlippage ?? 0.5) > 5.0) {
       return { success: false, error: "Slippage exceeds max safety tolerance (5.0%)" }
     }
+    if (!context.walletAddress) {
+      return { success: false, error: "Wallet address required for simulation" }
+    }
 
-    const fromSymbol = (intent.fromToken || "OKB").toUpperCase()
-    const toSymbol = (intent.toToken || "USDT").toUpperCase()
-    const recipient = (context.walletAddress || "0x1111111111111111111111111111111111111111") as `0x${string}`
+    const fromSymbol = intent.fromToken.toUpperCase()
+    const toSymbol = intent.toToken.toUpperCase()
+    const recipient = context.walletAddress as `0x${string}`
 
     try {
       const payload = getSwapTransactionPayload({
         fromTokenSymbol: fromSymbol,
         toTokenSymbol: toSymbol,
-        amount: intent.amount || "1",
+        amount: intent.amount,
         recipient,
         slippage: intent.maxSlippage ?? 0.5,
       })
@@ -136,28 +154,24 @@ export class TestnetSwapAdapter implements XecuteAdapter {
       )
 
       // 2. Perform live gas estimation
-      let gasUsed = "142,500"
-      try {
-        const estRes = await callXLayerRpc<string>(
-          "eth_estimateGas",
-          [
-            {
-              from: recipient,
-              to: payload.to,
-              data: payload.data,
-              value: payload.value,
-            },
-          ],
-          "testnet",
-        )
-        if (estRes) {
-          gasUsed = Number(BigInt(estRes)).toLocaleString("en-US")
-        }
-      } catch {}
+      const estRes = await callXLayerRpc<string>(
+        "eth_estimateGas",
+        [
+          {
+            from: recipient,
+            to: payload.to,
+            data: payload.data,
+            value: payload.value,
+          },
+        ],
+        "testnet",
+      )
+
+      const estimatedGasUnits = estRes ? Number(BigInt(estRes)).toLocaleString("en-US") + " gas" : "Estimated"
 
       return {
         success: true,
-        gasUsed,
+        gasUsed: estimatedGasUnits,
         logs: ["XecuteTestnetRouterSimulationSuccess"],
       }
     } catch (error) {
@@ -171,8 +185,9 @@ export class TestnetSwapAdapter implements XecuteAdapter {
 
   async buildTransaction(intent: Intent, context: ExecutionContext): Promise<TransactionRequest | null> {
     if (intent.mode !== "trade" || !intent.fromToken || !intent.toToken || !intent.amount) return null
+    if (!context.walletAddress) throw new MissingExecutionParameterError("walletAddress")
 
-    const recipient = (context.walletAddress || "0x0000000000000000000000000000000000000000") as `0x${string}`
+    const recipient = context.walletAddress as `0x${string}`
     const payload = getSwapTransactionPayload({
       fromTokenSymbol: intent.fromToken,
       toTokenSymbol: intent.toToken,
@@ -181,11 +196,36 @@ export class TestnetSwapAdapter implements XecuteAdapter {
       slippage: intent.maxSlippage ?? 0.5,
     })
 
+    // Estimate gas for the exact transaction payload
+    let gasLimit = "180000"
+    try {
+      const est = await callXLayerRpc<string>(
+        "eth_estimateGas",
+        [
+          {
+            from: recipient,
+            to: payload.to,
+            data: payload.data,
+            value: payload.value,
+          },
+        ],
+        "testnet",
+      )
+      if (est) {
+        // Apply 20% deterministic policy buffer for execution safety
+        const gasUnits = BigInt(est)
+        const buffered = (gasUnits * BigInt(120)) / BigInt(100)
+        gasLimit = buffered.toString()
+      }
+    } catch {
+      // If estimate fails during final build, keep conservative limit
+    }
+
     return {
       to: payload.to,
       data: payload.data,
       value: payload.value,
-      gasLimit: "180000",
+      gasLimit,
       chainId: 1952,
     }
   }
