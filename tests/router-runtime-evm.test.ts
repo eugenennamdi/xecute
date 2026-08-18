@@ -3,7 +3,7 @@ import assert from "node:assert/strict"
 import fs from "node:fs"
 import path from "node:path"
 import solc from "solc"
-import { getAddress, parseUnits, formatUnits, parseEther, formatEther } from "viem"
+import { getAddress, parseUnits, formatUnits, parseEther, formatEther, encodeFunctionData } from "viem"
 import { XECUTE_ROUTER_ABI } from "../src/lib/contracts/router-abi"
 import {
   getSwapTransactionPayload,
@@ -11,6 +11,7 @@ import {
   getTransferTransactionPayload,
   ROUTER_ADDRESS_TESTNET,
 } from "../src/lib/contracts/router"
+import { callXLayerRpc } from "../src/lib/xlayer/rpc"
 
 test("Solidity Contract: XecuteTestnetRouter compiles cleanly with standard solc", () => {
   const contractPath = path.resolve(process.cwd(), "contracts/XecuteTestnetRouter.sol")
@@ -120,4 +121,77 @@ test("Router Calldata Encoding: Exact match between ABI and router helpers", () 
 
   assert.equal(BigInt(stablePayload.value), BigInt(0))
   assert.ok(stablePayload.data.length > 10)
+})
+
+test("Onchain EVM Execution: Router getters and immutable state on X Layer Testnet", async () => {
+  const nameData = encodeFunctionData({
+    abi: XECUTE_ROUTER_ABI,
+    functionName: "name",
+  })
+  const versionData = encodeFunctionData({
+    abi: XECUTE_ROUTER_ABI,
+    functionName: "version",
+  })
+  const chainIdData = encodeFunctionData({
+    abi: XECUTE_ROUTER_ABI,
+    functionName: "CHAIN_ID",
+  })
+
+  const [nameRes, verRes, chainRes] = await Promise.all([
+    callXLayerRpc<string>("eth_call", [{ to: ROUTER_ADDRESS_TESTNET, data: nameData }, "latest"], "testnet"),
+    callXLayerRpc<string>("eth_call", [{ to: ROUTER_ADDRESS_TESTNET, data: versionData }, "latest"], "testnet"),
+    callXLayerRpc<string>("eth_call", [{ to: ROUTER_ADDRESS_TESTNET, data: chainIdData }, "latest"], "testnet"),
+  ])
+
+  assert.ok(nameRes && nameRes.length > 2, "name() returns valid ABI response")
+  assert.ok(verRes && verRes.length > 2, "version() returns valid ABI response")
+  assert.equal(BigInt(chainRes), BigInt(1952), "CHAIN_ID() onchain matches 1952")
+})
+
+test("Onchain EVM Execution: Router reverts closed on invalid or unauthorized execution parameters", async () => {
+  const caller = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+  const zeroAddress = "0x0000000000000000000000000000000000000000"
+  const usdtAddress = "0x9e29b3aada05bf2d2c827af80bd28dc0b9b4fb0c"
+
+  // 1. Zero OKB value on swapExactOKBForTokens
+  const zeroOkbData = encodeFunctionData({
+    abi: XECUTE_ROUTER_ABI,
+    functionName: "swapExactOKBForTokens",
+    args: [usdtAddress, BigInt(1), caller],
+  })
+  await assert.rejects(
+    async () => {
+      await callXLayerRpc("eth_call", [{ from: caller, to: ROUTER_ADDRESS_TESTNET, data: zeroOkbData, value: "0x0" }, "latest"], "testnet")
+    },
+    /Zero OKB amount|revert/i,
+    "Router must revert when msg.value is 0 on native swap"
+  )
+
+  // 2. Invalid zero recipient on swapExactTokensForOKB
+  const zeroRecipientData = encodeFunctionData({
+    abi: XECUTE_ROUTER_ABI,
+    functionName: "swapExactTokensForOKB",
+    args: [usdtAddress, BigInt(1000000), BigInt(1), zeroAddress],
+  })
+  await assert.rejects(
+    async () => {
+      await callXLayerRpc("eth_call", [{ from: caller, to: ROUTER_ADDRESS_TESTNET, data: zeroRecipientData, value: "0x0" }, "latest"], "testnet")
+    },
+    /Invalid recipient|revert/i,
+    "Router must revert when recipient is zero address"
+  )
+
+  // 3. Unauthorized config change (onlyOwner)
+  const setTokenData = encodeFunctionData({
+    abi: XECUTE_ROUTER_ABI,
+    functionName: "setSupportedToken",
+    args: [usdtAddress, true],
+  })
+  await assert.rejects(
+    async () => {
+      await callXLayerRpc("eth_call", [{ from: caller, to: ROUTER_ADDRESS_TESTNET, data: setTokenData }, "latest"], "testnet")
+    },
+    /Unauthorized|revert/i,
+    "Router must revert when non-owner calls setSupportedToken"
+  )
 })

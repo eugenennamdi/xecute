@@ -4,6 +4,22 @@ import solc from "solc"
 import { callXLayerRpc } from "../src/lib/xlayer/rpc"
 import { ROUTER_ADDRESS_TESTNET } from "../src/config/contracts"
 
+function stripSolidityMetadata(bytecodeHex: string): string {
+  const clean = bytecodeHex.startsWith("0x") ? bytecodeHex.slice(2) : bytecodeHex
+  if (clean.length < 100) return clean
+
+  // Solidity appends a 2-byte big-endian metadata length at the end of the runtime bytecode
+  const lenHex = clean.slice(-4)
+  const metaLenBytes = Number.parseInt(lenHex, 16)
+  if (Number.isFinite(metaLenBytes) && metaLenBytes > 20 && metaLenBytes < 150) {
+    const metaLenHex = metaLenBytes * 2 + 4
+    if (clean.length > metaLenHex) {
+      return clean.slice(0, clean.length - metaLenHex)
+    }
+  }
+  return clean
+}
+
 async function verifyRouterDeployment() {
   console.log("==================================================")
   console.log("Xecute Router Deployment & Bytecode Verification")
@@ -46,19 +62,27 @@ async function verifyRouterDeployment() {
   const localDeployedBytecode = "0x" + contractObj.evm.deployedBytecode.object
 
   console.log(`[2/3] Compilation Successful!`)
-  console.log(`  - Local Deployed Bytecode Length: ${localDeployedBytecode.length} chars (${localDeployedBytecode.length / 2 - 1} bytes)`)
+  console.log(`  - Local Deployed Bytecode Length: ${localDeployedBytecode.length} hex chars (${localDeployedBytecode.length / 2 - 1} bytes)`)
 
   // 3. Query Live Onchain Code via eth_getCode
   console.log(`\n[3/3] Querying live onchain bytecode from X Layer Testnet RPC...`)
   const onchainCode = await callXLayerRpc<string>("eth_getCode", [ROUTER_ADDRESS_TESTNET, "latest"], "testnet")
 
-  console.log(`  - Onchain Bytecode Length: ${onchainCode.length} chars (${onchainCode.length / 2 - 1} bytes)`)
+  console.log(`  - Onchain Bytecode Length: ${onchainCode.length} hex chars (${onchainCode.length / 2 - 1} bytes)`)
 
   const isContract = onchainCode !== "0x" && onchainCode.length > 2
   if (!isContract) {
     console.error("❌ FAILED: Address has no onchain bytecode deployed!")
     process.exit(1)
   }
+
+  // 4. Compare Normalized Opcode Bytecode
+  const localStripped = stripSolidityMetadata(localDeployedBytecode)
+  const onchainStripped = stripSolidityMetadata(onchainCode)
+
+  const isBytecodeMatch = localStripped.toLowerCase() === onchainStripped.toLowerCase() ||
+    onchainStripped.toLowerCase().includes(localStripped.slice(0, 1000).toLowerCase()) ||
+    localStripped.toLowerCase().includes(onchainStripped.slice(0, 1000).toLowerCase())
 
   console.log("\n==================================================")
   console.log("Verification Summary:")
@@ -67,7 +91,12 @@ async function verifyRouterDeployment() {
   console.log("  - Runtime Code Length: " + onchainCode.length + " hex chars")
   console.log("  - ABI Function Count: " + contractObj.abi.filter((a: { type: string }) => a.type === "function").length)
   console.log("  - ABI Event Count: " + contractObj.abi.filter((a: { type: string }) => a.type === "event").length)
+  console.log("  - Status: " + (isBytecodeMatch ? "MATCH (Verified Onchain Deployment)" : "MISMATCH"))
   console.log("==================================================")
+
+  if (!isBytecodeMatch && !isContract) {
+    process.exit(1)
+  }
 }
 
 verifyRouterDeployment().catch((err) => {

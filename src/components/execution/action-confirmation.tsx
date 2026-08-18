@@ -153,7 +153,7 @@ export function ActionConfirmation({
           ? "Approving..."
           : isRevoke
             ? "Revoking..."
-            : "Recording..."
+            : "Swapping..."
       : quoteFailed
         ? "Quote unavailable"
         : blocked

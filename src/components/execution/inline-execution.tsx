@@ -833,22 +833,30 @@ export function InlineExecution() {
   const completeTrade = isCompleteTradeIntent(intent)
   const isQuoteFailed = plan.status === "quote_failed"
   const isSimulated = plan.preview?.source === "simulated" || plan.status === "simulated_preview"
-
-  const statusLabel = status === "confirmed"
-    ? "Confirmed"
-    : status === "confirming"
-      ? "Recording approval"
-      : isQuoteFailed
-        ? "Quote unavailable"
-        : plan.status === "blocked"
-          ? "Blocked"
-          : isSimulated
-            ? "Simulated"
-            : intent.mode === "trade" && !completeTrade
-              ? "Needs details"
-              : intent.mode === "trade"
-                ? "Ready to execute"
-                : "Analysis ready"
+  const statusLabel =
+    status === "executed"
+      ? "Executed"
+      : status === "reverted"
+        ? "Reverted"
+        : status === "pending"
+          ? "Pending (Mining)"
+          : status === "broadcast"
+            ? "Broadcast"
+            : status === "awaiting_signature"
+              ? "Awaiting signature"
+              : status === "preparing"
+                ? "Preparing"
+                : isQuoteFailed
+                  ? "Quote unavailable"
+                  : plan.status === "blocked" || status === "blocked"
+                    ? "Blocked"
+                    : isSimulated
+                      ? "Simulated"
+                      : intent.mode === "trade" && !completeTrade
+                        ? "Needs details"
+                        : intent.mode === "trade"
+                          ? "Ready to execute"
+                          : "Analysis ready"
 
   const networkDisplay = intent.network === "mainnet" ? "X Layer Mainnet" : "X Layer Testnet"
 
@@ -878,7 +886,7 @@ export function InlineExecution() {
           variant="outline"
           className={cn(
             "h-5 shrink-0 rounded px-1.5 text-[9px] font-medium",
-            status === "confirmed"
+            status === "executed"
               ? "border-[#16845c]/20 text-[#16845c]"
               : isQuoteFailed || plan.status === "blocked"
                 ? "border-[#d94b2a]/20 text-[#d94b2a]"
@@ -938,8 +946,8 @@ export function InlineExecution() {
         <ActionConfirmation
           intent={intent}
           complete={completeTrade}
-          confirmed={status === "confirmed"}
-          confirming={status === "confirming"}
+          confirmed={status === "executed"}
+          confirming={status === "awaiting_signature" || status === "broadcast" || status === "pending"}
           safety={plan.safety}
           quoteFailed={isQuoteFailed}
           walletConnected={walletConnected}

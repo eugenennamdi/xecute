@@ -14,11 +14,13 @@ const ConfirmationSchema = z.object({
   conversationId: z.string().uuid(),
   plan: PreparedActionSchema,
   txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, "A valid 66-character onchain transaction hash is required."),
+  expectedWallet: z.string().optional(),
+  expectedTo: z.string().optional(),
 })
 
 export async function POST(request: Request) {
   try {
-    const { sessionId, conversationId, plan, txHash } = ConfirmationSchema.parse(await request.json())
+    const { sessionId, conversationId, plan, txHash, expectedWallet, expectedTo } = ConfirmationSchema.parse(await request.json())
     
     // Hard Network Execution Gating: Mainnet execution is strictly disabled in this Xecute version
     if (plan.intent.network === "mainnet") {
@@ -46,16 +48,30 @@ export async function POST(request: Request) {
 
     // Verify transaction details if available onchain
     try {
-      const txObj = await callXLayerRpc<{ from?: string; to?: string; chainId?: string } | null>(
+      const txObj = await callXLayerRpc<{ from?: string; to?: string; chainId?: string; input?: string; value?: string } | null>(
         "eth_getTransactionByHash",
         [txHash],
         "testnet",
       )
-      if (txObj && txObj.chainId) {
-        const txChainId = Number.parseInt(txObj.chainId, 16)
-        if (txChainId !== 1952) {
+      if (txObj) {
+        if (txObj.chainId) {
+          const txChainId = Number.parseInt(txObj.chainId, 16)
+          if (txChainId !== 1952) {
+            return Response.json(
+              { error: `Transaction chainId mismatch: broadcast to chain ${txChainId}, expected X Layer Testnet (1952).` },
+              { status: 400 },
+            )
+          }
+        }
+        if (expectedWallet && txObj.from && txObj.from.toLowerCase() !== expectedWallet.toLowerCase()) {
           return Response.json(
-            { error: `Transaction chainId mismatch: broadcast to chain ${txChainId}, expected X Layer Testnet (1952).` },
+            { error: `Transaction sender mismatch: onchain sender ${txObj.from} does not match expected wallet ${expectedWallet}.` },
+            { status: 400 },
+          )
+        }
+        if (expectedTo && txObj.to && txObj.to.toLowerCase() !== expectedTo.toLowerCase()) {
+          return Response.json(
+            { error: `Transaction recipient mismatch: onchain target ${txObj.to} does not match expected destination ${expectedTo}.` },
             { status: 400 },
           )
         }

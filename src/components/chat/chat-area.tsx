@@ -144,6 +144,7 @@ export function ChatArea() {
   const messages = useTerminalStore((state) => state.messages)
   const activeMode = useTerminalStore((state) => state.activeMode)
   const status = useTerminalStore((state) => state.status)
+  const isAgentRunning = useTerminalStore((state) => state.isAgentRunning)
   const currentIntent = useTerminalStore((state) => state.currentIntent)
   const setMode = useTerminalStore((state) => state.setMode)
   const submitPrompt = useTerminalStore((state) => state.submitPrompt)
@@ -153,7 +154,13 @@ export function ChatArea() {
   const promptRef = useRef<HTMLTextAreaElement>(null)
   const sendIconRef = useRef<SentIconHandle>(null)
   const hasConversation = messages.length > 1
-  const isProcessing = status === "processing" || status === "confirming"
+  const isProcessing =
+    isAgentRunning ||
+    status === "preparing" ||
+    status === "awaiting_signature" ||
+    status === "broadcast" ||
+    status === "pending" ||
+    messages.some((m) => m.streaming)
   const commandMatch = prompt.match(/^\/([a-z]*)$/i)
   const filteredCommands = commandMatch
     ? commands.filter((item) => item.command.slice(1).startsWith(commandMatch[1].toLowerCase()))

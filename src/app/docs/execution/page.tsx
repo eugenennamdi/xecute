@@ -46,7 +46,7 @@ export default function ExecutionPage() {
             {
               step: "03",
               title: "Strict Schema Validation",
-              desc: "Parameters are validated against strict Zod schemas (TradeIntentSchema, ProtectIntentSchema) to guarantee complete data types.",
+              desc: "Parameters are validated against strict Zod schemas (TradeIntentSchema, ProtectIntentSchema) to enforce complete data types.",
               tag: "Zod Validation",
             },
             {

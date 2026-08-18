@@ -194,62 +194,21 @@ export class TestnetSwapAdapter implements XecuteAdapter {
     if (intent.mode !== "trade" || !intent.fromToken || !intent.toToken || !intent.amount) return null
     if (!context.walletAddress) throw new MissingExecutionParameterError("walletAddress")
 
-    const recipient = context.walletAddress as `0x${string}`
-    const payload = getSwapTransactionPayload({
-      fromTokenSymbol: intent.fromToken,
-      toTokenSymbol: intent.toToken,
+    const { prepareExecutionTransaction } = await import("@/lib/execution/prepare-transaction")
+    const prep = await prepareExecutionTransaction({
+      action: "swap",
+      fromToken: intent.fromToken,
+      toToken: intent.toToken,
       amount: intent.amount,
-      recipient,
+      walletAddress: context.walletAddress,
       slippage: intent.maxSlippage ?? 0.5,
     })
 
-    // 1. Dry-run simulation via eth_call
-    try {
-      await callXLayerRpc(
-        "eth_call",
-        [
-          {
-            from: recipient,
-            to: payload.to,
-            data: payload.data,
-            value: payload.value,
-          },
-          "latest",
-        ],
-        "testnet",
-      )
-    } catch (simError) {
-      throw new Error(`Simulation failed: ${simError instanceof Error ? simError.message : "reverted"}`)
-    }
-
-    // 2. Exact gas estimation via eth_estimateGas — fails closed with zero fallback
-    const est = await callXLayerRpc<string>(
-      "eth_estimateGas",
-      [
-        {
-          from: recipient,
-          to: payload.to,
-          data: payload.data,
-          value: payload.value,
-        },
-      ],
-      "testnet",
-    )
-
-    if (!est || est === "0x" || est === "0x0") {
-      throw new Error("Gas estimation unavailable from RPC node")
-    }
-
-    const gasUnits = BigInt(est)
-    // Apply 20% deterministic policy buffer for execution safety
-    const buffered = (gasUnits * BigInt(120)) / BigInt(100)
-    const gasLimit = buffered.toString()
-
     return {
-      to: payload.to,
-      data: payload.data,
-      value: payload.value,
-      gasLimit,
+      to: prep.to,
+      data: prep.data,
+      value: prep.value,
+      gasLimit: prep.gasLimit,
       chainId: 1952,
     }
   }

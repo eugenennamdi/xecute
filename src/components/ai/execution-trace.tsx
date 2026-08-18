@@ -16,16 +16,35 @@ const traceSteps: Record<Mode, string[]> = {
 
 function extractTokens(text: string): string[] {
   const matches: Array<{ token: string; index: number }> = []
-  const candidates = ["USDT0", "USDG", "USDC", "USDT", "WOKB", "WETH", "OKB", "ETH", "BTC", "SOL"]
+  const candidates = [
+    "USD₮0",
+    "USDT0",
+    "USDT_LEGACY",
+    "USDC.E",
+    "USDC_BRIDGED",
+    "USDG",
+    "USDC",
+    "USDT",
+    "WOKB",
+    "WBTC",
+    "XBTC",
+    "WETH",
+    "XETH",
+    "OKB",
+    "ETH",
+    "BTC",
+    "SOL",
+  ]
   for (const token of candidates) {
-    const regex = new RegExp(`\\b${token}\\b`, "gi")
+    const escaped = token.replace(".", "\\.")
+    const regex = new RegExp(`\\b${escaped}\\b`, "gi")
     let match: RegExpExecArray | null
     while ((match = regex.exec(text)) !== null) {
       matches.push({ token, index: match.index })
     }
   }
   matches.sort((a, b) => a.index - b.index)
-  // Deduplicate consecutive tokens
+  // Deduplicate consecutive tokens preserving original casing
   return [...new Set(matches.map((m) => m.token))]
 }
 
@@ -35,9 +54,54 @@ export function getProcessingLabel(
   status?: string,
   intent?: Intent | null,
 ): string {
-  // If the user has signed or confirmed and the transaction is actively executing/broadcasting:
-  if (status === "confirming") {
-    if (intent?.mode === "trade") {
+  // If an onchain action is actively being prepared, signed, or executed:
+  if (
+    intent &&
+    (status === "preparing" ||
+      status === "awaiting_signature" ||
+      status === "broadcast" ||
+      status === "pending" ||
+      status === "confirming")
+  ) {
+    if (status === "preparing") {
+      if (intent.action === "swap") {
+        if (intent.fromToken && intent.toToken) {
+          return `Preparing swap (${intent.fromToken} → ${intent.toToken})`
+        }
+        return "Preparing swap onchain"
+      }
+      if (intent.action === "transfer") {
+        return "Preparing transfer transaction"
+      }
+      if (intent.action === "approve") {
+        return `Preparing approval for ${intent.fromToken ?? "token"}`
+      }
+      if (intent.action === "revoke") {
+        return `Preparing revocation for ${intent.fromToken ?? "token"}`
+      }
+      return "Preparing transaction onchain"
+    }
+
+    if (status === "awaiting_signature") {
+      if (intent.action === "swap") {
+        if (intent.fromToken && intent.toToken) {
+          return `Awaiting signature for swap (${intent.fromToken} → ${intent.toToken})`
+        }
+        return "Awaiting wallet signature for swap"
+      }
+      if (intent.action === "transfer") {
+        return "Awaiting wallet signature for transfer"
+      }
+      if (intent.action === "approve") {
+        return `Awaiting signature for approval (${intent.fromToken ?? "token"})`
+      }
+      if (intent.action === "revoke") {
+        return `Awaiting signature for revocation (${intent.fromToken ?? "token"})`
+      }
+      return "Awaiting signature in wallet"
+    }
+
+    if (status === "broadcast" || status === "pending" || status === "confirming") {
       if (intent.action === "swap") {
         if (intent.fromToken && intent.toToken) {
           return `Executing swap (${intent.fromToken} → ${intent.toToken})`
@@ -53,8 +117,8 @@ export function getProcessingLabel(
       if (intent.action === "revoke") {
         return `Revoking allowance for ${intent.fromToken ?? "token"}`
       }
+      return "Executing transaction on X Layer"
     }
-    return "Broadcasting transaction to X Layer"
   }
 
   const text = (rawPrompt ?? "").toLowerCase().trim()
@@ -80,46 +144,73 @@ export function getProcessingLabel(
     return "Thinking"
   }
 
-  // 2. Ecosystem, Architecture, Developer & General Documentation Inquiries
+  // 2. Token Approvals, Allowances, Revocations & Security Audits
+  if (/\b(approvals?|allowances?|revok(e|ing)|spenders?|unlimited allowance)\b/i.test(text)) {
+    const found = extractTokens(text)
+    if (found.length > 0 && /\b(revok(e|ing)|cancel)\b/i.test(text)) {
+      return `Auditing ${found[0]} approvals for revocation`
+    }
+    if (found.length > 0) {
+      return `Auditing approvals & allowances for ${found[0]}`
+    }
+    return "Auditing token approvals & allowances"
+  }
+  if (/\b(honeypots?|security|safety|safe|risk|audits?|malicious|drainers?|phishing|is this token safe)\b/i.test(text)) {
+    const found = extractTokens(text)
+    if (found.length > 0) {
+      return `Auditing ${found[0]} contract security & risk`
+    }
+    return "Auditing contract security & risk"
+  }
+
+  // 3. Ecosystem, Architecture, Developer & General Documentation Inquiries
+  if (/\b(agglayer|polygon\s+cdk)\b/i.test(text)) {
+    return "Consulting X Layer & AggLayer architecture"
+  }
+  if (/\b(zk-?rollup|zero[- ]knowledge|validium|prover|proofs?)\b/i.test(text)) {
+    return "Consulting X Layer ZK architecture"
+  }
   if (
-    /\b(what\s+is\s+x\s*layer|about\s+x\s*layer|how\s+does\s+x\s*layer|polygon\s+cdk|agglayer|zk-?rollup|zero[- ]knowledge|validium|finality|chain\s+id|rpc(\s+url)?|tokenomics|consensus|whitepaper|documentation|docs|metamask|walletconnect|appkit|developer|sdk)\b/i.test(
+    /\b(what\s+is\s+x\s*layer|about\s+x\s*layer|how\s+does\s+x\s*layer|finality|chain\s+id|rpc(\s+url)?|tokenomics|consensus|whitepaper|documentation|docs|metamask|walletconnect|appkit|developer|sdk|deploy|hardhat|foundry)\b/i.test(
       text,
     )
   ) {
     return "Consulting X Layer knowledge base"
   }
 
-  // 3. Bridging & Cross-chain Transfers
-  if (/\b(bridge|bridging|deposit from ethereum|withdraw to ethereum|l1\s*(to|->)\s*l2|l2\s*(to|->)\s*l1)\b/i.test(text)) {
+  // 4. Bridging & Cross-chain Transfers
+  if (/\b(bridge|bridging|deposit from ethereum|withdraw to ethereum|l1\s*(to|->)\s*l2|l2\s*(to|->)\s*l1|bridge contracts?)\b/i.test(text)) {
     return "Checking X Layer bridge guide"
   }
 
-  // 4. Gas & Network Telemetry Queries
-  if (/\b(gas price|current gas|gas fee|network status|network health|block height|latest block|rpc status|is x layer online|network snapshot)\b/i.test(text)) {
+  // 5. Gas & Network Telemetry Queries
+  if (/\b(gas price|current gas|gas fee|network status|network health|block height|latest block|rpc status|is x layer online|network snapshot|tps|transactions? per second)\b/i.test(text)) {
     return "Checking network gas & block status"
   }
 
-  // 5. Balance, Holdings, Address Inspection
+  // 6. Balance, Holdings, Address Inspection
   if (/\b(balance|holding|portfolio|assets? in wallet|how much okb|how many tokens?)\b/i.test(text) || /^0x[a-f0-9]{40}/i.test(text)) {
+    const found = extractTokens(text)
+    if (found.length > 0) {
+      return `Inspecting ${found[0]} balance on X Layer`
+    }
     return "Inspecting wallet balances on X Layer"
   }
 
-  // 6. Faucet Queries
+  // 7. Faucet Queries
   if (/\b(faucet|claim okb|test okb|free okb|testnet funds|testnet tokens)\b/i.test(text)) {
     return "Checking official testnet faucet"
   }
 
-  // 7. Token Approvals & Security Audits
-  if (/\b(approvals?|allowances?|revok(e|ing)|spenders?|unlimited allowance)\b/i.test(text)) {
-    return "Auditing token approvals & allowances"
-  }
-  if (/\b(honeypots?|security|safety|safe|risk|audits?|malicious|drainers?|phishing)\b/i.test(text)) {
-    return "Auditing contract security & risk"
-  }
-
   // 8. Earn & DeFi Yield Pools
-  if (/\b(yield|earn|apy|apr|staking|liquidity pool|vault|farm)\b/i.test(text)) {
+  if (/\b(yield|earn|apy|apr|staking|liquidity pool|vault|farm|aave|uniswap)\b/i.test(text)) {
     const found = extractTokens(text)
+    if (/\baave\b/i.test(text)) {
+      return found.length > 0 ? `Checking Aave lending rates for ${found[0]}` : "Checking Aave market rates on X Layer"
+    }
+    if (/\buniswap\b/i.test(text)) {
+      return "Scanning Uniswap V3 liquidity pools"
+    }
     if (found.length > 0) {
       return `Scanning yield pools for ${found[0]}`
     }
@@ -127,7 +218,13 @@ export function getProcessingLabel(
   }
 
   // 9. Predictions & Market Scenario Stress Tests
-  if (/\b(what if|predict|drops?|pumps?|crash|scenario|stress test|simulate|price shock|impermanent loss)\b/i.test(text)) {
+  if (/\b(what if|predict|drops?|pumps?|crash(es)?|scenario|stress test|simulate|price shock|impermanent loss)\b/i.test(text)) {
+    if (/\bimpermanent loss\b/i.test(text)) {
+      return "Calculating impermanent loss & pool risk"
+    }
+    if (/\b(crash(es)?|drops?|pumps?|shock(s)?)\b/i.test(text)) {
+      return "Modeling price shock & market scenario"
+    }
     return "Modeling market scenario & risk"
   }
 
@@ -145,15 +242,28 @@ export function getProcessingLabel(
 
   // 11. Transfers & Sends
   if (/\b(send|transfer)\b/i.test(text)) {
+    const found = extractTokens(text)
+    if (found.length > 0) {
+      return `Validating ${found[0]} transfer & gas`
+    }
     return "Validating transfer & gas"
   }
 
   // 12. Token Price & Market Data
   if (/\b(price of|market cap|volume|chart|worth|value of okb|token price)\b/i.test(text)) {
+    const found = extractTokens(text)
+    if (found.length > 0) {
+      return `Fetching real-time market data for ${found[0]}`
+    }
     return "Fetching real-time market data"
   }
 
-  // 13. General Explanatory Questions (How do I, Why is, Where can I, Can you, Tell me)
+  // 13. Conversational Confirmation & Follow-up Actions
+  if (/^(yes|proceed|confirm|do it|execute|go ahead|sure|ok|okay)\b/i.test(text)) {
+    return "Preparing execution plan"
+  }
+
+  // 14. General Explanatory Questions (How do I, Why is, Where can I, Can you, Tell me)
   if (/^(how|what|why|where|when|can|could|is|are|will|explain|tell|show)\b/i.test(text)) {
     return "Thinking"
   }

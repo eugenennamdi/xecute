@@ -25,7 +25,18 @@ export type ConversationSummary = {
   updatedAt: string
 }
 
-type PreviewStatus = "idle" | "processing" | "ready" | "blocked" | "confirming" | "confirmed"
+export type ExecutionStatus =
+  | "idle"
+  | "preparing"
+  | "ready"
+  | "awaiting_signature"
+  | "broadcast"
+  | "pending"
+  | "executed"
+  | "reverted"
+  | "failed"
+  | "blocked"
+
 type HistoryStatus = "idle" | "loading" | "ready" | "unavailable"
 
 type TerminalState = {
@@ -35,7 +46,8 @@ type TerminalState = {
   currentIntent: Intent | null
   currentPlan: PreparedAction | null
   receipt: ExecutionReceipt | null
-  status: PreviewStatus
+  status: ExecutionStatus
+  isAgentRunning: boolean
   walletConnected: boolean
   walletAddress: `0x${string}` | null
   walletChainId: number | null
@@ -75,7 +87,7 @@ function browserSessionId() {
   return created
 }
 
-function statusForPlan(plan: PreparedAction | null): PreviewStatus {
+function statusForPlan(plan: PreparedAction | null): ExecutionStatus {
   if (!plan) return "idle"
   if (plan.status === "ready_to_execute" || plan.status === "preview-ready" || plan.status === "simulated_preview") return "ready"
   if (plan.status === "blocked" || plan.status === "quote_failed") return "blocked"
@@ -97,6 +109,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   currentPlan: null,
   receipt: null,
   status: "idle",
+  isAgentRunning: false,
   walletConnected: false,
   walletAddress: null,
   walletChainId: null,
@@ -204,7 +217,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
             currentIntent: null,
             currentPlan: null,
             receipt: null,
-            status: "idle" as PreviewStatus,
+            status: "idle",
           }
         : {}),
     }))
@@ -220,7 +233,15 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   },
   submitPrompt: async (prompt) => {
     const cleanPrompt = prompt.trim()
-    if (!cleanPrompt || get().status === "processing" || get().status === "confirming") return
+    if (
+      !cleanPrompt ||
+      get().isAgentRunning ||
+      get().status === "preparing" ||
+      get().status === "awaiting_signature" ||
+      get().status === "broadcast" ||
+      get().status === "pending"
+    )
+      return
 
     const suffix = Date.now().toString(36)
     const mode = classifyIntent(cleanPrompt, get().activeMode)
@@ -240,7 +261,8 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       currentIntent: null,
       currentPlan: null,
       receipt: null,
-      status: "processing",
+      status: "idle",
+      isAgentRunning: true,
       messages: [
         ...state.messages,
         { id: `user-${suffix}`, role: "user", content: cleanPrompt, mode },
@@ -327,6 +349,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
           currentIntent: agentResponse.plan?.intent ?? null,
           currentPlan: agentResponse.plan,
           status: statusForPlan(agentResponse.plan),
+          isAgentRunning: false,
           messages: newMessages,
         }
       })
@@ -344,6 +367,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
       set((state) => ({
         status: "idle",
+        isAgentRunning: false,
         messages: [
           ...state.messages,
           {
@@ -392,7 +416,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       safety: { ...currentPlan.safety, checks: updatedChecks },
     }
 
-    set({ sessionId, status: "confirming", currentPlan: updatedPlan })
+    set({ sessionId, status: "awaiting_signature", currentPlan: updatedPlan })
 
     let onchainTxHash: string | undefined
 
@@ -420,189 +444,60 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
         const fromAddr = walletAddress as `0x${string}`
         const action = currentPlan.intent.action || "swap"
-        let payload: { to: string; value: string; data: string }
 
-        // Import necessary helpers for onchain verification
-        const { parseEther, parseUnits } = await import("viem")
-        const {
-          getXLayerNativeBalance,
-          getXLayerTokenBalance,
-          getXLayerTokenAllowance,
-          getXLayerTransactionReceipt,
-        } = await import("@/lib/xlayer/rpc")
+        const { prepareExecutionTransaction } = await import("@/lib/execution/prepare-transaction")
+        const { getXLayerTokenAllowance, getXLayerTransactionReceipt } = await import("@/lib/xlayer/rpc")
         const { findToken } = await import("@/config/tokens")
+        const { parseUnits } = await import("viem")
 
-        // 2. Query live native balance immediately before state changes
-        const nativeBalRes = await getXLayerNativeBalance(fromAddr, "testnet")
-        if (!nativeBalRes.success || nativeBalRes.rawBigInt === undefined) {
-          set({ status: "ready" })
-          alert("Execution blocked: Live native OKB balance is unavailable from X Layer Testnet.")
-          return
-        }
-        const nativeBalanceWei = nativeBalRes.rawBigInt
-        const requiredReserveWei = parseEther("0.005")
-
-        if (action === "transfer") {
-          if (!currentPlan.intent.fromToken) throw new Error("Missing transfer token parameter.")
-          if (!currentPlan.intent.amount) throw new Error("Missing transfer amount parameter.")
-          if (!currentPlan.intent.recipient) throw new Error("Missing transfer recipient parameter.")
-
-          const tokenSym = currentPlan.intent.fromToken.toUpperCase()
-          const tokenCfg = findToken(tokenSym, 1952)
-          if (!tokenCfg) throw new Error(`Unsupported token for transfer: ${tokenSym}`)
-
-          // Verify token or native balance
-          if (tokenCfg.address === "native") {
-            const amountWei = parseEther(currentPlan.intent.amount)
-            if (nativeBalanceWei < amountWei + requiredReserveWei) {
-              set({ status: "ready" })
-              alert("Execution blocked: Insufficient native OKB balance to cover transfer amount and the 0.005 OKB gas reserve.")
-              return
-            }
-          } else {
-            const tokBalRes = await getXLayerTokenBalance(tokenCfg.address, fromAddr, tokenCfg.decimals, "testnet")
-            if (!tokBalRes.success || tokBalRes.rawBigInt === undefined) {
-              set({ status: "ready" })
-              alert("Execution blocked: Token balance is unavailable from X Layer Testnet.")
-              return
-            }
-            const requiredTokens = parseUnits(currentPlan.intent.amount, tokenCfg.decimals)
-            if (tokBalRes.rawBigInt < requiredTokens) {
-              set({ status: "ready" })
-              alert(`Execution blocked: Insufficient ${tokenSym} balance for transfer.`)
-              return
-            }
-            if (nativeBalanceWei < requiredReserveWei) {
-              set({ status: "ready" })
-              alert("Execution blocked: Insufficient native OKB for gas reserve (minimum 0.005 OKB required).")
-              return
-            }
-          }
-
-          const { getTransferTransactionPayload } = await import("@/lib/contracts/router")
-          payload = getTransferTransactionPayload({
-            tokenSymbol: currentPlan.intent.fromToken,
-            amount: currentPlan.intent.amount,
-            recipient: currentPlan.intent.recipient,
-          })
-        } else if (action === "approve" || action === "revoke") {
-          if (!currentPlan.intent.fromToken) throw new Error("Missing approval token parameter.")
-          if (action !== "revoke" && !currentPlan.intent.amount) throw new Error("Missing approval amount parameter.")
-
-          if (nativeBalanceWei < requiredReserveWei) {
-            set({ status: "ready" })
-            alert("Execution blocked: Insufficient native OKB for gas reserve (minimum 0.005 OKB required).")
-            return
-          }
-
-          const { getApprovalTransactionPayload, ROUTER_ADDRESS_TESTNET } = await import("@/lib/contracts/router")
-          payload = getApprovalTransactionPayload({
-            tokenSymbol: currentPlan.intent.fromToken,
-            amount: action === "revoke" ? "0" : (currentPlan.intent.amount ?? "0"),
-            spender: currentPlan.intent.spender ?? ROUTER_ADDRESS_TESTNET,
-          })
-        } else {
-          // Swap action
-          if (!currentPlan.intent.fromToken) throw new Error("Missing swap input token parameter.")
-          if (!currentPlan.intent.toToken) throw new Error("Missing swap output token parameter.")
-          if (!currentPlan.intent.amount) throw new Error("Missing swap amount parameter.")
-
-          const fromSym = currentPlan.intent.fromToken.toUpperCase()
+        if (action === "swap") {
+          const fromSym = currentPlan.intent.fromToken?.toUpperCase() || ""
           const fromCfg = findToken(fromSym, 1952)
-          if (!fromCfg) throw new Error(`Unsupported swap input token: ${fromSym}`)
+          if (!fromCfg) throw new Error(`Unsupported token for swap: ${fromSym}`)
 
-          // Verify swap balance
-          if (fromCfg.address === "native") {
-            const amountWei = parseEther(currentPlan.intent.amount)
-            if (nativeBalanceWei < amountWei + requiredReserveWei) {
-              set({ status: "ready" })
-              alert("Execution blocked: Insufficient native OKB balance to cover swap amount and the 0.005 OKB gas reserve.")
-              return
-            }
-          } else {
-            const tokBalRes = await getXLayerTokenBalance(fromCfg.address, fromAddr, fromCfg.decimals, "testnet")
-            if (!tokBalRes.success || tokBalRes.rawBigInt === undefined) {
-              set({ status: "ready" })
-              alert("Execution blocked: Token balance is unavailable from X Layer Testnet.")
-              return
-            }
-            const requiredTokens = parseUnits(currentPlan.intent.amount, fromCfg.decimals)
-            if (tokBalRes.rawBigInt < requiredTokens) {
-              set({ status: "ready" })
-              alert(`Execution blocked: Insufficient ${fromSym} balance for swap.`)
-              return
-            }
-            if (nativeBalanceWei < requiredReserveWei) {
-              set({ status: "ready" })
-              alert("Execution blocked: Insufficient native OKB for gas reserve (minimum 0.005 OKB required).")
-              return
-            }
-          }
+          // Check if token approval prerequisite is required for ERC-20 swap
+          if (fromCfg.address !== "native") {
+            const { ROUTER_ADDRESS_TESTNET } = await import("@/config/contracts")
+            const requiredTokens = parseUnits(currentPlan.intent.amount || "0", fromCfg.decimals)
 
-          const { getSwapTransactionPayload } = await import("@/lib/contracts/router")
-          payload = getSwapTransactionPayload({
-            fromTokenSymbol: currentPlan.intent.fromToken,
-            toTokenSymbol: currentPlan.intent.toToken,
-            amount: currentPlan.intent.amount,
-            recipient: fromAddr,
-            slippage: currentPlan.intent.maxSlippage ?? 0.5,
-          })
-
-          if (fromSym !== "OKB") {
-            const tokenCfg = fromCfg
-            if (tokenCfg.address === "native") {
-              throw new Error(`Unsupported ERC-20 swap token: ${fromSym}`)
-            }
-
-            const { getApprovalTransactionPayload } = await import("@/lib/contracts/router")
-            const requiredAmount = parseUnits(currentPlan.intent.amount, tokenCfg.decimals)
-
-            // Query live onchain allowance via RPC — fail closed if RPC fails
-            const allowanceRes = await getXLayerTokenAllowance(
-              tokenCfg.address,
+            const allowRes = await getXLayerTokenAllowance(
+              fromCfg.address,
               fromAddr,
-              payload.to,
-              tokenCfg.decimals,
+              ROUTER_ADDRESS_TESTNET,
+              fromCfg.decimals,
               "testnet",
             )
-
-            if (!allowanceRes.success || allowanceRes.rawBigInt === undefined) {
+            if (!allowRes.success || allowRes.rawBigInt === undefined) {
               set({ status: "ready" })
-              alert("Execution blocked: Allowance verification is unavailable from X Layer Testnet.")
+              alert("Execution blocked: Onchain allowance verification is unavailable.")
               return
             }
 
-            const currentAllowance = allowanceRes.rawBigInt
-
-            if (currentAllowance < requiredAmount) {
-              const approvePayload = getApprovalTransactionPayload({
-                tokenSymbol: fromSym,
-                amount: currentPlan.intent.amount,
-                spender: payload.to,
+            if (allowRes.rawBigInt < requiredTokens) {
+              // Prepare Approval Transaction (simulates, estimates gas, checks native reserve)
+              const approvePrep = await prepareExecutionTransaction({
+                action: "approve",
+                fromToken: fromSym,
+                amount: currentPlan.intent.amount ?? undefined,
+                spender: ROUTER_ADDRESS_TESTNET,
+                walletAddress: fromAddr,
               })
 
-              // Network check immediately before approval send
-              const preApproveChainHex = await ethereum.request({ method: "eth_chainId" })
-              if (Number.parseInt(preApproveChainHex, 16) !== 1952) {
-                set({ status: "ready" })
-                alert("Execution blocked: Connected wallet must be on X Layer Testnet (Chain ID: 1952).")
-                return
-              }
-
-              // Request user signature for approval prerequisite
+              // Prompt wallet for approval signature
               let approvalTxHash: string
               try {
                 approvalTxHash = await ethereum.request({
                   method: "eth_sendTransaction",
                   params: [{
                     from: fromAddr,
-                    to: approvePayload.to,
-                    data: approvePayload.data,
-                    value: approvePayload.value,
+                    to: approvePrep.to,
+                    data: approvePrep.data,
+                    value: approvePrep.value,
+                    gas: approvePrep.gasLimit,
                   }],
                 })
               } catch (approvalErr) {
-                console.warn("Token approval signature rejected by user:", approvalErr)
+                console.warn("Approval signature rejected by user:", approvalErr)
                 set({ status: "ready" })
                 return
               }
@@ -622,11 +517,11 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
               if (!approvalConfirmed) {
                 set({ status: "ready" })
-                alert("Prerequisite token approval was not confirmed onchain. Swap cancelled.")
+                alert("Token approval was not confirmed onchain. Swap cancelled.")
                 return
               }
 
-              // Re-check chain ID AGAIN after approval mining to prevent mid-operation network switch
+              // Re-check chain ID AFTER approval mining to prevent mid-operation network switch
               const postApproveChainHex = await ethereum.request({ method: "eth_chainId" })
               if (Number.parseInt(postApproveChainHex, 16) !== 1952) {
                 set({ status: "ready" })
@@ -634,30 +529,37 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
                 return
               }
 
-              // Re-read allowance onchain to strictly verify sufficient balance authorization
-              const verifyRes = await getXLayerTokenAllowance(
-                tokenCfg.address,
+              // Re-read allowance onchain to strictly verify authorization
+              const postAllowRes = await getXLayerTokenAllowance(
+                fromCfg.address,
                 fromAddr,
-                payload.to,
-                tokenCfg.decimals,
+                ROUTER_ADDRESS_TESTNET,
+                fromCfg.decimals,
                 "testnet",
               )
-              if (!verifyRes.success || verifyRes.rawBigInt === undefined) {
+              if (!postAllowRes.success || postAllowRes.rawBigInt === undefined || postAllowRes.rawBigInt < requiredTokens) {
                 set({ status: "ready" })
-                alert("Execution blocked: Post-approval allowance verification unavailable from X Layer Testnet.")
-                return
-              }
-
-              if (verifyRes.rawBigInt < requiredAmount) {
-                set({ status: "ready" })
-                alert("Allowance remains insufficient after approval. Swap cancelled.")
+                alert("Allowance remains unverified after approval transaction. Swap cancelled.")
                 return
               }
             }
           }
         }
 
-        // Network re-check immediately before primary transaction broadcast
+        // Prepare the primary transaction (swap / transfer / approve / revoke)
+        // This re-evaluates live native balance (accounting for gas consumed in approval phase) and live gas reserve
+        const prep = await prepareExecutionTransaction({
+          action,
+          fromToken: currentPlan.intent.fromToken ?? undefined,
+          toToken: currentPlan.intent.toToken ?? undefined,
+          amount: currentPlan.intent.amount ?? undefined,
+          recipient: currentPlan.intent.recipient ?? undefined,
+          spender: currentPlan.intent.spender ?? undefined,
+          slippage: currentPlan.intent.maxSlippage ?? 0.5,
+          walletAddress: fromAddr,
+        })
+
+        // Re-check chain ID immediately before primary send
         const finalChainHex = await ethereum.request({ method: "eth_chainId" })
         if (Number.parseInt(finalChainHex, 16) !== 1952) {
           set({ status: "ready" })
@@ -665,19 +567,22 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
           return
         }
 
-        // Broadcast the primary transaction
+        // Request user signature & broadcast
         onchainTxHash = await ethereum.request({
           method: "eth_sendTransaction",
           params: [{
             from: fromAddr,
-            to: payload.to,
-            value: payload.value,
-            data: payload.data,
+            to: prep.to,
+            value: prep.value,
+            data: prep.data,
+            gas: prep.gasLimit,
           }],
         })
       } catch (walletError) {
-        console.warn("Wallet signing rejected or cancelled:", walletError)
+        console.warn("Wallet signing rejected or failed:", walletError)
+        const msg = walletError instanceof Error ? walletError.message : "Transaction rejected"
         set({ status: "ready" })
+        alert(msg)
         return
       }
     }
@@ -686,6 +591,8 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       set({ status: "ready" })
       return
     }
+
+    set({ status: "broadcast" })
 
     try {
       const response = await fetch("/api/execution/confirm", {
@@ -696,25 +603,35 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
           conversationId,
           plan: currentPlan,
           txHash: onchainTxHash,
+          expectedWallet: walletAddress,
         }),
       })
       if (!response.ok) throw new Error("Confirmation request failed")
       const payload = (await response.json()) as { receipt: ExecutionReceipt }
-      set({ receipt: payload.receipt, status: "confirmed" })
 
-      // If status is still pending/broadcast, poll until mined receipt arrives
-      if (payload.receipt.status === "pending" || payload.receipt.status === "broadcast") {
+      const initialStatus = payload.receipt.status === "executed"
+        ? "executed"
+        : payload.receipt.status === "reverted"
+          ? "reverted"
+          : "pending"
+
+      set({ receipt: payload.receipt, status: initialStatus })
+
+      // If status is pending, poll until mined receipt arrives
+      if (initialStatus === "pending") {
         const { getXLayerTransactionReceipt } = await import("@/lib/xlayer/rpc")
         for (let i = 0; i < 30; i++) {
           await new Promise((resolve) => setTimeout(resolve, 2000))
           const polled = await getXLayerTransactionReceipt(onchainTxHash, "testnet")
           if (polled.status === "mined") {
+            const minedStatus = polled.success ? "executed" : "reverted"
             set((state) => {
               if (!state.receipt) return state
               return {
+                status: minedStatus,
                 receipt: {
                   ...state.receipt,
-                  status: polled.success ? "executed" : "reverted",
+                  status: minedStatus,
                   gasUsed: polled.gasUsed,
                   blockNumber: polled.blockNumber,
                 },

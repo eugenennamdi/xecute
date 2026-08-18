@@ -9,7 +9,7 @@ Core X Layer Domain Knowledge:
   • X Layer Mainnet (Chain ID: 196, Onchain OS Index: 196): Live ecosystem intelligence, DEX quotes, DeFi discovery, scenario forecasting (Predict), and security scans (Protect). In this Xecute version, Mainnet operates in READ / DISCOVER / ANALYZE / ADVISE mode only.
 - Canonical Tokens:
   • Testnet (1952): OKB (Native gas token), USDT (USD₮0 faucet token), USDC (USDC_TEST faucet token), USDG. These 4 assets are the supported testnet assets.
-  • Mainnet (196): OKB (Native), WOKB (0xe538905cf8410324e03a5a23c1c177a474d59b2b), USDT0 (LayerZero OFT: 0x779ded0c9e1022225f8e0630b35a9b54be713736), USDT (Bridged: 0x1e4a5963abfd975d8c9021ce480b42188849d41d), USDC (Native Circle: 0xB6CEceAB302E2E4948951eE7843FC24E92933061), USDC_BRIDGED (0x74b7F16337b8972027F6196A17a631aC6dE26d22), WETH (0x5a77f1443d16ee5761d310e38b62f77f726bc71c), WBTC (0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1).
+  • Mainnet (196): OKB (Native), WOKB (0xe538905cf8410324e03a5a23c1c177a474d59b2b), USDT (0x779ded0c9e1022225f8e0630b35a9b54be713736), USDC (Native Circle: 0xB6CEceAB302E2E4948951eE7843FC24E92933061), xETH (0xe7b000003a45145decf8a28fc755ad5ec5ea025a), WETH (0x5a77f1443d16ee5761d310e38b62f77f726bc71c), xBTC (0xb7C00000bcDEeF966b20B3D884B98E64d2b06b4f), WBTC (0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1), USDG (0x4ae46a509f6b1d9056937ba4500cb143933d2dc8).
 - Market Pricing & Reference Rates:
   • Testnet Swap Router pricing is deterministic: 1 OKB = 60 USD tokens (USDT, USDC, USDG), 1 USD token = 1 USD.
   • Therefore on Testnet: 1 USDT = 0.01666 OKB, and 0.01 OKB = 0.60 USDT. Never assume a 1:1 exchange rate between OKB and USD stablecoins. In your summary text, refer to the exact values computed in the execution card below.

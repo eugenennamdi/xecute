@@ -45,47 +45,15 @@ export function formatApy(raw: string): string {
   return `${num.toFixed(2)}% APY`
 }
 
-const XLAYER_MAINNET_ASSETS: Record<string, string> = {
-  OKB: "NATIVE",
-  XOKB: "NATIVE",
-  WOKB: "0xe538905cf8410324e03a5a23c1c177a474d59b2b",
-  USDT: "0x1e4a5963abfd975d8c9021ce480b42188849d41d",
-  USDT0: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-  USDG: "0x4ae46a509f6b1d9056937ba4500cb143933d2dc8",
-  USDC: "0xB6CEceAB302E2E4948951eE7843FC24E92933061",
-  USDC_BRIDGED: "0x74b7F16337b8972027F6196A17a631aC6dE26d22",
-  ETH: "0x5a77f1443d16ee5761d310e38b62f77f726bc71c",
-  WETH: "0x5a77f1443d16ee5761d310e38b62f77f726bc71c",
-  BTC: "0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1",
-  WBTC: "0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1",
-}
-
-const AAVE_V3_XLAYER_RESERVES: Record<string, string> = {
-  USDT0: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-  "USD₮0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-  USDT: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-  USDG: "0x4ae46a509f6b1d9056937ba4500cb143933d2dc8",
-  ETH: "0x5a77f1443d16ee5761d310e38b62f77f726bc71c",
-  WETH: "0x5a77f1443d16ee5761d310e38b62f77f726bc71c",
-  WBTC: "0xe32812497678bb0bc161c5c0c2937748805f3246",
-  BTC: "0xe32812497678bb0bc161c5c0c2937748805f3246",
-  WOKB: "0xe538905cf8410324e03a5a23c1c177a474d59b2b",
-  OKB: "0xe538905cf8410324e03a5a23c1c177a474d59b2b",
-}
-
 export const UNISWAP_V3_XLAYER_POOLS: Record<string, string> = {
   "USDT-OKB": "0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
   "OKB-USDT": "0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
-  "USDT0-WOKB": "0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
-  "WOKB-USDT0": "0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
+  "USDT-WOKB": "0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
+  "WOKB-USDT": "0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
   "USDC-USDT": "0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
   "USDT-USDC": "0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
-  "USDC-USDT0": "0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
-  "USDT0-USDC": "0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
   "USDG-USDT": "0x0cbe0dbe1400e57f371a38bd3b9bc80f7c3676da",
   "USDT-USDG": "0x0cbe0dbe1400e57f371a38bd3b9bc80f7c3676da",
-  "USDG-USDT0": "0x0cbe0dbe1400e57f371a38bd3b9bc80f7c3676da",
-  "USDT0-USDG": "0x0cbe0dbe1400e57f371a38bd3b9bc80f7c3676da",
   "ETH-USDT": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
   "USDT-ETH": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
   "WETH-USDT": "0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
@@ -94,6 +62,8 @@ export const UNISWAP_V3_XLAYER_POOLS: Record<string, string> = {
   "ETH-OKB": "0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
   "BTC-USDT": "0x5fcfb33c9ab1665fee892eb2af163e863a874d73",
   "USDT-BTC": "0x5fcfb33c9ab1665fee892eb2af163e863a874d73",
+  "WBTC-USDT": "0x5fcfb33c9ab1665fee892eb2af163e863a874d73",
+  "USDT-WBTC": "0x5fcfb33c9ab1665fee892eb2af163e863a874d73",
 }
 
 function extractTokensFromName(text: string): string[] {
@@ -101,8 +71,9 @@ function extractTokensFromName(text: string): string[] {
   const tokens = clean.split(/\s+/).filter(Boolean)
   const matched: string[] = []
   for (const t of tokens) {
-    if (XLAYER_MAINNET_ASSETS[t]) {
-      if (!matched.includes(t)) matched.push(t)
+    const cfg = findToken(t, 196)
+    if (cfg) {
+      if (!matched.includes(cfg.symbol)) matched.push(cfg.symbol)
     }
   }
   return matched
@@ -120,8 +91,9 @@ export function getProtocolUrl(
   if (p.includes("aave")) {
     const matchedTokens = extractTokensFromName(`${name} ${asset}`)
     for (const token of matchedTokens) {
-      if (AAVE_V3_XLAYER_RESERVES[token]) {
-        return `https://app.aave.com/reserve-overview/?underlyingAsset=${AAVE_V3_XLAYER_RESERVES[token]}&marketName=proto_xlayer_v3`
+      const cfg = findToken(token, 196)
+      if (cfg && cfg.address !== "native") {
+        return `https://app.aave.com/reserve-overview/?underlyingAsset=${cfg.address}&marketName=proto_xlayer_v3`
       }
     }
     if (investmentId && /^0x[a-fA-F0-9]{40}$/.test(investmentId)) {

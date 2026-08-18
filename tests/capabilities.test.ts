@@ -119,7 +119,7 @@ test("formats APY and resolves official protocol URLs correctly", async () => {
   // Verified protocol URL mapping
   assert.equal(
     getProtocolUrl("Aave V3", "USDT Market", "USDT"),
-    "https://app.aave.com/reserve-overview/?underlyingAsset=0x779ded0c9e1022225f8e0630b35a9b54be713736&marketName=proto_xlayer_v3",
+    "https://app.aave.com/reserve-overview/?underlyingAsset=0x779Ded0c9e1022225f8E0630b35a9b54bE713736&marketName=proto_xlayer_v3",
   )
   assert.equal(
     getProtocolUrl("Aave V3", "General Markets"),

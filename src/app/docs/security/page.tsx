@@ -19,7 +19,7 @@ export default function SecurityPage() {
           Security Model & Boundaries
         </h1>
         <p className="text-sm text-foreground/70 leading-relaxed">
-          Xecute is engineered around a strict boundary between AI intent interpretation and onchain financial execution to guarantee user fund safety.
+          Xecute is engineered around a strict boundary between AI intent interpretation and onchain financial execution to enforce security controls.
         </p>
       </div>
 

@@ -565,16 +565,16 @@ ${points.join("\n\n")}
     if (address.ok && address.data && typeof address.data === "object") {
       const data = address.data as Record<string, unknown>
       const net = String(data.network || "X Layer")
-      const bal = String(data.nativeBalance ?? "0")
+      const bal = data.nativeBalance !== undefined ? String(data.nativeBalance) : "Unavailable"
       const sym = String(data.nativeSymbol ?? "OKB")
-      const txs = String(data.transactionCount ?? "0")
+      const txs = data.transactionCount !== undefined ? String(data.transactionCount) : "Unavailable"
       const rawAddr = String(data.address ?? "")
-      const block = data.blockHeight ? String(data.blockHeight) : "38,283,572"
-      const gas = data.gasPriceGwei ? `${data.gasPriceGwei} Gwei` : "0.020 Gwei"
+      const block = data.blockHeight ? String(data.blockHeight) : "Unavailable"
+      const gas = data.gasPriceGwei ? `${data.gasPriceGwei} Gwei` : "Unavailable"
       const tokens = Array.isArray(data.tokens) ? data.tokens : []
       const tokenSummary = tokens.length
         ? tokens.map((t: Record<string, unknown>) => `${String(t.balance)} ${String(t.symbol)}`).join(", ")
-        : "0 USDT, 0 USDC, 0 USDG"
+        : "Unavailable"
 
       parts.push(
 `Your OKB balance on **${net}** is **${bal} ${sym}**.
