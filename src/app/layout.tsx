@@ -12,7 +12,11 @@ export const metadata: Metadata = {
   description: "Prompt it. Preview it. Xecute it on X Layer.",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   const initialState = cookieToInitialState(wagmiConfig, (await cookies()).toString());
 
   return (
