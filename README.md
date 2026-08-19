@@ -1,7 +1,7 @@
 # Xecute · AI Execution Terminal for X Layer
 
 > **Execute on [X Layer](https://web3.okx.com/onchainos/dev-docs/xlayer/developer/build-on-xlayer/about-xlayer).**  
-> Natural-language execution, verified onchain state, deterministic safeguards, and human-confirmed transactions.
+> Natural-language execution, live onchain state, deterministic safeguards, and human-confirmed transactions.
 
 [![Live App](https://img.shields.io/badge/Live_App-xecute.xyz-FE6501?style=flat-square)](https://xecute.xyz/)
 [![Testnet Router](https://img.shields.io/badge/Testnet_Router-0x9be3...2acb-16845c?style=flat-square)](https://www.okx.com/web3/explorer/xlayer-test/address/0x9be3af8223f49b9357941db269a39775f7802acb)
@@ -59,13 +59,13 @@ Xecute deliberately separates execution from intelligence during the current rel
 - **Human-Confirmed Signing**: Every state mutation produces an interactive confirmation card requiring an explicit Web3 wallet signature.
 
 ### 2. Advise · Ecosystem Intelligence (Mainnet)
-- **Deterministic Protocol Registry**: Curated indexing of configured X Layer protocols (DEXs, Lending, Yield) with contract addresses and deep links.
-- **Real-Time Market & Yield Scouting**: Live reserve data from protocols like Aave V3 and Uniswap V3 on X Layer without AI hallucinations.
+- **Deterministic Protocol Registry**: Curated indexing of configured X Layer protocols (DEXs, Lending, Yield) with contract addresses and official links.
+- **Real-Time Market & Yield Scouting**: Structured indexing and live reserve data from protocols like Aave V3 and Uniswap V3 on X Layer backed by live onchain reads.
 - Dynamic values are only shown when Xecute can retrieve them from a supported onchain or API source.
 
 ### 3. Protect · Onchain Wallet & Permission Scanner
 - **Live Approval Discovery**: Scans discoverable historical `Approval` events and queries current `allowance(owner, spender)` state onchain.
-- **Evidence-Backed Findings**: Distinguishes EOAs from smart contracts via `eth_getCode` and flags unlimited permissions or unverified spenders without arbitrary AI security scores.
+- **Evidence-Backed Findings**: Distinguishes EOAs from smart contracts via `eth_getCode` and classifies active approval relationships, unlimited allowances, and contract/EOA/unknown spender types without arbitrary AI risk scores.
 - **1-Click Revocation**: Proposes immediate zero-allowance revocation transactions for active approvals within scan scope.
 
 ### 4. Predict · Portfolio Scenario Engine
@@ -191,7 +191,7 @@ npm run build          # Production build
 - Execution is restricted to registered capabilities and tokens configured in Xecute's token registry.
 - Simulation estimates behavior against currently observed state and cannot guarantee future block state.
 - Protect audits are scoped to observable ERC-20 allowances and do not prove global wallet immunity.
-- Unsupported or unverifiable requests fail closed safely rather than hallucinating results.
+- Unsupported or unverifiable requests fail closed safely rather than returning fabricated results.
 - Xecute never custodies user funds or wallet credentials.
 
 ---

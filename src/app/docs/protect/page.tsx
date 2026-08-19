@@ -33,7 +33,7 @@ export default function ProtectPage() {
             Deterministic Pre-Flight Safeguards
           </h3>
           <p className="text-xs text-foreground/70 leading-relaxed">
-            Before wallet signing, Xecute performs the applicable live execution checks and validates against 7 deterministic rules:
+            Before wallet signing, Xecute runs the applicable live execution safeguards:
           </p>
           <ul className="space-y-1.5 text-xs text-foreground/75 list-disc list-inside">
             <li><strong>Gas Reserve:</strong> Enforces ≥ 0.005 OKB buffer to prevent locked wallets.</li>

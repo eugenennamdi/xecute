@@ -19,7 +19,7 @@ export default function ExecutionPage() {
           How Execution Works
         </h1>
         <p className="text-sm text-foreground/70 leading-relaxed">
-          Xecute uses a deterministic application-layer execution pipeline to validate supported actions, verify live state, simulate transactions, estimate gas, enforce safeguards, and require explicit wallet confirmation.
+          Xecute uses a deterministic application-layer execution pipeline to validate supported actions, verify live state, simulate transactions, estimate gas, enforce safeguards, and require explicit wallet confirmation. This prevents free-form model output from being used directly as wallet calldata.
         </p>
         <p className="text-sm text-foreground/70 leading-relaxed">
           <strong>The execution model:</strong> AI interprets intent. Deterministic application code validates structured parameters and constructs supported actions. Live state and simulation inform pre-flight checks. The user provides final authority through the wallet. The blockchain provides final settlement.
@@ -85,7 +85,7 @@ export default function ExecutionPage() {
             {
               step: "09",
               title: "Transaction Simulation & Gas Estimation",
-              desc: "Simulates transaction execution against observed chain state and estimates gas with safety buffers to help detect failures before signing.",
+              desc: "Simulates transaction execution against observed chain state and estimates gas with safety buffers to help detect likely reverts or execution problems against the currently observed state before signing.",
               tag: "Pre-Flight Dry Run",
             },
             {

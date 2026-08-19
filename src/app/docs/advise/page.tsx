@@ -24,7 +24,7 @@ export default function AdvisePage() {
           If Xecute cannot retrieve a value through supported onchain sources or protocol endpoints, it will not present it as fact.
         </p>
         <p className="text-sm text-foreground/70 leading-relaxed">
-          Unlike generic conversational AI bots that hallucinate speculative yields or fabricate contract addresses, Xecute surfaces supported X Layer protocols and live onchain data where available. Official protocol interfaces and authoritative sources are preferred where available.
+          Rather than generating speculative estimates or fabricated contract addresses, Xecute surfaces supported/configured X Layer Mainnet protocols and live ecosystem data where available. Official protocol interfaces and authoritative sources are preferred where available.
         </p>
       </div>
 
@@ -42,7 +42,7 @@ export default function AdvisePage() {
                 1. Live Yield & Lending Markets
               </h3>
               <p className="text-xs text-foreground/70 leading-relaxed">
-                Discovers active lending pools and supply yields on protocols like <strong>Aave V3</strong> and liquidity venues on X Layer with official deep links.
+                Discovers active lending pools and supply yields on protocols like <strong>Aave V3</strong> and liquidity venues on X Layer with configured protocol links.
               </p>
             </div>
             <div className="mt-4 rounded-xl bg-[#fafafa] p-3 border border-black/[0.04]">

@@ -96,7 +96,7 @@ export default function NetworksPage() {
         <div className="rounded-xl border border-black/[0.06] bg-white p-4 space-y-2 text-xs">
           <p className="font-semibold text-foreground">Supported Testnet Capabilities:</p>
           <ul className="space-y-1 text-foreground/70 list-disc list-inside">
-            <li><strong>Testnet Swaps:</strong> Live routing through the deployed <code>XecuteTestnetRouter</code> demonstration contract with automatic token approvals and deterministic rates.</li>
+            <li><strong>Testnet Swaps:</strong> Testnet swap execution through the deployed Xecute demonstration router with automatic token approvals and deterministic rates.</li>
             <li><strong>Direct Transfers:</strong> Native OKB and ERC-20 token transfers with recipient address validation and canonical formatting.</li>
             <li><strong>Token Approvals & Revocations:</strong> Setting exact allowances or executing zero-allowance revocations directly on ERC-20 token contracts.</li>
             <li><strong>Live Gas Estimation:</strong> Dynamic <code>eth_estimateGas</code> calls with safety buffers without hardcoded fallbacks.</li>
@@ -116,7 +116,7 @@ export default function NetworksPage() {
         <div className="rounded-xl border border-black/[0.06] bg-white p-4 space-y-2 text-xs">
           <p className="font-semibold text-foreground">Supported Mainnet Intelligence Capabilities:</p>
           <ul className="space-y-1 text-foreground/70 list-disc list-inside">
-            <li><strong>Protocol & Yield Discovery:</strong> Live scouting of supported lending reserves (Aave V3 at <code>0xE3F3Ca...</code>) and liquidity pools (Uniswap V3 on X Layer) with official deep links.</li>
+            <li><strong>Protocol & Yield Discovery:</strong> Live scouting of supported lending markets and configured protocol data (such as Aave V3 at <code>0xE3F3Ca...</code>) and liquidity pools (Uniswap V3 on X Layer) with official protocol links.</li>
             <li><strong>Wallet Permission Auditing:</strong> Live historical log indexing (<code>Approval</code> events) and real-time <code>allowance(owner, spender)</code> queries to identify unlimited exposure.</li>
             <li><strong>Scenario Analytics:</strong> Portfolio stress-testing under hypothetical market price movements without making speculative financial forecasts.</li>
           </ul>
@@ -126,7 +126,7 @@ export default function NetworksPage() {
       <div className="rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 space-y-1.5 shadow-2xs">
         <h3 className="text-xs font-semibold text-foreground">Why Mainnet Execution is Gated</h3>
         <p className="text-xs text-foreground/70 leading-relaxed">
-          Mainnet execution is intentionally disabled in this release to prioritize user fund safety during the hackathon. Future Mainnet execution will be introduced progressively following comprehensive smart contract audits, security reviews, and protocol adapter verification.
+          Mainnet execution is intentionally disabled in this release to limit financial risk while the execution stack is hardened. Future Mainnet execution will be introduced progressively following comprehensive smart contract audits, security reviews, and protocol adapter verification.
         </p>
       </div>
 

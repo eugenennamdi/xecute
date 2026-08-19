@@ -125,7 +125,7 @@ export default function QuickStartPage() {
             </h3>
           </div>
           <p className="text-xs text-foreground/70 leading-relaxed sm:pl-8.5">
-            Click <strong>Confirm swap</strong> (or transfer/revoke) on the execution card. Xecute revalidates live state, executes a simulation dry-run, checks gas reserves, and requests your Web3 wallet signature. Once broadcast, Xecute verifies the receipt onchain and gives you a direct link to the <a href="https://www.okx.com/web3/explorer/xlayer-test" target="_blank" rel="noreferrer" className="text-[#FE6501] font-medium hover:underline">OKX X Layer Testnet Explorer</a>.
+            Click <strong>Confirm swap</strong> (or transfer/revoke) on the execution card. If the required checks pass, Xecute revalidates live state, executes a simulation dry-run, checks gas reserves, and requests your Web3 wallet signature. Once broadcast, Xecute verifies the receipt onchain and gives you a direct link to the <a href="https://www.okx.com/web3/explorer/xlayer-test" target="_blank" rel="noreferrer" className="text-[#FE6501] font-medium hover:underline">OKX X Layer Testnet Explorer</a>.
           </p>
         </div>
       </div>

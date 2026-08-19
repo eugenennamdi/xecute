@@ -99,7 +99,7 @@ export default function DocsOverviewPage() {
                 Advise
               </h3>
               <p className="text-xs text-foreground/60 leading-relaxed">
-                Discover supported X Layer Mainnet protocols, live lending markets, liquidity pools, and yield opportunities.
+                Discover supported/configured X Layer Mainnet protocols, live lending markets, liquidity pools, and yield opportunities.
               </p>
             </div>
             <div className="mt-4 flex items-center text-xs font-medium text-foreground/75 group-hover:text-[#FE6501] transition-colors">
@@ -170,7 +170,7 @@ export default function DocsOverviewPage() {
           How Xecute Works
         </h2>
         <p className="text-xs leading-relaxed text-foreground/70">
-          Xecute replaces disjointed crypto interfaces with a structured 8-step pipeline where AI interprets user intent, while deterministic application-layer adapters and safety policies govern transaction construction and wallet confirmation.
+          Xecute replaces disjointed crypto interfaces with a structured 8-step pipeline: AI interprets intent. Deterministic application code validates and prepares supported actions. Live preflight checks run before wallet signing. The user provides final authority through the wallet.
         </p>
 
         <div className="rounded-2xl border border-black/[0.07] bg-white p-3.5 sm:p-6 shadow-2xs">

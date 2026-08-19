@@ -61,7 +61,7 @@ export default function PredictPage() {
               </span>
             </div>
             <p className="text-xs text-foreground/70 leading-relaxed">
-              Simulation estimates how the transaction would behave against the currently observed chain state and can detect likely reverts or execution issues before signing.
+              Simulates proposed transactions to estimate gas and detect likely execution failures against the currently observed chain state before signing.
             </p>
           </div>
           <div className="mt-4 rounded-xl bg-[#fafafa] p-3 border border-black/[0.04]">
