@@ -101,7 +101,7 @@ export const DOCS_NAVIGATION: DocSection[] = [
         title: "Contracts & Deployments",
         href: "/docs/contracts",
         section: "Security & Reference",
-        description: "Verified contract addresses, official explorers, and chain parameters.",
+        description: "Contract addresses, official explorers, and chain parameters.",
       },
       {
         title: "Current Limitations",

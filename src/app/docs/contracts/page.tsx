@@ -8,7 +8,7 @@ import { XLAYER_MAINNET_TOKENS, XLAYER_TESTNET_TOKENS } from "@/config/tokens"
 
 export const metadata = {
   title: "Contracts & Deployments · Xecute Docs",
-  description: "Official smart contracts, router addresses, and verified token registries on X Layer Testnet and Mainnet.",
+  description: "Smart contract addresses, router deployments, and supported token registries on X Layer Testnet and Mainnet.",
 }
 
 export default function ContractsPage() {
@@ -24,6 +24,16 @@ export default function ContractsPage() {
         </h1>
         <p className="text-sm text-foreground/70 leading-relaxed">
           Deployed smart contracts and configured token registries used by Xecute across X Layer Testnet and Mainnet.
+        </p>
+      </div>
+
+      {/* Testnet Demonstration Note */}
+      <div className="rounded-2xl border border-black/[0.08] bg-[#fafafa] p-4 sm:p-5 space-y-1.5 shadow-2xs">
+        <h2 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+          Testnet Demonstration Contract
+        </h2>
+        <p className="text-xs text-foreground/75 leading-relaxed">
+          <strong>Testnet demonstration contract:</strong> <code>XecuteTestnetRouter</code> uses deterministic rates for the current X Layer Testnet release. It is not production-audited infrastructure and is not used for Mainnet state-changing execution. Application safeguards (gas reserves, slippage ceilings, balance checks) are enforced in the client-side execution pipeline prior to wallet submission.
         </p>
       </div>
 
@@ -57,7 +67,7 @@ export default function ContractsPage() {
                     <ExternalLink className="size-3 font-sans" />
                   </a>
                 </td>
-                <td className="px-4 py-3 font-sans text-foreground/70">Testnet Swaps & Execution</td>
+                <td className="px-4 py-3 font-sans text-foreground/70">Testnet Demonstration Swaps</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 font-sans font-medium text-foreground">Aave V3 Pool</td>
@@ -73,7 +83,7 @@ export default function ContractsPage() {
                     <ExternalLink className="size-3 font-sans" />
                   </a>
                 </td>
-                <td className="px-4 py-3 font-sans text-foreground/70">Mainnet Yield & Lending Reserves</td>
+                <td className="px-4 py-3 font-sans text-foreground/70">Mainnet Yield & Lending Reserves (Read-Only)</td>
               </tr>
             </tbody>
           </table>

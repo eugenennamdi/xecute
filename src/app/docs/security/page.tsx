@@ -32,10 +32,10 @@ export default function SecurityPage() {
         <div className="grid grid-cols-1 gap-4">
           <div className="rounded-2xl border border-black/[0.07] bg-white p-5 space-y-2 shadow-2xs">
             <h3 className="text-sm font-semibold text-foreground">
-              1. 100% Non-Custodial Architecture
+              1. Non-Custodial Architecture
             </h3>
             <p className="text-xs text-foreground/70 leading-relaxed">
-              Xecute never custodies, touches, or holds user funds. All assets remain safely in the user&apos;s Web3 wallet at all times.
+              Xecute never custodies, touches, or holds user funds. Assets move only through transactions explicitly authorized and signed in the user&apos;s Web3 wallet.
             </p>
           </div>
 
@@ -52,8 +52,8 @@ export default function SecurityPage() {
             <h3 className="text-sm font-semibold text-foreground">
               3. No Arbitrary AI Calldata Generation
             </h3>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-              The AI model is never allowed to directly output raw hex bytecode or arbitrary contract calls. Executable transactions are exclusively assembled by open-source, deterministic TypeScript and Solidity adapters.
+            <p className="text-xs text-foreground/70 leading-relaxed">
+              The AI model is never allowed to directly output raw hex bytecode or arbitrary contract calls. Executable transactions are exclusively assembled by deterministic TypeScript adapters.
             </p>
           </div>
 
@@ -71,7 +71,7 @@ export default function SecurityPage() {
               5. Fail-Closed Policy Enforcement
             </h3>
             <p className="text-xs text-foreground/70 leading-relaxed">
-              If an onchain state query fails, a gas estimate reverts, or a contract address is unverified, Xecute fails closed—meaning it returns an explicit error rather than guessing or fabricating placeholder data.
+              If an onchain state query fails, a gas estimate reverts, or a parameter fails validation, Xecute fails closed—meaning it returns an explicit error rather than guessing or fabricating placeholder data.
             </p>
           </div>
         </div>

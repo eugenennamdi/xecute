@@ -6,7 +6,7 @@ import { getPrevNextPages } from "@/config/docs"
 
 export const metadata = {
   title: "Advise · Xecute Docs",
-  description: "Explore verified X Layer Mainnet protocols, lending markets, liquidity pools, and live yield opportunities.",
+  description: "Explore supported X Layer Mainnet protocols, lending markets, liquidity pools, and live yield opportunities.",
 }
 
 export default function AdvisePage() {
@@ -18,13 +18,13 @@ export default function AdvisePage() {
 
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          Advise: Verified Ecosystem Intelligence
+          Advise: Supported Ecosystem Intelligence
         </h1>
         <p className="text-sm text-foreground/70 leading-relaxed">
-          If Xecute cannot verify a value through supported onchain sources or protocol endpoints, it will not present it as fact.
+          If Xecute cannot retrieve a value through supported onchain sources or protocol endpoints, it will not present it as fact.
         </p>
         <p className="text-sm text-foreground/70 leading-relaxed">
-          Unlike generic conversational AI bots that hallucinate speculative yields or fabricate contract addresses, Xecute connects only to verified X Layer Mainnet smart contracts and official protocol interfaces.
+          Unlike generic conversational AI bots that hallucinate speculative yields or fabricate contract addresses, Xecute surfaces supported X Layer protocols and live onchain data where available. Official protocol interfaces and authoritative sources are preferred where available.
         </p>
       </div>
 
@@ -42,7 +42,7 @@ export default function AdvisePage() {
                 1. Live Yield & Lending Markets
               </h3>
               <p className="text-xs text-foreground/70 leading-relaxed">
-                Discovers active lending pools and supply yields on protocols like <strong>Aave V3</strong> and liquidity venues on X Layer with verified deep links.
+                Discovers active lending pools and supply yields on protocols like <strong>Aave V3</strong> and liquidity venues on X Layer with official deep links.
               </p>
             </div>
             <div className="mt-4 rounded-xl bg-[#fafafa] p-3 border border-black/[0.04]">
@@ -75,8 +75,8 @@ export default function AdvisePage() {
 
       {/* Protocol Index Table */}
       <div className="space-y-4">
-        <h2 id="verified-protocols" className="text-lg font-semibold tracking-tight text-foreground">
-          Curated Mainnet Protocol Index
+        <h2 id="configured-protocols" className="text-lg font-semibold tracking-tight text-foreground">
+          Configured Mainnet Protocol Index
         </h2>
 
         <div className="overflow-x-auto rounded-2xl border border-black/[0.07] bg-white shadow-2xs">

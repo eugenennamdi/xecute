@@ -25,7 +25,7 @@ export default function ActPage() {
           The <strong>Act</strong> engine translates natural-language execution requests into validated transactions on <strong>X Layer Testnet (1952)</strong> through dedicated capability adapters.
         </p>
         <p className="text-sm text-foreground/70 leading-relaxed">
-          Xecute is capability-driven rather than swap-specific. The AI model extracts parameters (token, amount, recipient, slippage), while registered TypeScript and Solidity adapters construct exact calldata, execute pre-flight simulations, and request wallet signatures.
+          Xecute is capability-driven rather than swap-specific. The AI model extracts parameters (token, amount, recipient, slippage), while registered TypeScript adapters construct exact calldata, execute pre-flight simulations against observed state, and request wallet signatures.
         </p>
       </div>
 
@@ -39,14 +39,14 @@ export default function ActPage() {
         <div className="rounded-2xl border border-black/[0.07] bg-white p-5 space-y-3 shadow-2xs">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">
-              1. Decentralized Swaps
+              1. Testnet Swaps
             </h3>
             <span className="rounded bg-black/[0.04] px-2 py-0.5 text-[10px] font-mono text-foreground/60">
               XecuteTestnetRouter
             </span>
           </div>
           <p className="text-xs text-foreground/70 leading-relaxed">
-            Swaps tokens (e.g. <code>OKB ↔ USDT ↔ USDC</code>) directly on X Layer Testnet using the deployed router contract at <code>{ROUTER_ADDRESS_TESTNET}</code>.
+            Swaps tokens (e.g. <code>OKB ↔ USDT ↔ USDC</code>) on X Layer Testnet using the deployed demonstration router contract at <code>{ROUTER_ADDRESS_TESTNET}</code>.
           </p>
           <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-xs space-y-1 break-words [overflow-wrap:anywhere]">
             <p className="text-[10px] uppercase font-semibold text-foreground/45">Example Prompts</p>
@@ -69,7 +69,7 @@ export default function ActPage() {
             </span>
           </div>
           <p className="text-xs text-foreground/70 leading-relaxed">
-            Transfers native OKB or verified ERC-20 tokens directly to a recipient address with EVM address format verification and checksum formatting.
+            Transfers native OKB or supported ERC-20 tokens directly to a recipient address with EVM address format verification and normalization.
           </p>
           <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-xs space-y-1 break-words [overflow-wrap:anywhere]">
             <p className="text-[10px] uppercase font-semibold text-foreground/45">Example Prompts</p>
@@ -89,7 +89,7 @@ export default function ActPage() {
             </span>
           </div>
           <p className="text-xs text-foreground/70 leading-relaxed">
-            Constructs exact token approvals for specific spender contracts, or issues zero-allowance (<code>approve(spender, 0)</code>) revocation transactions to eliminate wallet risk.
+            Constructs exact token approvals for specific spender contracts, or issues zero-allowance (<code>approve(spender, 0)</code>) revocation transactions to remove active allowance permissions.
           </p>
           <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-3 text-xs space-y-1 break-words [overflow-wrap:anywhere]">
             <p className="text-[10px] uppercase font-semibold text-foreground/45">Example Prompts</p>

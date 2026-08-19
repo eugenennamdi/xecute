@@ -19,7 +19,10 @@ export default function ExecutionPage() {
           How Execution Works
         </h1>
         <p className="text-sm text-foreground/70 leading-relaxed">
-          Xecute bridges natural-language conversational interfaces and Web3 financial transactions through a strict, multi-stage pipeline designed to eliminate hallucinations and unauthorized execution.
+          Xecute uses a deterministic application-layer execution pipeline to validate supported actions, verify live state, simulate transactions, estimate gas, enforce safeguards, and require explicit wallet confirmation.
+        </p>
+        <p className="text-sm text-foreground/70 leading-relaxed">
+          <strong>The execution model:</strong> AI interprets intent. Deterministic application code validates structured parameters and constructs supported actions. Live state and simulation inform pre-flight checks. The user provides final authority through the wallet. The blockchain provides final settlement.
         </p>
       </div>
 
@@ -57,38 +60,38 @@ export default function ExecutionPage() {
             },
             {
               step: "05",
-              title: "Live Onchain State Verification",
-              desc: "Xecute queries the X Layer JSON-RPC for real-time wallet balances, token decimals, and existing allowance permissions.",
-              tag: "JSON-RPC",
+              title: "Execution Preview Render",
+              desc: "Renders an interactive execution preview card with estimated Pay/Receive balance deltas, route details, and parameter tuning.",
+              tag: "Preview UI",
             },
             {
               step: "06",
-              title: "7 Pre-Flight Safeguards",
+              title: "Human Confirmation Trigger",
+              desc: "The user explicitly clicks the confirmation button on the execution card to initiate live transaction preparation. No action executes autonomously.",
+              tag: "Human-in-the-Loop",
+            },
+            {
+              step: "07",
+              title: "Live Onchain State Verification",
+              desc: "Xecute queries X Layer JSON-RPC for real-time wallet balances, token decimals, and existing allowance permissions immediately prior to execution.",
+              tag: "JSON-RPC",
+            },
+            {
+              step: "08",
+              title: "Pre-Flight Safeguard Checks",
               desc: "Enforces deterministic policies: gas reserve protection (≥ 0.005 OKB), slippage ceiling (≤ 5%), EVM address verification, and distinct asset rules.",
               tag: "Safety Policy",
             },
             {
-              step: "07",
-              title: "Transaction Simulation & Gas Estimate",
-              desc: "Dry-runs the transaction via eth_estimateGas with a 20% buffer to ensure the transaction will not revert onchain.",
-              tag: "Dry Run",
-            },
-            {
-              step: "08",
-              title: "Action Confirmation Preview Card",
-              desc: "Renders an interactive execution preview card with exact Pay/Receive balance deltas, route details, and a slippage tuner.",
-              tag: "Preview UI",
-            },
-            {
               step: "09",
-              title: "Human Confirmation Trigger",
-              desc: "The user explicitly clicks the confirmation button on the execution card. No action ever executes automatically.",
-              tag: "Human-in-the-Loop",
+              title: "Transaction Simulation & Gas Estimation",
+              desc: "Simulates transaction execution against observed chain state and estimates gas with safety buffers to help detect failures before signing.",
+              tag: "Pre-Flight Dry Run",
             },
             {
               step: "10",
               title: "Wallet Signature & Settlement",
-              desc: "The user signs the transaction in their connected Web3 wallet (MetaMask, OKX Wallet) and the receipt is verified on X Layer.",
+              desc: "The user reviews and signs the transaction in their connected Web3 wallet (MetaMask, OKX Wallet) and the receipt is verified on X Layer Testnet.",
               tag: "X Layer Testnet",
             },
           ].map((item) => (

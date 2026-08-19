@@ -33,12 +33,12 @@ export default function ProtectPage() {
             Deterministic Pre-Flight Safeguards
           </h3>
           <p className="text-xs text-foreground/70 leading-relaxed">
-            Every transaction prepared by Xecute is vetted against 7 deterministic rules before presenting the confirmation card:
+            Before wallet signing, Xecute performs the applicable live execution checks and validates against 7 deterministic rules:
           </p>
           <ul className="space-y-1.5 text-xs text-foreground/75 list-disc list-inside">
             <li><strong>Gas Reserve:</strong> Enforces ≥ 0.005 OKB buffer to prevent locked wallets.</li>
             <li><strong>Slippage Ceiling:</strong> Hard block on slippage &gt; 5.0%.</li>
-            <li><strong>Simulation:</strong> Real-time dry run via <code>eth_estimateGas</code>; fails closed on revert.</li>
+            <li><strong>Simulation:</strong> Real-time dry run via <code>eth_estimateGas</code> to detect likely failures; fails closed on revert.</li>
             <li><strong>Address Check:</strong> Validates 40-hex EVM recipient addresses and normalizes canonical format.</li>
           </ul>
         </div>
@@ -52,10 +52,10 @@ export default function ProtectPage() {
             Live Onchain Allowance Auditing
           </h3>
           <p className="text-xs text-foreground/70 leading-relaxed">
-            Inspects ERC-20 approval permissions and active spenders using real-time contract reads without arbitrary AI risk scores:
+            Inspects discoverable ERC-20 approval permissions and active spenders using real-time contract reads without arbitrary AI risk scores:
           </p>
           <ul className="space-y-1.5 text-xs text-foreground/75 list-disc list-inside">
-            <li><strong>Live RPC Reads:</strong> Queries <code>allowance(owner, spender)</code> directly.</li>
+            <li><strong>Live RPC Reads:</strong> Queries <code>allowance(owner, spender)</code> directly onchain.</li>
             <li><strong>Unlimited Allowance Flags:</strong> Surfaces true maximum allowances (<code>type(uint256).max</code>).</li>
             <li><strong>Contract vs. EOA:</strong> Uses <code>eth_getCode</code> to verify whether a spender is a contract.</li>
             <li><strong>1-Click Revocations:</strong> Prepares direct zero-allowance transactions.</li>
@@ -69,14 +69,14 @@ export default function ProtectPage() {
           Wallet Permission Audit Scope
         </h2>
         <p className="text-xs leading-relaxed text-foreground/75">
-          When you ask Xecute <em>&ldquo;Scan my wallet for risky approvals&rdquo;</em>, it scans verified token contracts across X Layer, filters out zero allowances, and outputs a focused audit summary:
+          When you ask Xecute <em>&ldquo;Scan my wallet for risky approvals&rdquo;</em>, it scans supported token contracts across X Layer, queries active onchain allowances, and outputs a focused audit summary. If no active approvals are discovered, it reports <em>&ldquo;No active ERC-20 approvals found within this scan&apos;s scope.&rdquo;</em>
         </p>
 
         <div className="rounded-2xl border border-black/[0.07] bg-white p-3 sm:p-5 shadow-2xs">
           <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4 text-center">
             <div className="flex flex-col justify-between rounded-xl bg-[#fafafa] p-2.5 sm:p-3.5 border border-black/[0.04]">
               <span className="text-[10px] sm:text-[11px] font-medium text-foreground/50">Total Scanned</span>
-              <p className="mt-1 sm:mt-1.5 text-xs font-semibold text-foreground">Verified Assets</p>
+              <p className="mt-1 sm:mt-1.5 text-xs font-semibold text-foreground">Supported Assets</p>
             </div>
             <div className="flex flex-col justify-between rounded-xl bg-[#fafafa] p-2.5 sm:p-3.5 border border-black/[0.04]">
               <span className="text-[10px] sm:text-[11px] font-medium text-foreground/50">Active Spenders</span>

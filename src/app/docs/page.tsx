@@ -30,7 +30,7 @@ export default function DocsOverviewPage() {
           >
             X Layer
           </a>
-          . Learn how Xecute transforms natural-language intent into verified onchain state, deterministic safeguards, and human-confirmed transactions.
+          . Learn how Xecute transforms natural-language intent into structured execution parameters, verifies onchain state, enforces deterministic safeguards, and requires explicit wallet confirmation.
         </p>
 
         <div className="flex items-center gap-3 pt-2">
@@ -99,7 +99,7 @@ export default function DocsOverviewPage() {
                 Advise
               </h3>
               <p className="text-xs text-foreground/60 leading-relaxed">
-                Discover verified X Layer Mainnet protocols, live lending markets, liquidity pools, and yield opportunities.
+                Discover supported X Layer Mainnet protocols, live lending markets, liquidity pools, and yield opportunities.
               </p>
             </div>
             <div className="mt-4 flex items-center text-xs font-medium text-foreground/75 group-hover:text-[#FE6501] transition-colors">
@@ -126,7 +126,7 @@ export default function DocsOverviewPage() {
                 Protect
               </h3>
               <p className="text-xs text-foreground/60 leading-relaxed">
-                Audit onchain wallet allowances, detect unlimited permissions, and enforce 7 deterministic pre-flight safeguards.
+                Audit onchain wallet allowances, detect unlimited permissions, and apply deterministic pre-flight safeguards before wallet signing.
               </p>
             </div>
             <div className="mt-4 flex items-center text-xs font-medium text-foreground/75 group-hover:text-[#FE6501] transition-colors">
@@ -153,7 +153,7 @@ export default function DocsOverviewPage() {
                 Predict
               </h3>
               <p className="text-xs text-foreground/60 leading-relaxed">
-                Model hypothetical portfolio scenarios and market exposure deltas without making fabricated price forecasts.
+                Model hypothetical portfolio scenarios and market exposure deltas without making speculative price forecasts.
               </p>
             </div>
             <div className="mt-4 flex items-center text-xs font-medium text-foreground/75 group-hover:text-[#FE6501] transition-colors">
@@ -170,7 +170,7 @@ export default function DocsOverviewPage() {
           How Xecute Works
         </h2>
         <p className="text-xs leading-relaxed text-foreground/70">
-          Xecute replaces disjointed crypto interfaces with a structured 8-step pipeline where AI understands the user&apos;s goal, but deterministic smart contracts and safety policies control execution.
+          Xecute replaces disjointed crypto interfaces with a structured 8-step pipeline where AI interprets user intent, while deterministic application-layer adapters and safety policies govern transaction construction and wallet confirmation.
         </p>
 
         <div className="rounded-2xl border border-black/[0.07] bg-white p-3.5 sm:p-6 shadow-2xs">
@@ -187,33 +187,33 @@ export default function DocsOverviewPage() {
             </div>
             <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 3</span>
-              <p className="mt-1 text-xs font-semibold text-foreground">Onchain Verify</p>
-              <p className="mt-0.5 text-[10px] text-foreground/50">Live state & balances</p>
+              <p className="mt-1 text-xs font-semibold text-foreground">Execution Preview</p>
+              <p className="mt-0.5 text-[10px] text-foreground/50">Action preview card</p>
             </div>
             <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 4</span>
-              <p className="mt-1 text-xs font-semibold text-foreground">Safeguards</p>
-              <p className="mt-0.5 text-[10px] text-foreground/50">7 deterministic checks</p>
+              <p className="mt-1 text-xs font-semibold text-foreground">Human Confirm</p>
+              <p className="mt-0.5 text-[10px] text-foreground/50">User initiates action</p>
             </div>
             <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 5</span>
-              <p className="mt-1 text-xs font-semibold text-foreground">Simulation</p>
-              <p className="mt-0.5 text-[10px] text-foreground/50">Pre-flight dry run</p>
+              <p className="mt-1 text-xs font-semibold text-foreground">Live Pre-Flight</p>
+              <p className="mt-0.5 text-[10px] text-foreground/50">Live state & policies</p>
             </div>
             <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 6</span>
-              <p className="mt-1 text-xs font-semibold text-foreground">Preview Card</p>
-              <p className="mt-0.5 text-[10px] text-foreground/50">Exact balance deltas</p>
+              <p className="mt-1 text-xs font-semibold text-foreground">Simulation</p>
+              <p className="mt-0.5 text-[10px] text-foreground/50">Dry run & gas estimate</p>
             </div>
             <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 7</span>
-              <p className="mt-1 text-xs font-semibold text-foreground">Human Confirm</p>
-              <p className="mt-0.5 text-[10px] text-foreground/50">Explicit user trigger</p>
+              <p className="mt-1 text-xs font-semibold text-foreground">Wallet Signing</p>
+              <p className="mt-0.5 text-[10px] text-foreground/50">Explicit Web3 signature</p>
             </div>
             <div className="rounded-xl border border-black/[0.05] bg-[#fafafa] p-2.5 sm:p-3 text-center">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">Step 8</span>
-              <p className="mt-1 text-xs font-semibold text-foreground">X Layer Settlement</p>
-              <p className="mt-0.5 text-[10px] text-foreground/50">Wallet broadcast</p>
+              <p className="mt-1 text-xs font-semibold text-foreground">Settlement</p>
+              <p className="mt-0.5 text-[10px] text-foreground/50">Onchain verification</p>
             </div>
           </div>
         </div>
@@ -246,7 +246,7 @@ export default function DocsOverviewPage() {
               </tr>
               <tr>
                 <td className="px-4 py-3">Token swaps</td>
-                <td className="px-4 py-3 font-medium text-foreground">✓ Live Router Execution</td>
+                <td className="px-4 py-3 font-medium text-foreground">✓ Testnet Demonstration Router</td>
                 <td className="px-4 py-3 text-foreground/50">Quote & Discovery only</td>
               </tr>
               <tr>

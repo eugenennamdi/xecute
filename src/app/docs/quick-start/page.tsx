@@ -100,12 +100,12 @@ export default function QuickStartPage() {
             </h3>
           </div>
           <p className="text-xs text-foreground/70 leading-relaxed sm:pl-8.5">
-            Before any transaction is signed, Xecute executes 7 deterministic safety checks (gas reserves, slippage ceiling, EVM address validity, balance checks). If safe, Xecute attaches an interactive <strong>Action Confirmation Card</strong> with:
+            When an actionable intent is recognized, Xecute presents an interactive <strong>Action Confirmation Card</strong> with estimated balance deltas and routing details:
           </p>
           <div className="sm:pl-8.5 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             <div className="rounded-lg border border-black/[0.05] bg-[#fafafa] p-2.5">
               <span className="text-[10px] font-semibold text-foreground/50 uppercase">Balance Delta</span>
-              <p className="mt-0.5 font-medium text-foreground">Exact You Pay & You Receive</p>
+              <p className="mt-0.5 font-medium text-foreground">Estimated You Pay & You Receive</p>
             </div>
             <div className="rounded-lg border border-black/[0.05] bg-[#fafafa] p-2.5">
               <span className="text-[10px] font-semibold text-foreground/50 uppercase">Slippage & Route</span>
@@ -125,7 +125,7 @@ export default function QuickStartPage() {
             </h3>
           </div>
           <p className="text-xs text-foreground/70 leading-relaxed sm:pl-8.5">
-            Click <strong>Confirm swap</strong> (or transfer/revoke) on the execution card. Your connected Web3 wallet will prompt you to review and sign the transaction. Once broadcast, Xecute verifies the receipt onchain and gives you a direct link to the <a href="https://www.okx.com/web3/explorer/xlayer-test" target="_blank" rel="noreferrer" className="text-[#FE6501] font-medium hover:underline">OKX X Layer Testnet Explorer</a>.
+            Click <strong>Confirm swap</strong> (or transfer/revoke) on the execution card. Xecute revalidates live state, executes a simulation dry-run, checks gas reserves, and requests your Web3 wallet signature. Once broadcast, Xecute verifies the receipt onchain and gives you a direct link to the <a href="https://www.okx.com/web3/explorer/xlayer-test" target="_blank" rel="noreferrer" className="text-[#FE6501] font-medium hover:underline">OKX X Layer Testnet Explorer</a>.
           </p>
         </div>
       </div>

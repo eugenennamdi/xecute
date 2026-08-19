@@ -61,7 +61,7 @@ export default function PredictPage() {
               </span>
             </div>
             <p className="text-xs text-foreground/70 leading-relaxed">
-              Dry-runs pending transactions against live onchain state to verify gas and execution success before signing.
+              Simulation estimates how the transaction would behave against the currently observed chain state and can detect likely reverts or execution issues before signing.
             </p>
           </div>
           <div className="mt-4 rounded-xl bg-[#fafafa] p-3 border border-black/[0.04]">

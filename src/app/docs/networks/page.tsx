@@ -20,7 +20,7 @@ export default function NetworksPage() {
           Testnet & Mainnet Environment Model
         </h1>
         <p className="text-sm text-foreground/70 leading-relaxed">
-          Xecute deliberately separates <strong>execution</strong> from <strong>intelligence</strong> across networks to ensure financial safety while demonstrating full capability.
+          Xecute deliberately separates <strong>execution</strong> from <strong>intelligence</strong> across networks to limit financial risk while the execution stack is hardened.
         </p>
       </div>
 
@@ -75,7 +75,7 @@ export default function NetworksPage() {
               <tr>
                 <td className="px-4 py-3 font-sans font-medium text-foreground">Router Contract</td>
                 <td className="px-4 py-3 truncate max-w-[200px]" title={ROUTER_ADDRESS_TESTNET}>
-                  {ROUTER_ADDRESS_TESTNET}
+                  {ROUTER_ADDRESS_TESTNET} (Demonstration)
                 </td>
                 <td className="px-4 py-3 text-foreground/40">None (Gated)</td>
               </tr>
@@ -90,16 +90,16 @@ export default function NetworksPage() {
           1. X Layer Testnet (Chain ID: 1952)
         </h2>
         <p className="text-xs leading-relaxed text-foreground/75">
-          Testnet is Xecute&apos;s full-stack execution sandbox. Every supported action passes through Xecute&apos;s deterministic capability adapters to construct standard Web3 transactions that are submitted to the user&apos;s connected wallet for onchain signature and broadcast.
+          Testnet is Xecute&apos;s full-stack execution sandbox. Every supported action passes through Xecute&apos;s deterministic capability adapters to construct standard Web3 transactions that are submitted to the user&apos;s connected wallet for onchain signature and broadcast. Testnet swaps settle through the deployed <code>XecuteTestnetRouter</code>, a deterministic demonstration router built for the current Testnet release.
         </p>
 
         <div className="rounded-xl border border-black/[0.06] bg-white p-4 space-y-2 text-xs">
           <p className="font-semibold text-foreground">Supported Testnet Capabilities:</p>
           <ul className="space-y-1 text-foreground/70 list-disc list-inside">
-            <li><strong>Decentralized Swaps:</strong> Live routing through the deployed <code>XecuteTestnetRouter</code> with automatic token approvals and deterministic 1:60 OKB/USD rate mechanics.</li>
+            <li><strong>Testnet Swaps:</strong> Live routing through the deployed <code>XecuteTestnetRouter</code> demonstration contract with automatic token approvals and deterministic rates.</li>
             <li><strong>Direct Transfers:</strong> Native OKB and ERC-20 token transfers with recipient address validation and canonical formatting.</li>
             <li><strong>Token Approvals & Revocations:</strong> Setting exact allowances or executing zero-allowance revocations directly on ERC-20 token contracts.</li>
-            <li><strong>Live Gas Estimation:</strong> Dynamic <code>eth_estimateGas</code> calls with 20% safety buffers without hardcoded fallbacks.</li>
+            <li><strong>Live Gas Estimation:</strong> Dynamic <code>eth_estimateGas</code> calls with safety buffers without hardcoded fallbacks.</li>
           </ul>
         </div>
       </div>
@@ -116,9 +116,9 @@ export default function NetworksPage() {
         <div className="rounded-xl border border-black/[0.06] bg-white p-4 space-y-2 text-xs">
           <p className="font-semibold text-foreground">Supported Mainnet Intelligence Capabilities:</p>
           <ul className="space-y-1 text-foreground/70 list-disc list-inside">
-            <li><strong>Protocol & Yield Discovery:</strong> Live scouting of verified lending reserves (Aave V3 at <code>0xE3F3Ca...</code>) and liquidity pools (Uniswap V3 on X Layer) with official deep links.</li>
+            <li><strong>Protocol & Yield Discovery:</strong> Live scouting of supported lending reserves (Aave V3 at <code>0xE3F3Ca...</code>) and liquidity pools (Uniswap V3 on X Layer) with official deep links.</li>
             <li><strong>Wallet Permission Auditing:</strong> Live historical log indexing (<code>Approval</code> events) and real-time <code>allowance(owner, spender)</code> queries to identify unlimited exposure.</li>
-            <li><strong>Scenario Analytics:</strong> Portfolio stress-testing under market price movements without making speculative financial forecasts.</li>
+            <li><strong>Scenario Analytics:</strong> Portfolio stress-testing under hypothetical market price movements without making speculative financial forecasts.</li>
           </ul>
         </div>
       </div>
@@ -126,7 +126,7 @@ export default function NetworksPage() {
       <div className="rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 space-y-1.5 shadow-2xs">
         <h3 className="text-xs font-semibold text-foreground">Why Mainnet Execution is Gated</h3>
         <p className="text-xs text-foreground/70 leading-relaxed">
-          Mainnet execution is intentionally disabled in this release to prioritize user fund safety during the hackathon. Future Mainnet execution will be introduced progressively following comprehensive third-party smart contract audits and protocol adapter verification.
+          Mainnet execution is intentionally disabled in this release to prioritize user fund safety during the hackathon. Future Mainnet execution will be introduced progressively following comprehensive smart contract audits, security reviews, and protocol adapter verification.
         </p>
       </div>
 

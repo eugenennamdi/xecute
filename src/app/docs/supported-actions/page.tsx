@@ -37,13 +37,13 @@ export default function SupportedActionsPage() {
             <tr>
               <td className="px-4 py-3 font-medium text-foreground">Token Swaps</td>
               <td className="px-4 py-3 text-foreground/60">Trading</td>
-              <td className="px-4 py-3 text-foreground font-semibold">✓ Execute (Router)</td>
+              <td className="px-4 py-3 text-foreground font-semibold">✓ Execute (Testnet Demonstration Router)</td>
               <td className="px-4 py-3 text-foreground/50">Read / Quote</td>
             </tr>
             <tr>
               <td className="px-4 py-3 font-medium text-foreground">Direct Transfers</td>
               <td className="px-4 py-3 text-foreground/60">Payments</td>
-              <td className="px-4 py-3 text-foreground font-semibold">✓ Execute (Native & ERC-20)</td>
+              <td className="px-4 py-3 text-foreground font-semibold">✓ Execute (Native & Supported ERC-20)</td>
               <td className="px-4 py-3 text-foreground/50">Read-only</td>
             </tr>
             <tr>
@@ -61,14 +61,14 @@ export default function SupportedActionsPage() {
             <tr>
               <td className="px-4 py-3 font-medium text-foreground">Wallet Allowance Audits</td>
               <td className="px-4 py-3 text-foreground/60">Security</td>
-              <td className="px-4 py-3 text-foreground font-semibold">✓ Active</td>
-              <td className="px-4 py-3 text-foreground font-semibold">✓ Active</td>
+              <td className="px-4 py-3 text-foreground font-semibold">✓ Active (Observable ERC-20)</td>
+              <td className="px-4 py-3 text-foreground font-semibold">✓ Active (Observable ERC-20)</td>
             </tr>
             <tr>
               <td className="px-4 py-3 font-medium text-foreground">Protocol & Yield Scouting</td>
               <td className="px-4 py-3 text-foreground/60">Intelligence</td>
               <td className="px-4 py-3 text-foreground font-semibold">✓ Active</td>
-              <td className="px-4 py-3 text-foreground font-semibold">✓ Live Aave V3 data</td>
+              <td className="px-4 py-3 text-foreground font-semibold">✓ Live Aave V3 data (Read-Only)</td>
             </tr>
             <tr>
               <td className="px-4 py-3 font-medium text-foreground">Portfolio Scenario Stress-Test</td>
