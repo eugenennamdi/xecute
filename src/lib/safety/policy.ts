@@ -193,12 +193,22 @@ function evaluateTrade(intent: Extract<Intent, { mode: "trade" }>) {
       "token",
     ))
 
-    const differentAssets = !intent.fromToken || !intent.toToken || intent.fromToken !== intent.toToken
+    const isSameAsset = Boolean(
+      intent.fromToken &&
+      intent.toToken &&
+      (intent.fromToken.trim().toUpperCase() === intent.toToken.trim().toUpperCase() ||
+        (fromToken &&
+          toToken &&
+          (fromToken.canonicalAssetId === toToken.canonicalAssetId ||
+            (fromToken.address !== "native" &&
+              toToken.address !== "native" &&
+              fromToken.address.toLowerCase() === toToken.address.toLowerCase())))),
+    )
     checks.push(check(
       "distinct-assets",
       "Distinct asset pair",
-      differentAssets ? "pass" : "block",
-      differentAssets ? "Input and output tokens are distinct." : "Input and output tokens cannot be the same asset.",
+      !isSameAsset ? "pass" : "block",
+      !isSameAsset ? "Input and output tokens are distinct." : "Input and output tokens cannot be the same asset.",
       "token",
     ))
 
@@ -234,10 +244,8 @@ function evaluateTrade(intent: Extract<Intent, { mode: "trade" }>) {
     checks.push(check(
       "native-gas-reserve",
       "Native gas reserve",
-      intent.preserveGasBalance ? "pass" : "warn",
-      intent.preserveGasBalance
-        ? "Gas reserve protection active: OKB balance preserved for transaction fees."
-        : "Warning: Transacting entire OKB balance may leave insufficient gas for fees.",
+      "pending",
+      "Mandatory gas reserve: at least 0.005 OKB must remain after value and gas fees.",
       "gas",
     ))
   }
@@ -270,7 +278,7 @@ export function evaluateIntentSafety(intent: Intent): SafetyReport {
   const checks: SafetyCheck[] = []
 
   if (intent.mode === "earn") {
-    checks.push(check("earn-protocol-risk", "Verified protocols only", "pass", "Ecosystem protocols filtered by verification and TVL thresholds.", "network"))
+    checks.push(check("earn-protocol-risk", "Supported protocol discovery", "pass", "Ecosystem protocols filtered by configured registry references.", "network"))
     checks.push(check("earn-non-custodial", "Non-custodial deposit", "pass", "Funds remain under direct smart contract control without platform custody.", "network"))
   } else if (intent.mode === "predict") {
     checks.push(check("predict-scenario-only", "Scenario modeling", "pass", "Read-only simulation without financial speculation or trade recommendation.", "network"))

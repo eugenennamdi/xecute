@@ -6,7 +6,7 @@ import { classifyIntent } from "@/agents/intent-parser"
 import type { PreparedAction } from "@/lib/action-plan"
 import { AgentResponseSchema, type AgentMetadata } from "@/lib/agent-types"
 import type { Intent, Mode } from "@/lib/intents"
-import type { ExecutionReceipt } from "@/config/constants"
+import { type ExecutionReceipt, createExecutionReceipt } from "@/config/constants"
 
 export type ChatMessage = {
   id: string
@@ -62,6 +62,7 @@ type TerminalState = {
   loadConversation: (conversationId: string) => Promise<void>
   deleteConversation: (conversationId: string) => Promise<void>
   submitPrompt: (prompt: string) => Promise<void>
+  setPlanSlippage: (slippage: number) => void
   confirmAction: () => Promise<void>
   finishStreamingMessage: (messageId: string) => void
   newChat: () => void
@@ -380,6 +381,40 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       }))
     }
   },
+  setPlanSlippage: (slippage: number) => {
+    const { currentPlan } = get()
+    if (!currentPlan || currentPlan.intent.mode !== "trade") return
+    const updatedIntent: Extract<Intent, { mode: "trade" }> = {
+      ...currentPlan.intent,
+      maxSlippage: slippage,
+    }
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { evaluateIntentSafety } = require("@/lib/safety/policy")
+    const safety = evaluateIntentSafety(updatedIntent)
+    let preview = currentPlan.preview
+    if (preview) {
+      const numOut = parseFloat(preview.estimatedOutput)
+      let minReceived = preview.minimumReceived
+      if (!isNaN(numOut) && numOut > 0) {
+        const calculated = numOut * (1 - slippage / 100)
+        minReceived = calculated >= 1 ? calculated.toFixed(4) : calculated.toFixed(6)
+      }
+      preview = {
+        ...preview,
+        slippage: `${slippage}%`,
+        minimumReceived: minReceived,
+      }
+    }
+    set({
+      currentIntent: updatedIntent,
+      currentPlan: {
+        ...currentPlan,
+        intent: updatedIntent,
+        safety,
+        preview,
+      },
+    })
+  },
   confirmAction: async () => {
     const { currentPlan, conversationId, walletConnected, walletAddress } = get()
     const sessionId = get().sessionId ?? browserSessionId()
@@ -418,7 +453,8 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
     set({ sessionId, status: "awaiting_signature", currentPlan: updatedPlan })
 
-    let onchainTxHash: string | undefined
+    let onchainTxHash: `0x${string}` | undefined
+    let preparedTxEvidence: import("@/lib/execution/prepare-transaction").PreparedExecutionTransaction | undefined
 
     // Prompt user's connected wallet to sign and broadcast onchain on X Layer Testnet via orchestrator
     if (typeof window !== "undefined" && currentPlan.intent.mode === "trade") {
@@ -433,6 +469,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
           return
         }
         onchainTxHash = result.txHash
+        preparedTxEvidence = result.preparedTx
       } catch (walletError) {
         console.warn("Wallet execution rejected or failed:", walletError)
         const msg = walletError instanceof Error ? walletError.message : "Transaction rejected"
@@ -447,7 +484,11 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       return
     }
 
-    set({ status: "broadcast" })
+    // Set status to broadcast immediately upon receiving onchain hash and preserve receipt
+    set({
+      status: "broadcast",
+      receipt: createExecutionReceipt(currentPlan.intent, onchainTxHash, { status: "broadcast" }),
+    })
 
     try {
       const response = await fetch("/api/execution/confirm", {
@@ -456,9 +497,12 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
         body: JSON.stringify({
           sessionId,
           conversationId,
-          plan: currentPlan,
+          plan: updatedPlan,
           txHash: onchainTxHash,
           expectedWallet: walletAddress,
+          expectedTo: preparedTxEvidence?.to,
+          expectedValue: preparedTxEvidence?.value !== undefined ? preparedTxEvidence.value.toString() : undefined,
+          expectedFunctionSelector: preparedTxEvidence?.functionSelector,
         }),
       })
       if (!response.ok) throw new Error("Confirmation request failed")
@@ -497,7 +541,12 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
         }
       }
     } catch {
-      set({ status: "ready" })
+      // If API confirm fails after broadcast, NEVER revert to ready!
+      // Keep status as pending/broadcast with preserved onchain txHash
+      set((state) => ({
+        status: "pending",
+        receipt: state.receipt ?? createExecutionReceipt(currentPlan.intent, onchainTxHash!, { status: "pending" }),
+      }))
     }
   },
   finishStreamingMessage: (messageId: string) => {

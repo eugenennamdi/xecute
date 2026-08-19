@@ -290,11 +290,6 @@ export function prepareAction(
 
   const action = intent.action || "swap"
 
-  // Auto-resolve spender on Testnet if not explicitly specified
-  if (intent.network === "testnet" && (action === "approve" || action === "revoke") && !intent.spender) {
-    intent.spender = ROUTER_ADDRESS_TESTNET
-  }
-
   // Check completeness per action
   if (action === "transfer") {
     if (!intent.amount || !intent.fromToken || !intent.recipient) {
@@ -348,7 +343,7 @@ export function prepareAction(
   // Handle Approve action preview
   if (action === "approve") {
     const isTestnet = intent.network === "testnet"
-    const spenderAddr = intent.spender || (isTestnet ? ROUTER_ADDRESS_TESTNET : "0x0000000000000000000000000000000000000000")
+    const spenderAddr = intent.spender!
     return {
       status: isTestnet && !forceSimulated ? "ready_to_execute" : "simulated_preview",
       intent,
@@ -375,7 +370,7 @@ export function prepareAction(
   // Handle Revoke action preview
   if (action === "revoke") {
     const isTestnet = intent.network === "testnet"
-    const spenderAddr = intent.spender || (isTestnet ? ROUTER_ADDRESS_TESTNET : "0x0000000000000000000000000000000000000000")
+    const spenderAddr = intent.spender!
     return {
       status: isTestnet && !forceSimulated ? "ready_to_execute" : "simulated_preview",
       intent,

@@ -59,6 +59,7 @@ export interface EthereumProvider {
 export interface OrchestrationResult {
   success: boolean
   txHash?: `0x${string}`
+  preparedTx?: PreparedExecutionTransaction
   receipt?: ExecutionReceipt
   error?: string
   errorCode?: string
@@ -70,6 +71,7 @@ export interface WalletExecutionDependencies {
   pollIntervalMs?: number
   maxPollAttempts?: number
   prepareTxFn?: typeof prepareExecutionTransaction
+  checkApprovalMinedFn?: (txHash: string) => Promise<boolean>
 }
 
 /**
@@ -195,18 +197,22 @@ export async function executePlanWithWallet(
         }
 
         // Step D: Poll for approval confirmation
-        const pollInterval = deps.pollIntervalMs ?? 2000
-        const maxAttempts = deps.maxPollAttempts ?? 30
         let approvalConfirmed = false
 
-        for (let i = 0; i < maxAttempts; i++) {
-          await new Promise((resolve) => setTimeout(resolve, pollInterval))
-          const receipt = await getXLayerTransactionReceipt(approvalTxHash, "testnet")
-          if (receipt.status === "mined") {
-            if (receipt.success) {
-              approvalConfirmed = true
+        if (deps.checkApprovalMinedFn) {
+          approvalConfirmed = await deps.checkApprovalMinedFn(approvalTxHash)
+        } else {
+          const pollInterval = deps.pollIntervalMs ?? 2000
+          const maxAttempts = deps.maxPollAttempts ?? 30
+          for (let i = 0; i < maxAttempts; i++) {
+            await new Promise((resolve) => setTimeout(resolve, pollInterval))
+            const receipt = await getXLayerTransactionReceipt(approvalTxHash, "testnet")
+            if (receipt.status === "mined") {
+              if (receipt.success) {
+                approvalConfirmed = true
+              }
+              break
             }
-            break
           }
         }
 
@@ -271,5 +277,6 @@ export async function executePlanWithWallet(
   return {
     success: true,
     txHash: onchainTxHash,
+    preparedTx: prep,
   }
 }

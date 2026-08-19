@@ -88,14 +88,14 @@ test("Case 6: Distinct asset check blocks swapping token for itself", () => {
   assert.equal(safety.checks.find((c) => c.id === "distinct-assets")?.status, "block")
 })
 
-test("Case 7: Native OKB gas reserve is checked when swapping native token", () => {
+test("Case 7: Native OKB gas reserve is mandatory policy when swapping native token", () => {
   const intentWithReserve = parseIntent("Swap 10 OKB to xUSDT keep gas reserve", "trade", "testnet")
   const safetyWithReserve = evaluateIntentSafety(intentWithReserve)
-  assert.equal(safetyWithReserve.checks.find((c) => c.id === "native-gas-reserve")?.status, "pass")
+  assert.equal(safetyWithReserve.checks.find((c) => c.id === "native-gas-reserve")?.status, "pending")
 
   const intentWithoutReserve = parseIntent("Swap 10 OKB to xUSDT", "trade", "testnet")
   const safetyWithoutReserve = evaluateIntentSafety(intentWithoutReserve)
-  assert.equal(safetyWithoutReserve.checks.find((c) => c.id === "native-gas-reserve")?.status, "warn")
+  assert.equal(safetyWithoutReserve.checks.find((c) => c.id === "native-gas-reserve")?.status, "pending")
 })
 
 test("Case 8: Human confirmation is strictly pending before user confirmation", () => {

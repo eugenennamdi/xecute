@@ -147,8 +147,8 @@ export const xLayerKnowledge: XLayerKnowledgeRecord[] = [
     facts: [
       "OKB (Native Gas Token): Claimable (0.2 OKB every 12h) via official faucet (https://web3.okx.com/xlayer/faucet/xlayerfaucet)",
       "USDT (Testnet Tether USD): Claimable (10 USDT every 12h) via official faucet, supported for test swaps",
-      "USDC (Testnet USD Coin): Claimable (10 USDC every 12h) via official faucet, supported for test swaps",
-      "USDG (Testnet Global Dollar): Claimable (10 USDG every 12h) via official faucet, supported for test swaps",
+      "USDC (Testnet USD Coin): Xecute-supported test asset for sandbox swap execution",
+      "USDG (Testnet Global Dollar): Xecute-supported test asset for sandbox swap execution",
     ],
     keywords: ["testnet tokens", "faucet", "usdt", "usdc", "usdg", "okb", "test assets", "usdt0"],
     network: "testnet",
@@ -320,7 +320,7 @@ export function rankXLayerKnowledge(
         .toLowerCase()
       let score = queryTokens.size === 0 ? 1 : 0
 
-      if (asksForDefinition && record.id === "architecture-zk-rollup") score += 10
+      if (asksForDefinition && record.id === "architecture-op-stack") score += 10
       if (asksForDefinition && record.id === "network-mainnet") score += 6
 
       for (const token of queryTokens) {

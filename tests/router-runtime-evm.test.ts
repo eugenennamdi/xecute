@@ -97,7 +97,6 @@ class LocalRouterRuntimeEVM {
 
   registerToken(token: MockERC20State) {
     this.tokens.set(token.address.toLowerCase(), token)
-    this.supportedTokens.add(token.address.toLowerCase())
   }
 
   setNativeBalance(account: string, amountWei: bigint) {
@@ -108,21 +107,11 @@ class LocalRouterRuntimeEVM {
     return this.nativeBalances.get(account.toLowerCase()) ?? 0n
   }
 
-  supplyLiquidity(caller: string, tokenAddress: string, amount: bigint) {
-    const token = this.tokens.get(tokenAddress.toLowerCase())
-    if (!token) throw new Error("Unsupported token")
-    if (!this.supportedTokens.has(tokenAddress.toLowerCase())) throw new Error("Unsupported token")
-    if (amount <= 0n) throw new Error("Zero amount")
-
-    const ok = token.transferFrom(this.routerAddress, caller, this.routerAddress, amount)
-    if (!ok) throw new Error("TransferFrom failed")
-  }
-
   swapExactOKBForTokens(caller: string, tokenOutAddress: string, minAmountOut: bigint, recipient: string, msgValueWei: bigint): bigint {
     if (msgValueWei <= 0n) throw new Error("Zero OKB amount")
     if (!recipient || recipient === "0x0000000000000000000000000000000000000000") throw new Error("Invalid recipient")
     const tokenOut = this.tokens.get(tokenOutAddress.toLowerCase())
-    if (!tokenOut || !this.supportedTokens.has(tokenOutAddress.toLowerCase())) throw new Error("Unsupported token")
+    if (!tokenOut) throw new Error("Unsupported token")
 
     const callerBal = this.getNativeBalance(caller)
     if (callerBal < msgValueWei) throw new Error("Insufficient native balance")
@@ -142,10 +131,10 @@ class LocalRouterRuntimeEVM {
   }
 
   swapExactTokensForOKB(caller: string, tokenInAddress: string, amountIn: bigint, minAmountOutWei: bigint, recipient: string): bigint {
-    if (amountIn <= 0n) throw new Error("Zero amount")
+    if (amountIn <= 0n) throw new Error("Zero amountIn")
     if (!recipient || recipient === "0x0000000000000000000000000000000000000000") throw new Error("Invalid recipient")
     const tokenIn = this.tokens.get(tokenInAddress.toLowerCase())
-    if (!tokenIn || !this.supportedTokens.has(tokenInAddress.toLowerCase())) throw new Error("Unsupported token")
+    if (!tokenIn) throw new Error("Unsupported token")
 
     const okIn = tokenIn.transferFrom(this.routerAddress, caller, this.routerAddress, amountIn)
     if (!okIn) throw new Error("TransferFrom failed")
@@ -171,13 +160,13 @@ class LocalRouterRuntimeEVM {
     recipient: string,
   ): bigint {
     if (tokenInAddress.toLowerCase() === tokenOutAddress.toLowerCase()) throw new Error("Identical tokens")
-    if (amountIn <= 0n) throw new Error("Zero amount")
+    if (amountIn <= 0n) throw new Error("Zero amountIn")
     if (!recipient || recipient === "0x0000000000000000000000000000000000000000") throw new Error("Invalid recipient")
 
     const tokenIn = this.tokens.get(tokenInAddress.toLowerCase())
     const tokenOut = this.tokens.get(tokenOutAddress.toLowerCase())
-    if (!tokenIn || !this.supportedTokens.has(tokenInAddress.toLowerCase())) throw new Error("Unsupported input token")
-    if (!tokenOut || !this.supportedTokens.has(tokenOutAddress.toLowerCase())) throw new Error("Unsupported output token")
+    if (!tokenIn) throw new Error("Unsupported input token")
+    if (!tokenOut) throw new Error("Unsupported output token")
 
     const okIn = tokenIn.transferFrom(this.routerAddress, caller, this.routerAddress, amountIn)
     if (!okIn) throw new Error("TransferFrom failed")
@@ -195,17 +184,8 @@ class LocalRouterRuntimeEVM {
     return amountOut
   }
 
-  setSupportedToken(caller: string, tokenAddress: string, supported: boolean) {
-    if (caller.toLowerCase() !== this.owner) throw new Error("Unauthorized: Only owner")
-    if (supported) {
-      this.supportedTokens.add(tokenAddress.toLowerCase())
-    } else {
-      this.supportedTokens.delete(tokenAddress.toLowerCase())
-    }
-  }
-
   emergencyWithdraw(caller: string, tokenAddress: string, to: string, amount: bigint) {
-    if (caller.toLowerCase() !== this.owner) throw new Error("Unauthorized: Only owner")
+    if (caller.toLowerCase() !== this.owner) throw new Error("Unauthorized")
     if (tokenAddress === "0x0000000000000000000000000000000000000000") {
       const bal = this.getNativeBalance(this.routerAddress)
       const withdraw = amount > bal ? bal : amount
@@ -274,11 +254,9 @@ test("Local EVM Runtime: End-to-end Deploy -> Mint -> Approve -> Liquidity -> Sw
   router.setNativeBalance(user, parseEther("10"))
   router.setNativeBalance(owner, parseEther("50"))
 
-  // 3. Owner supplies liquidity to router
-  usdt.approve(owner, router.routerAddress, parseUnits("50000", 6))
-  usdc.approve(owner, router.routerAddress, parseUnits("50000", 6))
-  router.supplyLiquidity(owner, usdt.address, parseUnits("50000", 6))
-  router.supplyLiquidity(owner, usdc.address, parseUnits("50000", 6))
+  // 3. Fund router with token and native liquidity
+  usdt.mint(router.routerAddress, parseUnits("50000", 6))
+  usdc.mint(router.routerAddress, parseUnits("50000", 6))
   router.setNativeBalance(router.routerAddress, parseEther("100"))
 
   assert.equal(usdt.balanceOf(router.routerAddress), parseUnits("50000", 6))
@@ -323,9 +301,7 @@ test("Local EVM Runtime: Precision & Decimal conversions (6-dec <-> 18-dec)", ()
   router.registerToken(usdt)
   router.registerToken(dai)
 
-  dai.mint(owner, parseUnits("100000", 18))
-  dai.approve(owner, router.routerAddress, parseUnits("100000", 18))
-  router.supplyLiquidity(owner, dai.address, parseUnits("100000", 18))
+  dai.mint(router.routerAddress, parseUnits("100000", 18))
 
   usdt.mint(user, parseUnits("50", 6))
   usdt.approve(user, router.routerAddress, parseUnits("50", 6))
@@ -346,9 +322,7 @@ test("Local EVM Runtime: Strict Reverts on Invalid or Unauthorized Execution Par
   router.registerToken(usdt)
 
   router.setNativeBalance(user, parseEther("10"))
-  usdt.mint(owner, parseUnits("1000", 6))
-  usdt.approve(owner, router.routerAddress, parseUnits("1000", 6))
-  router.supplyLiquidity(owner, usdt.address, parseUnits("1000", 6))
+  usdt.mint(router.routerAddress, parseUnits("1000", 6))
 
   // 1. Zero OKB amount reverts
   assert.throws(() => router.swapExactOKBForTokens(user, usdt.address, 1n, user, 0n), /Zero OKB amount/)
@@ -379,15 +353,10 @@ test("Local EVM Runtime: Strict Reverts on Invalid or Unauthorized Execution Par
   assert.throws(() => router.swapExactOKBForTokens(user, usdt.address, 1n, user, parseEther("0.1")), /Transfer failed/)
   usdt.shouldFailTransfer = false
 
-  // 9. Unauthorized setSupportedToken (onlyOwner)
-  assert.throws(() => router.setSupportedToken(user, usdt.address, false), /Unauthorized: Only owner/)
+  // 9. Unauthorized emergency withdraw (onlyOwner) reverts
+  assert.throws(() => router.emergencyWithdraw(user, usdt.address, user, parseUnits("100", 6)), /Unauthorized/)
 
-  // 10. Owner can update allowlist & emergency withdraw
-  router.setSupportedToken(owner, usdt.address, false)
-  assert.equal(router.supportedTokens.has(usdt.address.toLowerCase()), false)
-  router.setSupportedToken(owner, usdt.address, true)
-  assert.equal(router.supportedTokens.has(usdt.address.toLowerCase()), true)
-
+  // 10. Owner emergency withdraw
   router.emergencyWithdraw(owner, usdt.address, owner, parseUnits("500", 6))
   assert.equal(usdt.balanceOf(owner), parseUnits("500", 6))
 })

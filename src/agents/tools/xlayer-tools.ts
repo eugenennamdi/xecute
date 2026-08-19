@@ -653,24 +653,6 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
       url: "https://app.uniswap.org/explore/pools/xlayer/0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
     },
   ],
-  WETH: [
-    {
-      name: "xETH / USDT (0.05%)",
-      protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
-      productGroup: "DEX_POOL",
-      chainIndex: "196",
-      url: "https://app.uniswap.org/explore/pools/xlayer/0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
-    },
-    {
-      name: "xETH / OKB (0.05%)",
-      protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
-      productGroup: "DEX_POOL",
-      chainIndex: "196",
-      url: "https://app.uniswap.org/explore/pools/xlayer/0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
-    },
-  ],
   XBTC: [
     {
       name: "xBTC / USDT (0.05%)",
@@ -855,7 +837,7 @@ async function inspectAddress(argumentsValue: unknown): Promise<AgentToolResult>
       nativeBalance: (mainnetSnapshot.balance as string) ?? "Unavailable",
       nativeSymbol: (mainnetSnapshot.balanceSymbol as string) ?? "OKB",
       transactionCount: mainnetSnapshot.transactionCount !== undefined ? mainnetSnapshot.transactionCount : "Unavailable",
-      isContract: mainnetSnapshot.contractAddress !== undefined ? (typeof mainnetSnapshot.contractAddress === "boolean" ? mainnetSnapshot.contractAddress : Boolean(mainnetSnapshot.contractAddress)) : "Unknown",
+      isContract: mainnetSnapshot.contractAddress !== undefined ? (typeof mainnetSnapshot.contractAddress === "boolean" ? (mainnetSnapshot.contractAddress ? "Contract" : "EOA") : mainnetSnapshot.contractAddress ? "Contract" : "EOA") : "Unknown",
       contractCalls30d: mainnetSnapshot.contractCalls,
       callingAddresses30d: mainnetSnapshot.contractCallingAddresses,
       firstTransactionTime: mainnetSnapshot.firstTransactionTime,

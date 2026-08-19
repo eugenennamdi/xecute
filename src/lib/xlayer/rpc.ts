@@ -296,8 +296,11 @@ export async function getXLayerTransactionReceipt(
     if (!receipt) {
       return { status: "pending" }
     }
-    const statusHex = receipt.status ? String(receipt.status) : undefined
-    const isSuccess = statusHex === "0x1" || statusHex === "1"
+    let isSuccess: boolean | undefined
+    if (receipt.status !== undefined && receipt.status !== null) {
+      const statusHex = String(receipt.status).toLowerCase()
+      isSuccess = statusHex === "0x1" || statusHex === "1"
+    }
     let gasUsed: string | undefined
     if (receipt.gasUsed) {
       try {

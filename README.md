@@ -5,7 +5,7 @@
 
 [![Live App](https://img.shields.io/badge/Live_App-xecute.xyz-FE6501?style=flat-square)](https://xecute.xyz/)
 [![Testnet Router](https://img.shields.io/badge/Testnet_Router-0x9be3...2acb-16845c?style=flat-square)](https://www.okx.com/web3/explorer/xlayer-test/address/0x9be3af8223f49b9357941db269a39775f7802acb)
-[![Tests](https://img.shields.io/badge/Tests-63%2F63_Passing-blue?style=flat-square)](#verification--tests)
+[![Tests](https://img.shields.io/badge/Tests-Passing-blue?style=flat-square)](#verification--tests)
 
 **Prompt it. Preview it. Xecute it.**
 
@@ -168,12 +168,12 @@ npm run dev
 
 ## Verification & Tests
 
-Xecute includes 93 automated unit and integration tests covering intent parsing, safety guardrails, token registries, live gas estimation, Protect allowance audits, smart contract invariants, execution orchestrator lifecycle, RPC lookups, and execution routing:
+Xecute includes a comprehensive automated test suite covering intent parsing, safety guardrails, token registries, live gas estimation, Protect allowance audits, smart contract invariants, execution orchestrator lifecycle, RPC lookups, and execution routing:
 
 ```bash
 npm run typecheck      # Type check (0 errors)
-npm test               # 93/93 passing unit & integration tests
-npm run test:contracts  # Local EVM runtime + onchain live read
+npm test               # Automated unit & integration test suite
+npm run test:contracts  # Router invariants, mathematical model & Solidity compilation tests
 npm run verify:router   # Bytecode SHA256 verification vs deployed contract
 npm run build          # Production build
 ```

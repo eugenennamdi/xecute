@@ -24,14 +24,14 @@ export function ExecutionStepper({
     {
       id: "simulation",
       label: "Preflight Simulation",
-      detail: "Validated route, reserves & estimated gas (142,500 gas)",
+      detail: "Validated route, onchain reserves & gas estimation",
       isComplete: ["verifying", "signing", "settled"].includes(stage),
       isRunning: stage === "simulating",
     },
     {
       id: "safety",
       label: "Safeguard Policy",
-      detail: "Verified slippage constraint (≤ 0.5%) & gas buffer retention",
+      detail: "Verified slippage constraint & mandatory gas buffer retention",
       isComplete: ["signing", "settled"].includes(stage),
       isRunning: stage === "verifying",
     },

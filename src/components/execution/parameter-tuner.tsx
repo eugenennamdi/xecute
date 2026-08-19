@@ -113,30 +113,15 @@ export function ParameterTuner({
         </div>
       )}
 
-      {onTogglePreserveGas && (
-        <div className="mt-2.5 flex items-center justify-between border-t border-black/[0.06] pt-2 text-[11px]">
-          <span className="flex items-center gap-1.5 text-foreground/65">
-            <Shield className="size-3 text-[#16845c]" />
-            Reserve OKB for gas (≥ 0.005 buffer)
-          </span>
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => onTogglePreserveGas(!preserveGas)}
-            className={cn(
-              "flex h-4.5 w-8 items-center rounded-full p-0.5 transition-colors active:scale-[0.95]",
-              preserveGas ? "bg-[#16845c]" : "bg-black/[0.16]",
-            )}
-          >
-            <span
-              className={cn(
-                "size-3.5 rounded-full bg-white shadow-xs transition-transform",
-                preserveGas ? "translate-x-3.5" : "translate-x-0",
-              )}
-            />
-          </button>
-        </div>
-      )}
+      <div className="mt-2.5 flex items-center justify-between border-t border-black/[0.06] pt-2 text-[11px]">
+        <span className="flex items-center gap-1.5 text-foreground/65">
+          <Shield className="size-3 text-[#16845c]" />
+          Mandatory Gas Reserve (≥ 0.005 OKB buffer)
+        </span>
+        <span className="inline-flex items-center gap-1 rounded bg-[#16845c]/10 px-1.5 py-0.5 text-[9.5px] font-semibold text-[#16845c]">
+          Enforced
+        </span>
+      </div>
     </div>
   )
 }

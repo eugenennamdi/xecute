@@ -775,12 +775,45 @@ function Receipt() {
     window.setTimeout(() => setCopied(false), 1600)
   }
 
+  const isExecuted = receipt.status === "executed"
+  const isReverted = receipt.status === "reverted"
+
   return (
-    <div className="border-t border-[#16845c]/15 bg-[#16845c]/[0.035] px-3.5 sm:px-4 py-2.5">
+    <div
+      className={cn(
+        "border-t px-3.5 sm:px-4 py-2.5",
+        isExecuted
+          ? "border-[#16845c]/15 bg-[#16845c]/[0.035]"
+          : isReverted
+            ? "border-red-500/20 bg-red-500/[0.04]"
+            : "border-amber-500/20 bg-amber-500/[0.04]",
+      )}
+    >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div className="flex items-center gap-2 text-xs font-semibold text-[#16845c]">
-          <CheckCircle2 className="size-4 shrink-0" />
-          <span>Transaction successful</span>
+        <div
+          className={cn(
+            "flex items-center gap-2 text-xs font-semibold",
+            isExecuted
+              ? "text-[#16845c]"
+              : isReverted
+                ? "text-red-600"
+                : "text-amber-700",
+          )}
+        >
+          {isExecuted ? (
+            <CheckCircle2 className="size-4 shrink-0" />
+          ) : isReverted ? (
+            <AlertCircle className="size-4 shrink-0" />
+          ) : (
+            <Clock className="size-4 shrink-0 animate-pulse" />
+          )}
+          <span>
+            {isExecuted
+              ? "Transaction successful"
+              : isReverted
+                ? "Transaction reverted onchain"
+                : "Transaction broadcast — confirming onchain..."}
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -792,7 +825,12 @@ function Receipt() {
           >
             <span>{shortHash}</span>
             {copied ? (
-              <Check className="size-3 text-[#16845c] stroke-[2.5]" />
+              <Check
+                className={cn(
+                  "size-3 stroke-[2.5]",
+                  isExecuted ? "text-[#16845c]" : isReverted ? "text-red-600" : "text-amber-700",
+                )}
+              />
             ) : (
               <Copy01Icon size={12} className="text-foreground/45" />
             )}
@@ -802,7 +840,14 @@ function Receipt() {
             href={explorerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-[#16845c] transition-colors hover:bg-[#16845c]/10"
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+              isExecuted
+                ? "text-[#16845c] hover:bg-[#16845c]/10"
+                : isReverted
+                  ? "text-red-600 hover:bg-red-50"
+                  : "text-amber-700 hover:bg-amber-50",
+            )}
           >
             <span>View in Explorer ↗</span>
           </a>
@@ -817,6 +862,7 @@ export function InlineExecution() {
   const status = useTerminalStore((state) => state.status)
   const walletConnected = useTerminalStore((state) => state.walletConnected)
   const confirmAction = useTerminalStore((state) => state.confirmAction)
+  const setPlanSlippage = useTerminalStore((state) => state.setPlanSlippage)
   const submitPrompt = useTerminalStore((state) => state.submitPrompt)
   const intent = plan?.intent ?? null
   const parsedJson = useMemo(() => intent ? JSON.stringify(toIntentJson(intent), null, 2) : "", [intent])
@@ -826,6 +872,11 @@ export function InlineExecution() {
 
   const [slippage, setSlippage] = useState(initialSlippage)
   const [preserveGas, setPreserveGas] = useState(initialPreserveGas)
+
+  function handleSlippageChange(val: number) {
+    setSlippage(val)
+    setPlanSlippage(val)
+  }
 
   if (!intent || !plan) return null
 
@@ -953,7 +1004,7 @@ export function InlineExecution() {
           walletConnected={walletConnected}
           slippage={slippage}
           preserveGas={preserveGas}
-          onSlippageChange={setSlippage}
+          onSlippageChange={handleSlippageChange}
           onPreserveGasChange={setPreserveGas}
           onConfirm={confirmAction}
         />
