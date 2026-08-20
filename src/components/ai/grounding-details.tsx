@@ -117,7 +117,7 @@ export function GroundingDetails({ metadata }: { metadata: AgentMetadata }) {
             {metadata.sources.length > 0 ? (
               <div className="space-y-1.5 pt-1">
                 <p className="text-[10.5px] font-semibold tracking-wider text-foreground/45 uppercase">
-                  Verified Data & Protocol Sources
+                  Data & Protocol Sources
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {metadata.sources.map((source) => (

@@ -35,7 +35,10 @@ export const EarnOpportunitySchema = z.object({
 })
 
 export function formatApy(raw: string): string {
-  if (!raw || raw.toLowerCase() === "variable") return "Variable APY"
+  if (!raw) return "Variable"
+  const lower = raw.toLowerCase().trim()
+  if (lower === "variable" || lower.startsWith("variable")) return "Variable"
+  if (lower === "unavailable" || lower === "n/a") return "Unavailable"
   if (raw.includes("%")) return raw.includes("APY") ? raw : `${raw} APY`
   const num = parseFloat(raw)
   if (isNaN(num)) return raw

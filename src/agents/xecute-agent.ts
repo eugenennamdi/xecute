@@ -823,17 +823,13 @@ export async function runXecuteAgent(request: AgentRequest): Promise<AgentRespon
     try {
       const response = await runRemoteAgent(request, config, startedAt, budget)
       if (failures.length > 0) {
-        response.metadata.tools.unshift({
-          name: "model_fallback",
-          label: "Model fallback",
-          status: "unavailable",
-          summary: failures.join("; ").slice(0, 280),
-        })
+        console.warn(`[agent] Primary model failed, fallback succeeded (${config.provider}/${config.model}): ${failures.join("; ")}`)
       }
       return response
     } catch (error) {
       coolDownProvider(config, error)
       const summary = error instanceof Error ? error.message : "request failed"
+      console.error(`[agent] ${providerLabels[config.provider]} ${config.model} failed:`, error)
       failures.push(`${providerLabels[config.provider]} ${config.model}: ${summary.slice(0, 100)}`)
     }
   }

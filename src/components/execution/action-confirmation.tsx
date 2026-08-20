@@ -13,6 +13,7 @@ import type { TradeIntent } from "@/lib/intents"
 import { getCanonicalPreflightSummary } from "@/lib/safety/policy"
 import type { SafetyCheck, SafetyReport } from "@/lib/safety/types"
 import { useTerminalStore } from "@/lib/store"
+import { formatDisplayAmount } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 type ActionConfirmationProps = {
@@ -229,7 +230,7 @@ export function ActionConfirmation({
             <div className="rounded-xl border border-black/[0.04] bg-white p-2">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/45">You Send</span>
               <div className="mt-0.5 flex items-baseline gap-1">
-                <span className="font-mono text-sm font-semibold text-foreground/90 tabular-nums">-{intent.amount}</span>
+                <span className="font-mono text-sm font-semibold text-foreground/90 tabular-nums">-{formatDisplayAmount(intent.amount)}</span>
                 <span className="text-xs font-semibold text-foreground/60">{intent.fromToken}</span>
               </div>
             </div>
@@ -255,7 +256,7 @@ export function ActionConfirmation({
               </span>
               <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
                 <span className="truncate font-mono text-xs sm:text-sm font-semibold text-foreground/90 tabular-nums">
-                  {isRevoke ? "0" : (intent.amount ?? "Unlimited")}
+                  {isRevoke ? "0" : (formatDisplayAmount(intent.amount) || "Unlimited")}
                 </span>
                 <span className="truncate text-[11px] sm:text-xs font-semibold text-foreground/60">{intent.fromToken}</span>
               </div>
@@ -279,7 +280,7 @@ export function ActionConfirmation({
             <div className="min-w-0 rounded-xl border border-black/[0.04] bg-white p-2">
               <span className="text-[9.5px] sm:text-[10px] font-semibold uppercase tracking-wider text-foreground/45 truncate block">You Pay</span>
               <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
-                <span className="truncate font-mono text-xs sm:text-sm font-semibold text-foreground/90 tabular-nums">-{intent.amount}</span>
+                <span className="truncate font-mono text-xs sm:text-sm font-semibold text-foreground/90 tabular-nums">-{formatDisplayAmount(intent.amount)}</span>
                 <span className="truncate text-[11px] sm:text-xs font-semibold text-foreground/60">{intent.fromToken}</span>
               </div>
             </div>

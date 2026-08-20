@@ -543,7 +543,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "USD₮0 / USDC (0.01%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
@@ -551,7 +551,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "USD₮0 / OKB (0.05%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
@@ -559,7 +559,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "xETH / USD₮0 (0.05%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
@@ -567,7 +567,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "xBTC / USD₮0 (0.05%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x5fcfb33c9ab1665fee892eb2af163e863a874d73",
@@ -577,7 +577,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "USD₮0 / USDC (0.01%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
@@ -585,7 +585,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "USD₮0 / OKB (0.05%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
@@ -595,7 +595,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "USDC / USDT (0.01%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xeeeb3c1f61dc3070c675c2670a3f2188a060012d",
@@ -603,7 +603,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "USDC / xETH (0.05%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
@@ -611,7 +611,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "USDC / OKB (0.3%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x63d62734847e55a266fca4219a9ad0a02d5f6e02",
@@ -621,7 +621,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "OKB / USDT (0.05%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xe3be6a0137f1b0602fc1a4841686f43b340a5082",
@@ -629,7 +629,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "OKB / xETH (0.05%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
@@ -639,7 +639,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "xETH / USDT (0.05%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x77ef18adf35f62b2ad442e4370cdbc7fe78b7dcc",
@@ -647,7 +647,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "xETH / OKB (0.05%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0xc1382e9eb8f3df11d348d1dcca34e246690122a2",
@@ -657,7 +657,7 @@ const CONFIGURED_XLAYER_POOL_REFERENCES: Record<
     {
       name: "xBTC / USDT (0.05%)",
       protocol: "Uniswap V3",
-      apy: "Variable (Live telemetry unavailable)",
+      apy: "Variable",
       productGroup: "DEX_POOL",
       chainIndex: "196",
       url: "https://app.uniswap.org/explore/pools/xlayer/0x5fcfb33c9ab1665fee892eb2af163e863a874d73",

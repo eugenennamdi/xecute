@@ -114,7 +114,8 @@ test("formats APY and resolves official protocol URLs correctly", async () => {
   assert.equal(formatApy("0.01310"), "1.31% APY")
   assert.equal(formatApy("0.054"), "5.40% APY")
   assert.equal(formatApy("4.8%"), "4.8% APY")
-  assert.equal(formatApy("Variable"), "Variable APY")
+  assert.equal(formatApy("Variable"), "Variable")
+  assert.equal(formatApy("Variable (Live telemetry unavailable)"), "Variable")
 
   // Verified protocol URL mapping
   assert.equal(

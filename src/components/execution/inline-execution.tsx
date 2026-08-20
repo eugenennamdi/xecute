@@ -36,6 +36,7 @@ import type { ApprovalFinding, EarnOpportunity, PreparedAction, TradeExecutionPr
 import { getCanonicalPreflightSummary } from "@/lib/safety/policy"
 import type { SafetyCheck, SafetyReport } from "@/lib/safety/types"
 import { useTerminalStore } from "@/lib/store"
+import { formatDisplayAmount } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 const modeIcons: Record<Mode, LucideIcon> = {
@@ -264,9 +265,9 @@ function TradeResult({
     const numOut = parseFloat(preview.estimatedOutput)
     if (!isNaN(numOut) && numOut > 0) {
       const calculated = numOut * (1 - slippage / 100)
-      return calculated >= 1 ? calculated.toFixed(4) : calculated.toFixed(6)
+      return formatDisplayAmount(calculated)
     }
-    return preview.minimumReceived
+    return formatDisplayAmount(preview.minimumReceived)
   }, [preview.estimatedOutput, preview.minimumReceived, slippage])
 
   const passedChecksCount = useMemo(() => {
@@ -299,7 +300,7 @@ function TradeResult({
           <div className="min-w-0">
             <p className="text-[10px] font-medium uppercase tracking-wider text-foreground/40">You pay</p>
             <p className="mt-0.5 truncate font-mono text-base sm:text-lg font-semibold tracking-tight text-foreground">
-              {preview.inputAmount} <span className="font-sans text-xs font-medium text-foreground/50">{preview.fromToken}</span>
+              {formatDisplayAmount(preview.inputAmount)} <span className="font-sans text-xs font-medium text-foreground/50">{preview.fromToken}</span>
             </p>
           </div>
           <span className="flex size-6 sm:size-7 shrink-0 items-center justify-center rounded-full border border-black/[0.08] bg-white text-foreground/50 shadow-sm">
@@ -308,7 +309,7 @@ function TradeResult({
           <div className="min-w-0 text-right">
             <p className="text-[10px] font-medium uppercase tracking-wider text-foreground/40">Estimated receive</p>
             <p className="mt-0.5 truncate font-mono text-base sm:text-lg font-semibold tracking-tight text-[#16845c]">
-              {preview.estimatedOutput} <span className="font-sans text-xs font-medium text-foreground/50">{preview.toToken}</span>
+              {formatDisplayAmount(preview.estimatedOutput)} <span className="font-sans text-xs font-medium text-foreground/50">{preview.toToken}</span>
             </p>
           </div>
         </div>
@@ -411,7 +412,7 @@ function TransferResult({
           <div className="min-w-0">
             <p className="text-[10px] font-medium uppercase tracking-wider text-foreground/40">You send</p>
             <p className="mt-0.5 truncate font-mono text-base sm:text-lg font-semibold tracking-tight text-foreground">
-              {intent.amount ?? preview.inputAmount}{" "}
+              {formatDisplayAmount(intent.amount ?? preview.inputAmount)}{" "}
               <span className="font-sans text-xs font-medium text-foreground/50">{intent.fromToken ?? preview.fromToken}</span>
             </p>
           </div>
@@ -525,7 +526,7 @@ function ApprovalResult({
               {isRevoke ? "Revoke Token" : "Approve Token"}
             </p>
             <p className="mt-0.5 truncate font-mono text-base sm:text-lg font-semibold tracking-tight text-foreground">
-              {isRevoke ? "0" : (intent.amount ?? "Unavailable")}{" "}
+              {isRevoke ? "0" : (formatDisplayAmount(intent.amount) || "Unavailable")}{" "}
               <span className="font-sans text-xs font-medium text-foreground/50">{intent.fromToken ?? preview.fromToken}</span>
             </p>
           </div>
